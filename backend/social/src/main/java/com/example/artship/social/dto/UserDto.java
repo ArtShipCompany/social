@@ -23,7 +23,7 @@ public class UserDto {
         this.createdAt = user.getCreatedAt();
     }
     
-    // Геттеры
+
     public Long getId() { return id; }
     public String getUsername() { return username; }
     public String getDisplayName() { return displayName; }
