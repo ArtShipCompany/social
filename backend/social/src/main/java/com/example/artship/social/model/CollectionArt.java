@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "collection_arts")
-@IdClass(CollectionArtId.class)
+@IdClass(CollectionArt.CollectionArtId.class)
 public class CollectionArt {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -61,29 +61,30 @@ public class CollectionArt {
         return "CollectionArt{collection=" + (collection != null ? collection.getTitle() : "null") + 
                ", art=" + (art != null ? art.getId() : "null") + "}";
     }
+
+    public class CollectionArtId implements java.io.Serializable {
+        private Long collection;
+        private Long art;
+        
+        public CollectionArtId() {}
+        
+        public CollectionArtId(Long collection, Long art) {
+            this.collection = collection;
+            this.art = art;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof CollectionArtId that)) return false;
+            return collection.equals(that.collection) && art.equals(that.art);
+        }
+        
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(collection, art);
+        }
+}
 }
 
-// Класс для составного ключа
-class CollectionArtId implements java.io.Serializable {
-    private Long collection;
-    private Long art;
-    
-    public CollectionArtId() {}
-    
-    public CollectionArtId(Long collection, Long art) {
-        this.collection = collection;
-        this.art = art;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CollectionArtId that)) return false;
-        return collection.equals(that.collection) && art.equals(that.art);
-    }
-    
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(collection, art);
-    }
-}
+

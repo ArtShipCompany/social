@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "art_tags")
-@IdClass(ArtTagId.class)
+@IdClass(ArtTag.ArtTagId.class)
 public class ArtTag {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -51,10 +51,8 @@ public class ArtTag {
         return "ArtTag{art=" + (art != null ? art.getId() : "null") + 
                ", tag=" + (tag != null ? tag.getName() : "null") + "}";
     }
-}
 
-
-class ArtTagId implements java.io.Serializable {
+    public class ArtTagId implements java.io.Serializable {
     private Long art;
     private Long tag;
     
@@ -77,3 +75,6 @@ class ArtTagId implements java.io.Serializable {
         return java.util.Objects.hash(art, tag);
     }
 }
+}
+
+

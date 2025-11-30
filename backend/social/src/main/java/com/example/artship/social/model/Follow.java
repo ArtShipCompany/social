@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "follows")
-@IdClass(FollowId.class)
+@IdClass(Follow.FollowId.class)
 public class Follow {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -61,29 +61,30 @@ public class Follow {
         return "Follow{follower=" + (follower != null ? follower.getUsername() : "null") + 
                ", following=" + (following != null ? following.getUsername() : "null") + "}";
     }
+
+    public class FollowId implements java.io.Serializable {
+        private Long follower;
+        private Long following;
+        
+        public FollowId() {}
+        
+        public FollowId(Long follower, Long following) {
+            this.follower = follower;
+            this.following = following;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof FollowId followId)) return false;
+            return follower.equals(followId.follower) && following.equals(followId.following);
+        }
+        
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(follower, following);
+        }
+}
 }
 
 
-class FollowId implements java.io.Serializable {
-    private Long follower;
-    private Long following;
-    
-    public FollowId() {}
-    
-    public FollowId(Long follower, Long following) {
-        this.follower = follower;
-        this.following = following;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof FollowId followId)) return false;
-        return follower.equals(followId.follower) && following.equals(followId.following);
-    }
-    
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(follower, following);
-    }
-}

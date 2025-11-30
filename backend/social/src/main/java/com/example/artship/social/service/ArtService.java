@@ -1,34 +1,55 @@
 package com.example.artship.social.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.artship.social.dto.ArtDto;
+import com.example.artship.social.dto.TagDto;
 import com.example.artship.social.model.Art;
+import com.example.artship.social.model.Tag;
 import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
+import com.example.artship.social.repository.UserRepository;
 
 @Service
+@Transactional
 public class ArtService {
-    @Autowired
-    private ArtRepository artRepository;
+    private final ArtRepository artRepository;
+    private final ArtTagService artTagService;
+    private final TagService tagService;
+    private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
-    public ArtService(ArtRepository artRepository){
+    public ArtService(ArtRepository artRepository, TagService tagService, 
+                     ArtTagService artTagService, UserRepository userRepository,
+                     FileStorageService fileStorageService) {
         this.artRepository = artRepository;
+        this.tagService = tagService;
+        this.artTagService = artTagService;
+        this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
-    public Art createArt(Art art){
-        return artRepository.save(art);
+    public ArtDto createArt(Art art, Long userId) { 
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        art.setAuthor(author);
+        art.setCreatedAt(LocalDateTime.now());
+        art.setUpdatedAt(LocalDateTime.now());
+        
+        Art savedArt = artRepository.save(art);
+        return convertToDto(savedArt);
     }
 
-    public Art updateArt(Long id, Art artDetails) {
+    public ArtDto updateArt(Long id, Art artDetails) {
         Art art = artRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
         
@@ -37,8 +58,24 @@ public class ArtService {
         art.setImageUrl(artDetails.getImageUrl());
         art.setProjectDataUrl(artDetails.getProjectDataUrl());
         art.setIsPublic(artDetails.getIsPublic());
+        art.setUpdatedAt(LocalDateTime.now());
         
-        return artRepository.save(art);
+        Art updatedArt = artRepository.save(art);
+        return convertToDto(updatedArt);
+    }
+
+    public void deleteArt(Long id) {
+        Art art = artRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
+        
+        // Удаляем файл изображения перед удалением арта
+        String imageUrl = art.getImageUrl();
+        if (imageUrl != null && imageUrl.startsWith("/api/files/images/")) {
+            fileStorageService.deleteFile(imageUrl);
+        }
+        
+        artTagService.removeAllTagsFromArt(id);
+        artRepository.delete(art);
     }
 
     @Transactional(readOnly = true)
@@ -49,17 +86,18 @@ public class ArtService {
     @Transactional(readOnly = true)
     public Optional<ArtDto> getArtDtoById(Long id) {
         return artRepository.findById(id)
-                .map(ArtDto::new);
+                .map(this::convertToDto);
     }
 
-    public void deleteArt(Long id) {
-        Art art = artRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
-        artRepository.delete(art);
-    }
-
+    @Transactional(readOnly = true)
     public Page<Art> getPublicArts(Pageable pageable) {
         return artRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ArtDto> getPublicArtsDtos(Pageable pageable) {
+        return artRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable)
+                .map(this::convertToDto);
     }
 
     @Transactional(readOnly = true)
@@ -71,7 +109,7 @@ public class ArtService {
     public List<ArtDto> getPublicArtDtosByAuthor(User author) {
         return artRepository.findByAuthorAndIsPublicTrueOrderByCreatedAtDesc(author)
                 .stream()
-                .map(ArtDto::new)
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
@@ -83,7 +121,7 @@ public class ArtService {
     @Transactional(readOnly = true)
     public Page<ArtDto> getUserFeedDtos(Long userId, Pageable pageable) {
         return artRepository.findFeedByUserId(userId, pageable)
-                .map(ArtDto::new);
+                .map(this::convertToDto);
     }
 
     @Transactional(readOnly = true)
@@ -97,11 +135,70 @@ public class ArtService {
     public List<Art> getAllArtsByAuthor(User author) {
         return artRepository.findByAuthorOrderByCreatedAtDesc(author);
     }
+
+    @Transactional(readOnly = true)
+    public List<ArtDto> getAllArtDtosByAuthor(User author) {
+        return artRepository.findByAuthorOrderByCreatedAtDesc(author)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public Page<Art> searchPublicArtsByTitle(String title, Pageable pageable) {
         return artRepository.findByTitleContainingIgnoreCaseAndIsPublicTrue(title, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ArtDto> searchPublicArtDtosByTitle(String title, Pageable pageable) {
+        return artRepository.findByTitleContainingIgnoreCaseAndIsPublicTrue(title, pageable)
+                .map(this::convertToDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Art> findByTagName(String tagName, Pageable pageable) {
+        return artRepository.findByTagNameAndIsPublicTrue(tagName, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ArtDto> findDtosByTagName(String tagName, Pageable pageable) {
+        return artRepository.findByTagNameAndIsPublicTrue(tagName, pageable)
+                .map(this::convertToDto);
+    }
+
+    // Методы для работы с тегами
+    public ArtDto addTagsToArt(Long artId, List<String> tagNames) {
+        artTagService.addTagsToArt(artId, tagNames);
+        return getArtDtoById(artId)
+                .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
+    }
+
+    public ArtDto removeTagFromArt(Long artId, Long tagId) {
+        artTagService.removeTagFromArt(artId, tagId);
+        return getArtDtoById(artId)
+                .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<TagDto> getArtTags(Long artId) {
+        List<Tag> tags = artTagService.getTagsByArtId(artId);
+        return tags.stream()
+                .map(tag -> {
+                    TagDto dto = new TagDto(tag);
+                    Long artCount = tagService.getArtCountByTagId(tag.getId());
+                    dto.setArtCount(artCount != null ? artCount.intValue() : 0);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 
 
+    public ArtDto convertToDto(Art art) {
+        List<Tag> tags = artTagService.getTagsByArtId(art.getId());
+        
+
+        ArtDto artDto = new ArtDto(art, tags);
+        
+        return artDto;
+    }
 }

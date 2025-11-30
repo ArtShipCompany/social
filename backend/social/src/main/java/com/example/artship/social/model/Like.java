@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "likes")
-@IdClass(LikeId.class)
+@IdClass(Like.LikeId.class)
 public class Like {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -60,29 +60,36 @@ public class Like {
         return "Like{user=" + (user != null ? user.getUsername() : "null") + 
                ", art=" + (art != null ? art.getId() : "null") + "}";
     }
+
+    public static class LikeId implements java.io.Serializable {
+        private Long user;
+        private Long art;
+        
+        public LikeId() {}
+        
+        public LikeId(Long user, Long art) {
+            this.user = user;
+            this.art = art;
+        }
+        
+        public Long getUser() { return user; }
+        public void setUser(Long user) { this.user = user; }
+        
+        public Long getArt() { return art; }
+        public void setArt(Long art) { this.art = art; }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof LikeId likeId)) return false;
+            return java.util.Objects.equals(user, likeId.user) && 
+                   java.util.Objects.equals(art, likeId.art);
+        }
+        
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(user, art);
+        }
+    }
 }
 
-// Класс для составного ключа
-class LikeId implements java.io.Serializable {
-    private Long user;
-    private Long art;
-    
-    public LikeId() {}
-    
-    public LikeId(Long user, Long art) {
-        this.user = user;
-        this.art = art;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LikeId likeId)) return false;
-        return user.equals(likeId.user) && art.equals(likeId.art);
-    }
-    
-    @Override
-    public int hashCode() {
-        return java.util.Objects.hash(user, art);
-    }
-}

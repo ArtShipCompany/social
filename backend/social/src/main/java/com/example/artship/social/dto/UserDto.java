@@ -23,6 +23,15 @@ public class UserDto {
         this.createdAt = user.getCreatedAt();
     }
     
+    public UserDto(UserDto other) {
+        this.id = other.id;
+        this.username = other.username;
+        this.displayName = other.displayName;
+        this.avatarUrl = other.avatarUrl;
+        this.bio = other.bio;
+        this.isPublic = other.isPublic;
+        this.createdAt = other.createdAt;
+    }
 
     public Long getId() { return id; }
     public String getUsername() { return username; }
