@@ -1,0 +1,8 @@
+.feed {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5 колонок */
+  grid-template-rows: repeat(3, 1fr);     /* 3 строки */
+  gap: 20px;                              /* отступы между карточками */
+  margin: 20px 200px;                       /* отступ от поисковой строки */
+  max-width: 100%;                        /* не выходит за границы контейнера */
+}
