@@ -7,4 +7,12 @@
 main {
   flex: 1;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.boards {
+  display: flex;
+  flex-direction: row;
 }
