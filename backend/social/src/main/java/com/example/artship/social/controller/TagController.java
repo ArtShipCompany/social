@@ -1,8 +1,14 @@
 package com.example.artship.social.controller;
 
+import com.example.artship.social.dto.TagCreateRequest;
 import com.example.artship.social.dto.TagDto;
 import com.example.artship.social.model.Tag;
 import com.example.artship.social.service.TagService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,22 +27,29 @@ public class TagController {
         this.tagService = tagService;
     }
     
-    // Создание тега
-    @PostMapping
-    public ResponseEntity<Tag> createTag(@RequestParam String name) {
-        try {
-            Tag tag = tagService.createTag(name);
-            return new ResponseEntity<>(tag, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
+
     // Создание тега через JSON
-    @PostMapping("/create")
-    public ResponseEntity<Tag> createTagJson(@RequestBody Tag tagRequest) {
+    @PostMapping
+    @Operation(summary = "Создать тег")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Данные для создания тега",
+        required = true,
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = TagCreateRequest.class), // ← УКАЖИТЕ ПРАВИЛЬНЫЙ КЛАСС
+            examples = @ExampleObject(
+                name = "Пример запроса",
+                value = """
+                    {
+                    "name": "живопись"
+                    }
+                    """
+            )
+        )
+    )
+    public ResponseEntity<Tag> createTag(@RequestBody TagCreateRequest request) {
         try {
-            Tag tag = tagService.createTag(tagRequest.getName());
+            Tag tag = tagService.createTag(request.getName());
             return new ResponseEntity<>(tag, HttpStatus.CREATED);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();

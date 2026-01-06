@@ -1,6 +1,14 @@
 package com.example.artship.social.config;
 
 import com.example.artship.social.security.JwtAuthenticationFilter;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.servers.Server;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -45,6 +53,36 @@ public class SecurityConfig {
     }
     
     @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("ArtShip Social API")
+                        .version("1.0.0")
+                        .description("REST API для социальной сети ArtShip")
+                        .contact(new Contact()
+                                .name("ArtShip Support")
+                                .email("support@artship.com"))
+                        .license(new License()
+                                .name("Apache 2.0")
+                                .url("http://springdoc.org")))
+                .servers(List.of(
+                    new Server()
+                        .url("http://localhost:8081")
+                        .description("Локальный сервер разработки"),
+                    new Server()
+                        .url("https://api.artship.com")
+                        .description("Продакшен сервер")
+                ))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new io.swagger.v3.oas.models.security.SecurityScheme()
+                                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
+    }
+    
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -52,15 +90,34 @@ public class SecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            
             .authorizeHttpRequests(auth -> auth
+                // Swagger UI и OpenAPI документация
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/api/auth/register",
+                    "/",
+                    "/index.html",
                     "/swagger-ui/**",
+                    "/swagger-ui.html",
                     "/v3/api-docs/**",
+                    "/api-docs/**",
+                    "/swagger-resources/**",
+                    "/swagger-resources",
+                    "/webjars/**",
+                    "/configuration/ui",
+                    "/configuration/security",
+                    "/favicon.ico",
                     "/error"
                 ).permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Публичные API
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/users/register",
+                    "/api/users/public/**",
+                    "/api/test/**",
+                    "/api/arts/public/**",
+                    "/api/tags/public/**"
+                ).permitAll()
+                // Все остальные запросы требуют аутентификации
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -71,11 +128,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",     
+            "http://localhost:8081",     
+            "http://localhost:8080"       
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

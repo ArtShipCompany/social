@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.dto.TagDto;
+import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.model.Art;
-import com.example.artship.social.model.Tag;
 import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.UserRepository;
@@ -22,18 +22,20 @@ import com.example.artship.social.repository.UserRepository;
 @Transactional
 public class ArtService {
     private final ArtRepository artRepository;
-    private final ArtTagService artTagService;
-    private final TagService tagService;
     private final UserRepository userRepository;
+    private final TagManagementService tagManagementService; // Вместо ArtTagService
+    private final TagService tagService;
     private final FileStorageService fileStorageService;
 
-    public ArtService(ArtRepository artRepository, TagService tagService, 
-                     ArtTagService artTagService, UserRepository userRepository,
+    public ArtService(ArtRepository artRepository, 
+                     UserRepository userRepository,
+                     TagManagementService tagManagementService, // Изменено
+                     TagService tagService,
                      FileStorageService fileStorageService) {
         this.artRepository = artRepository;
-        this.tagService = tagService;
-        this.artTagService = artTagService;
         this.userRepository = userRepository;
+        this.tagManagementService = tagManagementService; // Изменено
+        this.tagService = tagService;
         this.fileStorageService = fileStorageService;
     }
 
@@ -74,7 +76,8 @@ public class ArtService {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        artTagService.removeAllTagsFromArt(id);
+        // Используем TagManagementService вместо artTagService
+        tagManagementService.removeAllTagsFromArt(id);
         artRepository.delete(art);
     }
 
@@ -166,38 +169,61 @@ public class ArtService {
                 .map(this::convertToDto);
     }
 
-    // Методы для работы с тегами
+    // Методы для работы с тегами (используют TagManagementService)
     public ArtDto addTagsToArt(Long artId, List<String> tagNames) {
-        artTagService.addTagsToArt(artId, tagNames);
+        tagManagementService.addTagsToArt(artId, tagNames);
         return getArtDtoById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
     }
 
     public ArtDto removeTagFromArt(Long artId, Long tagId) {
-        artTagService.removeTagFromArt(artId, tagId);
+        tagManagementService.removeTagFromArt(artId, tagId);
         return getArtDtoById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
     }
 
     @Transactional(readOnly = true)
     public List<TagDto> getArtTags(Long artId) {
-        List<Tag> tags = artTagService.getTagsByArtId(artId);
+        List<TagDto> tags = tagManagementService.getTagsByArtId(artId);
+        
+        // Добавляем количество артов для каждого тега
         return tags.stream()
                 .map(tag -> {
-                    TagDto dto = new TagDto(tag);
                     Long artCount = tagService.getArtCountByTagId(tag.getId());
-                    dto.setArtCount(artCount != null ? artCount.intValue() : 0);
-                    return dto;
+                    tag.setArtCount(artCount != null ? artCount.intValue() : 0);
+                    return tag;
                 })
                 .collect(Collectors.toList());
     }
 
-
+    // Конвертация Art в ArtDto с тегами
+    @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
-        List<Tag> tags = artTagService.getTagsByArtId(art.getId());
+        if (art == null) return null;
         
-
-        ArtDto artDto = new ArtDto(art, tags);
+        ArtDto artDto = new ArtDto();
+        artDto.setId(art.getId());
+        artDto.setTitle(art.getTitle());
+        artDto.setDescription(art.getDescription());
+        artDto.setImage(art.getImageUrl());
+        artDto.setProjectDataUrl(art.getProjectDataUrl());
+        artDto.setPublic(art.getIsPublic() != null ? art.getIsPublic() : true);
+        artDto.setCreatedAt(art.getCreatedAt());
+        artDto.setUpdatedAt(art.getUpdatedAt());
+        
+        // Автор
+        if (art.getAuthor() != null) {
+            UserDto authorDto = new UserDto();
+            authorDto.setId(art.getAuthor().getId());
+            authorDto.setUsername(art.getAuthor().getUsername());
+            authorDto.setEmail(art.getAuthor().getEmail());
+            authorDto.setAvatarUrl(art.getAuthor().getAvatarUrl());
+            artDto.setAuthor(authorDto);
+        }
+        
+        // Теги (получаем через TagManagementService)
+        List<TagDto> tags = tagManagementService.getTagsByArtId(art.getId());
+        artDto.setTags(tags);
         
         return artDto;
     }

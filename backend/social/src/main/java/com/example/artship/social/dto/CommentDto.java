@@ -17,7 +17,7 @@ public class CommentDto {
 
     public CommentDto() {}
 
-    public CommentDto(Comment comment) {
+    public CommentDto(Comment comment, Long parentCommentIdFromRequest) {
         this.id = comment.getId();
         this.text = comment.getText();
         this.createdAt = comment.getCreatedAt();
@@ -25,8 +25,13 @@ public class CommentDto {
         this.userId = comment.getUser() != null ? comment.getUser().getId() : null;
         this.username = comment.getUser() != null ? comment.getUser().getUsername() : null;
         this.userAvatarUrl = comment.getUser() != null ? comment.getUser().getAvatarUrl() : null;
-        this.parentCommentId = comment.getParentComment() != null ? comment.getParentComment().getId() : null;
-        this.replies = null; // Загружаются отдельно
+        
+        // Сначала проверяем parentComment объект, если его нет - используем ID из запроса
+        this.parentCommentId = comment.getParentComment() != null 
+            ? comment.getParentComment().getId() 
+            : parentCommentIdFromRequest;
+        
+        this.replies = null;
     }
 
     // Геттеры и сеттеры

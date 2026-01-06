@@ -36,19 +36,18 @@ public class UserController {
     private UserService userService;
     
     @Autowired
-    private PasswordEncoder passwordEncoder; // Добавьте для хеширования паролей
+    private PasswordEncoder passwordEncoder; 
     
-    // Публичные endpoints
     @GetMapping("/public/{id}")
     public ResponseEntity<UserDto> getPublicUser(@PathVariable Long id) {
         return userService.findById(id)
-                .filter(User::getIsPublic) // Показываем только публичных пользователей
+                .filter(User::getIsPublic) 
                 .map(UserDto::new)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Защищенные endpoints
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> getCurrentUser() {
@@ -64,13 +63,11 @@ public class UserController {
     @PutMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> updateCurrentUser(@RequestBody UserUpdateRequest updateRequest) {
-        // Создайте отдельный DTO для обновления
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         
         return userService.findByUsername(username)
                 .map(existingUser -> {
-                    // Обновление полей
                     if (updateRequest.getDisplayName() != null) {
                         existingUser.setDisplayName(updateRequest.getDisplayName());
                     }
@@ -91,10 +88,10 @@ public class UserController {
     }
     
     @GetMapping
-    @PreAuthorize("isAuthenticated()") // Только для авторизованных
+    @PreAuthorize("isAuthenticated()") 
     public List<UserDto> getAllUsers() {
         return userService.findAll().stream()
-                .filter(User::getIsPublic) // Только публичные
+                .filter(User::getIsPublic) 
                 .map(UserDto::new)
                 .collect(Collectors.toList());
     }
@@ -110,28 +107,8 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PostMapping
-    @PreAuthorize("permitAll()") 
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserCreateRequest createRequest) {
-        // Валидация
-        if (userService.existsByUsername(createRequest.getUsername())) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (userService.existsByEmail(createRequest.getEmail())) {
-            return ResponseEntity.badRequest().build();
-        }
 
-        User user = new User(
-            createRequest.getUsername(),
-            createRequest.getEmail(),
-            passwordEncoder.encode(createRequest.getPassword()),
-            createRequest.getDisplayName()
-        );
-        
-        User savedUser = userService.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new UserDto(savedUser));
-    }
+    
     
     @GetMapping("/username/{username}")
     @PreAuthorize("isAuthenticated()")

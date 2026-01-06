@@ -3,33 +3,53 @@ package com.example.artship.social.controller;
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.dto.CollectionArtDto;
 import com.example.artship.social.service.CollectionArtService;
+
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/collection-arts")
 public class CollectionArtController {
+
+    private static final Logger log = LoggerFactory.getLogger(FollowController.class);
+
     
     private final CollectionArtService collectionArtService;
     
     public CollectionArtController(CollectionArtService collectionArtService) {
         this.collectionArtService = collectionArtService;
     }
-    
-    // Добавление арта в коллекцию
+
     @PostMapping("/collection/{collectionId}/art/{artId}")
-    public ResponseEntity<CollectionArtDto> addArtToCollection(
-            @PathVariable Long collectionId,
-            @PathVariable Long artId) {
-        try {
-            CollectionArtDto collectionArt = collectionArtService.addArtToCollection(collectionId, artId);
-            return ResponseEntity.ok(collectionArt);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        public ResponseEntity<?> addArtToCollection(
+                @PathVariable Long collectionId,
+                @PathVariable Long artId) {
+            log.info("Adding art {} to collection {}", artId, collectionId);
+            
+            try {
+                CollectionArtDto collectionArt = collectionArtService.addArtToCollection(collectionId, artId);
+                log.info("Successfully added art {} to collection {}", artId, collectionId);
+                
+                // Возвращаем 201 Created с Location header
+                URI location = URI.create("/api/collection-arts/collection/" + collectionId + "/art/" + artId);
+                return ResponseEntity.created(location).body(collectionArt);
+                
+            } catch (RuntimeException e) {
+                log.error("Error adding art {} to collection {}: {}", artId, collectionId, e.getMessage(), e);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", e.getMessage());
+                return ResponseEntity.badRequest().body(error);
+            }
         }
-    }
     
     // Удаление арта из коллекции
     @DeleteMapping("/collection/{collectionId}/art/{artId}")

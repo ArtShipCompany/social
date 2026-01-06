@@ -66,7 +66,7 @@ public class TagService {
     
 
     @Transactional(readOnly = true)
-    public List<Tag> getPopularTags() {
+    public List<Tag> getPopularTags(int limit) {
         return tagRepository.findPopularTags();
     }
     

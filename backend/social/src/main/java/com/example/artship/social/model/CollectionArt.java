@@ -1,13 +1,14 @@
 package com.example.artship.social.model;
 
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "collection_arts")
-@IdClass(CollectionArt.CollectionArtId.class)
+@IdClass(CollectionArt.CollectionArtId.class)  // Указываем класс составного ключа
 public class CollectionArt {
+    
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable = false)
@@ -21,51 +22,60 @@ public class CollectionArt {
     @Column(name = "saved_at")
     private LocalDateTime savedAt;
     
+    // Конструкторы
     public CollectionArt() {}
     
     public CollectionArt(Collection collection, Art art) {
         this.collection = collection;
         this.art = art;
+        this.savedAt = LocalDateTime.now();
     }
     
     @PrePersist
     protected void onCreate() {
-        savedAt = LocalDateTime.now();
+        if (savedAt == null) {
+            savedAt = LocalDateTime.now();
+        }
     }
     
-
+    // Геттеры и сеттеры
     public Collection getCollection() { return collection; }
-    public Art getArt() { return art; }
-    public LocalDateTime getSavedAt() { return savedAt; }
-    
-
     public void setCollection(Collection collection) { this.collection = collection; }
+    
+    public Art getArt() { return art; }
     public void setArt(Art art) { this.art = art; }
+    
+    public LocalDateTime getSavedAt() { return savedAt; }
     public void setSavedAt(LocalDateTime savedAt) { this.savedAt = savedAt; }
     
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CollectionArt that)) return false;
-        return collection != null && collection.equals(that.collection) && 
-               art != null && art.equals(that.art);
+        return Objects.equals(collection.getId(), that.collection.getId()) && 
+               Objects.equals(art.getId(), that.art.getId());
     }
     
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(collection, art);
+        return Objects.hash(collection.getId(), art.getId());
     }
     
     @Override
     public String toString() {
-        return "CollectionArt{collection=" + (collection != null ? collection.getTitle() : "null") + 
-               ", art=" + (art != null ? art.getId() : "null") + "}";
+        return "CollectionArt{" +
+               "collection=" + (collection != null ? collection.getTitle() : "null") + 
+               ", art=" + (art != null ? art.getId() : "null") + 
+               ", savedAt=" + savedAt + 
+               '}';
     }
 
-    public class CollectionArtId implements java.io.Serializable {
-        private Long collection;
-        private Long art;
+    // ВАЖНО: Класс должен быть static и public
+    public static class CollectionArtId implements java.io.Serializable {
+        private Long collection;  // Должен совпадать с именем поля в CollectionArt
+        private Long art;         // Должен совпадать с именем поля в CollectionArt
         
+        // Конструкторы
         public CollectionArtId() {}
         
         public CollectionArtId(Long collection, Long art) {
@@ -73,18 +83,25 @@ public class CollectionArt {
             this.art = art;
         }
         
+        // Геттеры и сеттеры
+        public Long getCollection() { return collection; }
+        public void setCollection(Long collection) { this.collection = collection; }
+        
+        public Long getArt() { return art; }
+        public void setArt(Long art) { this.art = art; }
+        
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof CollectionArtId that)) return false;
-            return collection.equals(that.collection) && art.equals(that.art);
+            if (!(o instanceof CollectionArtId)) return false;
+            CollectionArtId that = (CollectionArtId) o;
+            return Objects.equals(collection, that.collection) && 
+                   Objects.equals(art, that.art);
         }
         
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(collection, art);
+            return Objects.hash(collection, art);
         }
+    }
 }
-}
-
-

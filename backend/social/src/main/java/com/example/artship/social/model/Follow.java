@@ -1,13 +1,14 @@
 package com.example.artship.social.model;
 
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "follows")
-@IdClass(Follow.FollowId.class)
+@IdClass(Follow.FollowId.class)  // Указываем класс для составного ключа
 public class Follow {
+    
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "follower_id", nullable = false)
@@ -26,45 +27,52 @@ public class Follow {
     public Follow(User follower, User following) {
         this.follower = follower;
         this.following = following;
+        this.createdAt = LocalDateTime.now();
     }
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
     
-
+    // Геттеры и сеттеры
     public User getFollower() { return follower; }
-    public User getFollowing() { return following; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    
-
     public void setFollower(User follower) { this.follower = follower; }
+    
+    public User getFollowing() { return following; }
     public void setFollowing(User following) { this.following = following; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Follow follow)) return false;
-        return follower != null && follower.equals(follow.follower) && 
-               following != null && following.equals(follow.following);
+        return Objects.equals(follower.getId(), follow.follower.getId()) && 
+               Objects.equals(following.getId(), follow.following.getId());
     }
     
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(follower, following);
+        return Objects.hash(follower.getId(), following.getId());
     }
     
     @Override
     public String toString() {
-        return "Follow{follower=" + (follower != null ? follower.getUsername() : "null") + 
-               ", following=" + (following != null ? following.getUsername() : "null") + "}";
+        return "Follow{" +
+               "follower=" + (follower != null ? follower.getUsername() : "null") + 
+               ", following=" + (following != null ? following.getUsername() : "null") + 
+               ", createdAt=" + createdAt + 
+               '}';
     }
 
-    public class FollowId implements java.io.Serializable {
-        private Long follower;
-        private Long following;
+    // ВАЖНО: Класс должен быть static и public
+    public static class FollowId implements java.io.Serializable {
+        private Long follower;  // Должен совпадать с именем поля в Follow
+        private Long following; // Должен совпадать с именем поля в Follow
         
         public FollowId() {}
         
@@ -73,18 +81,25 @@ public class Follow {
             this.following = following;
         }
         
+        // Геттеры и сеттеры
+        public Long getFollower() { return follower; }
+        public void setFollower(Long follower) { this.follower = follower; }
+        
+        public Long getFollowing() { return following; }
+        public void setFollowing(Long following) { this.following = following; }
+        
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof FollowId followId)) return false;
-            return follower.equals(followId.follower) && following.equals(followId.following);
+            if (!(o instanceof FollowId)) return false;
+            FollowId followId = (FollowId) o;
+            return Objects.equals(follower, followId.follower) && 
+                   Objects.equals(following, followId.following);
         }
         
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(follower, following);
+            return Objects.hash(follower, following);
         }
+    }
 }
-}
-
-

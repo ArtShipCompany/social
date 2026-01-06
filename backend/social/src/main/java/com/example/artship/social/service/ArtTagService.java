@@ -6,132 +6,93 @@ import com.example.artship.social.model.ArtTag;
 import com.example.artship.social.model.Tag;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.ArtTagRepository;
+import com.example.artship.social.repository.TagRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @Service
 @Transactional
 public class ArtTagService {
     
+    private static final Logger log = LoggerFactory.getLogger(ArtTagService.class);
+    
     private final ArtTagRepository artTagRepository;
     private final ArtRepository artRepository;
-    private final TagService tagService;
+    private final TagRepository tagRepository;
+    private final TagManagementService tagManagementService; // Используем TagManagementService
     
-    public ArtTagService(ArtTagRepository artTagRepository, ArtRepository artRepository, TagService tagService) {
+    public ArtTagService(ArtTagRepository artTagRepository,
+                        ArtRepository artRepository,
+                        TagRepository tagRepository,
+                        TagManagementService tagManagementService) { // Убираем ArtService
         this.artTagRepository = artTagRepository;
         this.artRepository = artRepository;
-        this.tagService = tagService;
+        this.tagRepository = tagRepository;
+        this.tagManagementService = tagManagementService;
     }
     
-    // Добавление тега к арту
-    public void addTagToArt(Long artId, Long tagId) {
+    // Создание связи арт-тег (возвращает ArtTagDto)
+    public ArtTagDto createArtTag(Long artId, Long tagId) {
+        log.info("Creating art-tag relation: artId={}, tagId={}", artId, tagId);
+        
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
-        Tag tag = tagService.getTagById(tagId)
+        
+        Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new RuntimeException("Tag not found with id: " + tagId));
         
-        if (!artTagRepository.existsByArtIdAndTagId(artId, tagId)) {
-            ArtTag artTag = new ArtTag(art, tag);
-            artTagRepository.save(artTag);
+        if (artTagRepository.existsByArtIdAndTagId(artId, tagId)) {
+            throw new RuntimeException("Art-tag relation already exists");
         }
-    }
-    
-    // Добавление тегов к арту по именам
-    public void addTagsToArt(Long artId, List<String> tagNames) {
-        Art art = artRepository.findById(artId)
-                .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
         
-        for (String tagName : tagNames) {
-            Tag tag = tagService.findOrCreateTag(tagName);
-            if (!artTagRepository.existsByArtIdAndTagId(artId, tag.getId())) {
-                ArtTag artTag = new ArtTag(art, tag);
-                artTagRepository.save(artTag);
-            }
-        }
+        ArtTag artTag = new ArtTag(art, tag);
+        ArtTag savedArtTag = artTagRepository.save(artTag);
+        
+        log.info("Art-tag relation created successfully");
+        return new ArtTagDto(savedArtTag);
     }
     
-    // Удаление тега из арта
+    // Удаление связи
     public void removeTagFromArt(Long artId, Long tagId) {
-        artTagRepository.deleteByArtIdAndTagId(artId, tagId);
-    }
-    
-    // Удаление всех тегов из арта
-    public void removeAllTagsFromArt(Long artId) {
-        artTagRepository.deleteByArtId(artId);
-    }
-    
-    // Получение тегов арта
-    @Transactional(readOnly = true)
-    public List<Tag> getTagsByArtId(Long artId) {
-        return artTagRepository.findByArtId(artId).stream()
-                .map(ArtTag::getTag)
-                .collect(Collectors.toList());
-    }
-    
-    // Получение артов по тегу
-    @Transactional(readOnly = true)
-    public List<Art> getArtsByTagId(Long tagId) {
-        return artTagRepository.findByTagId(tagId).stream()
-                .map(ArtTag::getArt)
-                .collect(Collectors.toList());
-    }
-    
-    // Получение DTO тегов арта
-    @Transactional(readOnly = true)
-    public List<Tag> getTagDtosByArtId(Long artId) {
-        return getTagsByArtId(artId);
+        tagManagementService.removeTagFromArt(artId, tagId);
     }
     
     // Проверка существования связи
-    @Transactional(readOnly = true)
     public boolean existsByArtIdAndTagId(Long artId, Long tagId) {
-        return artTagRepository.existsByArtIdAndTagId(artId, tagId);
+        return tagManagementService.existsByArtIdAndTagId(artId, tagId);
     }
     
-
-    @Transactional(readOnly = true)
+    // Получение всех ArtTagDto для арта
     public List<ArtTagDto> getArtTagDtosByArtId(Long artId) {
         return artTagRepository.findByArtId(artId).stream()
                 .map(ArtTagDto::new)
                 .collect(Collectors.toList());
     }
     
-    // Получение ArtTagDto по ID тега
-    @Transactional(readOnly = true)
+    // Получение всех ArtTagDto для тега
     public List<ArtTagDto> getArtTagDtosByTagId(Long tagId) {
         return artTagRepository.findByTagId(tagId).stream()
                 .map(ArtTagDto::new)
                 .collect(Collectors.toList());
     }
     
-    // Получение всех ArtTagDto
-    @Transactional(readOnly = true)
-    public List<ArtTagDto> getAllArtTagDtos() {
-        return artTagRepository.findAll().stream()
-                .map(ArtTagDto::new)
-                .collect(Collectors.toList());
+    // Количество артов по тегу
+    public Long getArtCountByTagId(Long tagId) {
+        return tagManagementService.getArtCountByTagId(tagId);
     }
     
-    // Создание связи и возврат DTO
-    public ArtTagDto createArtTagWithDto(Long artId, Long tagId) {
-        addTagToArt(artId, tagId);
-        // Получаем созданную связь
-        List<ArtTag> artTags = artTagRepository.findByArtIdAndTagId(artId, tagId);
-        if (!artTags.isEmpty()) {
-            return new ArtTagDto(artTags.get(0));
-        }
-        throw new RuntimeException("Failed to create ArtTag relation");
+    // Количество тегов у арта
+    public Long getTagCountByArtId(Long artId) {
+        return tagManagementService.getTagCountByArtId(artId);
     }
     
-    // Получение ArtTagDto по artId и tagId
-    @Transactional(readOnly = true)
-    public List<ArtTagDto> getArtTagDtosByArtIdAndTagId(Long artId, Long tagId) {
-        return artTagRepository.findByArtIdAndTagId(artId, tagId).stream()
-                .map(ArtTagDto::new)
-                .collect(Collectors.toList());
+    // Удаление всех тегов из арта
+    public void removeAllTagsFromArt(Long artId) {
+        tagManagementService.removeAllTagsFromArt(artId);
     }
 }

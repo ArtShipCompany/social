@@ -2,16 +2,26 @@ package com.example.artship.social.controller;
 
 import com.example.artship.social.dto.CommentDto;
 import com.example.artship.social.service.CommentService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/comments")
 public class CommentController {
     
+    private static final Logger log = LoggerFactory.getLogger(CommentController.class);
+
     private final CommentService commentService;
     
     public CommentController(CommentService commentService) {
@@ -19,41 +29,59 @@ public class CommentController {
     }
     
     // Создание комментария
-    @PostMapping
-    public ResponseEntity<CommentDto> createComment(@RequestBody CommentRequest request) {
-        try {
-            CommentDto comment = commentService.createComment(
-                request.getText(), 
-                request.getArtId(), 
-                request.getUserId(), 
-                request.getParentCommentId()
-            );
-            return ResponseEntity.ok(comment);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+     @PostMapping
+        public ResponseEntity<?> createComment(@RequestBody CommentRequest request) {
+            log.info("Creating comment request: {}", request);
+            
+            try {
+                CommentDto comment = commentService.createComment(
+                    request.getText(), 
+                    request.getArtId(), 
+                    request.getUserId(), 
+                    request.getParentCommentId()
+                );
+                
+                // Создаем Location header
+                URI location = URI.create("/api/comments/" + comment.getId());
+                
+                log.info("Comment created successfully with ID: {}", comment.getId());
+                return ResponseEntity.created(location).body(comment);
+                
+            } catch (RuntimeException e) {
+                log.error("Error creating comment: ", e);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", e.getMessage());
+                return ResponseEntity.badRequest().body(error);
+            }
         }
-    }
-    
-    // Получение комментария по ID
-    @GetMapping("/{id}")
-    public ResponseEntity<CommentDto> getComment(@PathVariable Long id) {
-        Optional<CommentDto> comment = commentService.getCommentById(id);
-        return comment.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
-    
-    // Обновление комментария
-    @PutMapping("/{id}")
-    public ResponseEntity<CommentDto> updateComment(
-            @PathVariable Long id,
-            @RequestBody CommentUpdateRequest request) {
-        try {
-            CommentDto comment = commentService.updateComment(id, request.getText());
-            return ResponseEntity.ok(comment);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+        
+        // Получение комментария по ID
+        @GetMapping("/{id}")
+        public ResponseEntity<CommentDto> getComment(@PathVariable Long id) {
+            log.debug("Getting comment by ID: {}", id);
+            
+            Optional<CommentDto> comment = commentService.getCommentById(id);
+            return comment.map(ResponseEntity::ok)
+                        .orElse(ResponseEntity.notFound().build());
         }
-    }
+        
+        // Обновление комментария
+        @PutMapping("/{id}")
+        public ResponseEntity<?> updateComment(
+                @PathVariable Long id,
+                @RequestBody CommentUpdateRequest request) throws IllegalArgumentException {
+            log.info("Updating comment {} with request: {}", id, request);
+            
+            try {
+                CommentDto comment = commentService.updateComment(id, request.getText());
+                return ResponseEntity.ok(comment);
+            } catch (RuntimeException e) {
+                log.error("Error updating comment {}: ", id, e);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", e.getMessage());
+                return ResponseEntity.notFound().build();
+            }
+        }
     
     // Удаление комментария
     @DeleteMapping("/{id}")

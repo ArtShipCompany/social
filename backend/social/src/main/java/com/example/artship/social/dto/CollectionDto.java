@@ -1,8 +1,11 @@
 package com.example.artship.social.dto;
 
 import com.example.artship.social.model.Collection;
+import com.example.artship.social.model.CollectionArt;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CollectionDto {
     private Long id;
@@ -27,10 +30,24 @@ public class CollectionDto {
         this.createdAt = collection.getCreatedAt();
         this.userId = collection.getUser() != null ? collection.getUser().getId() : null;
         this.username = collection.getUser() != null ? collection.getUser().getUsername() : null;
-        this.artCount = collection.getCollectionArts() != null ? collection.getCollectionArts().size() : 0;
-        this.arts = null; // Загружаются отдельно
+        
+        // Получаем коллекцию артов
+        List<CollectionArt> collectionArts = collection.getCollectionArts();
+        if (collectionArts != null && !collectionArts.isEmpty()) {
+            this.artCount = collectionArts.size();
+            // Преобразуем в ArtDto
+            this.arts = collectionArts.stream()
+                    .map(CollectionArt::getArt)
+                    .filter(art -> art != null)
+                    .map(ArtDto::new)
+                    .collect(Collectors.toList());
+        } else {
+            this.artCount = 0;
+            this.arts = Collections.emptyList(); // Пустой список вместо null
+        }
     }
 
+    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

@@ -246,11 +246,18 @@ public class AuthService {
     @Transactional
     public User register(AuthRequest authRequest) {
         logger.info("=== РЕГИСТРАЦИЯ НОВОГО ПОЛЬЗОВАТЕЛЯ ===");
-        logger.info("Имя пользователя: {}", authRequest.getUsername());
+        logger.info("Имя пользователя: {}, Email: {}", 
+            authRequest.getUsername(), authRequest.getEmail());
         
+        // Валидация входных данных
         if (authRequest.getUsername() == null || authRequest.getUsername().trim().isEmpty()) {
             logger.error("Имя пользователя не может быть пустым");
             throw new RuntimeException("Username cannot be empty");
+        }
+        
+        if (authRequest.getEmail() == null || authRequest.getEmail().trim().isEmpty()) {
+            logger.error("Email не может быть пустым");
+            throw new RuntimeException("Email cannot be empty");
         }
         
         if (authRequest.getPassword() == null || authRequest.getPassword().trim().isEmpty()) {
@@ -259,56 +266,58 @@ public class AuthService {
         }
         
         String username = authRequest.getUsername().trim();
+        String email = authRequest.getEmail().trim();
         String password = authRequest.getPassword();
         
-        // Проверка существования пользователя
+        // Проверка существования пользователя по username
         if (userRepository.existsByUsername(username)) {
             logger.error("❌ Имя пользователя '{}' уже существует", username);
             throw new RuntimeException("Username already exists");
         }
         
-        // Для простоты используем username как email
-        if (userRepository.existsByEmail(username)) {
-            logger.error("❌ Email '{}' уже существует", username);
+        // Проверка существования пользователя по email
+        if (userRepository.existsByEmail(email)) {
+            logger.error("❌ Email '{}' уже существует", email);
             throw new RuntimeException("Email already exists");
         }
         
-
+        // Логируем информацию о пароле
         logger.debug("Пароль при регистрации, длина: {} символов, {} байт (UTF-8)", 
             password.length(), password.getBytes(StandardCharsets.UTF_8).length);
         
-
+        // BCrypt автоматически обрежет пароль если он длиннее 72 символов
         if (password.length() > 72) {
             logger.warn("⚠️ Пароль длиннее 72 символов, будет обрезан BCrypt");
         }
-
+        
+        // Создание нового пользователя с ОТДЕЛЬНЫМ email
         logger.debug("Создание объекта User...");
         User user = new User();
         user.setUsername(username);
-        user.setEmail(username); 
-        user.setDisplayName(username);
+        user.setEmail(email); // ← ИСПРАВЛЕНИЕ: используем email из запроса, а не username
+        user.setDisplayName(username); // Можно использовать username как displayName по умолчанию
         
-  
+        // Хеширование пароля с помощью BCrypt
         logger.debug("Хеширование пароля с помощью BCrypt...");
         String hashedPassword = passwordEncoder.encode(password);
         logger.debug("Хешированный пароль, длина: {} символов", hashedPassword.length());
         logger.debug("Начало хеша: {}", 
             hashedPassword.length() > 20 ? hashedPassword.substring(0, 20) + "..." : hashedPassword);
         
- 
+        // Проверяем формат BCrypt
         if (!hashedPassword.startsWith("$2")) {
             logger.warn("⚠️ Хеш не имеет формат BCrypt! Проверьте PasswordEncoder");
         }
         
         user.setPasswordHash(hashedPassword);
         
-
+        // Сохранение пользователя
         logger.debug("Сохранение пользователя в БД...");
         User savedUser = userRepository.save(user);
         
         logger.info("=== ✅ РЕГИСТРАЦИЯ УСПЕШНА ===");
-        logger.info("Пользователь '{}' зарегистрирован с ID: {}", 
-            savedUser.getUsername(), savedUser.getId());
+        logger.info("Пользователь '{}' зарегистрирован с ID: {} и email: {}", 
+            savedUser.getUsername(), savedUser.getId(), savedUser.getEmail());
         
         return savedUser;
     }
