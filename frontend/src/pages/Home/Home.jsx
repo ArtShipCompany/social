@@ -1,9 +1,16 @@
 import styles from './Home.module.css';
 import BoardCard from '../../components/BoardCard/BoardCard';
+import ArtCard from '../../components/ArtCard/ArtCard';
+
 import SearchIcon from '../../assets/search-icon.svg';
 import { TEXTS } from '../../assets/texts';
 
 export default function Home() {
+
+    const cards = Array.from({ length: 15 }, (_, i) => (
+        <ArtCard key={i} />
+    ));
+
     return (
         <>
             <div className={styles.boards}>
@@ -29,7 +36,7 @@ export default function Home() {
             </div>
 
             <div className={styles.feed}>
-
+                {cards}
             </div>
 
             <button className={styles.button}>
