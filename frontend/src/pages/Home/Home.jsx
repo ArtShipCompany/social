@@ -7,10 +7,6 @@ import { TEXTS } from '../../assets/texts';
 
 export default function Home() {
 
-    const cards = Array.from({ length: 15 }, (_, i) => (
-        <ArtCard key={i} />
-    ));
-
     return (
         <>
             <div className={styles.boards}>
@@ -36,7 +32,13 @@ export default function Home() {
             </div>
 
             <div className={styles.feed}>
-                {cards}
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className={styles.column}>
+                        <ArtCard />
+                        <ArtCard />
+                        <ArtCard />
+                    </div>
+                ))}
             </div>
 
             <button className={styles.button}>
