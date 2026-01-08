@@ -1,0 +1,27 @@
+.footer {
+  background-color: var(--layout-color);
+  min-height: 50px;
+  padding: 5px 10px;
+  --labelColor: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.link {
+  font-size: 20px;
+  color: var(--labelColor);
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.link:hover {
+  color: var(--labelColor);
+  transform: translateY(1px);
+}
+
+.text {
+  line-height: 1;
+  display: inline-block;
+}
