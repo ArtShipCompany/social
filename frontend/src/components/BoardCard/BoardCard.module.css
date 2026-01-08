@@ -1,0 +1,39 @@
+.board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #B8DFFF; 
+  border-radius: 30px;
+  padding: 24px 16px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  width: 280px;
+  height: 200px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.board:hover {
+  background-color: #92CEFF;
+}
+
+.lockIcon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.text {
+  font-size: 16px;
+  color: #104A78;
+  text-align: center;
+}
