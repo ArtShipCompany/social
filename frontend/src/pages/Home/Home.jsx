@@ -1,4 +1,5 @@
 import styles from './Home.module.css';
+import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
 
@@ -41,9 +42,7 @@ export default function Home() {
                 ))}
             </div>
 
-            <button className={styles.button}>
-                Показать ещё
-            </button>
+            <DefaultBtn text={'Показать ещё'} />
 
         </>
     );

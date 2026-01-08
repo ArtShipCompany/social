@@ -1,0 +1,17 @@
+.btn {
+  background-color: var(--btn-bg-color);
+  color: var(--text-color);
+  font-family: 'Ubuntu', Arial, sans-serif;
+  font-size: 16px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+  background-color: var(--btn-hover-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(1px);
+}
