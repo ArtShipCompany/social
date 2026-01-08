@@ -5,9 +5,11 @@
 
   --bg-color: #f1f2f7;
   --layout-color: #337BB6;
-  --btn-bg-color: #B8DFFF;
+  --btn-bg-color: #8ACAFF;
+  --input-bg-color: #C3E4FF;
   --text-color: #104A78;
   --btn-hover-color: #83C7FF;
+
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

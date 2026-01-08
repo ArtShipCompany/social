@@ -9,7 +9,7 @@
   padding: 24px 16px;
   cursor: pointer;
   border: none;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color 0.1s ease, transform 0.2s ease;
   width: 280px;
   height: 200px;
   flex-shrink: 0;
@@ -17,7 +17,9 @@
 }
 
 .board:hover {
-  background-color: #92CEFF;
+  background-color: var(--btn-hover-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(1px);
 }
 
 .lockIcon {

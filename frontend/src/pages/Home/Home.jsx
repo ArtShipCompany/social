@@ -1,5 +1,6 @@
 import styles from './Home.module.css';
 import BoardCard from '../../components/BoardCard/BoardCard';
+import SearchIcon from '../../assets/search-icon.svg';
 import { TEXTS } from '../../assets/texts';
 
 export default function Home() {
@@ -21,7 +22,10 @@ export default function Home() {
             </div>
             
             <div className={styles.search}>
-
+                <div className={styles.searchInputWrapper}>
+                    <img src={SearchIcon} alt="Поиск" className={styles.icon} />
+                    <input type="text" placeholder="Поиск..." className={styles.searchInput} />
+                </div>
             </div>
 
             <div className={styles.feed}>
