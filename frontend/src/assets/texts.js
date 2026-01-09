@@ -4,6 +4,6 @@ export const TEXTS = {
     private: "Хотите порисовать только с близкими?\nИспользуйте возможность создания приватной доски, настраивайте права и проводите время за созданием общих рисунков!"
   },
   profileTest: {
-    desc: "some desription\nsome desription some desription\nsome desription some desription"
+    desc: "some desrifff dddddddddf dfdfds fed fsdfe f sfe fdf jdf fdijs fdsofpsd jf"
   }
 };

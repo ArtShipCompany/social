@@ -7,20 +7,12 @@
     z-index: 1;
 }
 
-.headBg {
-    position: absolute;
-    top: +50px;
-    width: 100%;
-    height: 200px;
-    background-color: var(--input-bg-color);
-    border-radius: 30px;
-}
-
 .faceName {
+    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
-    z-index: 1;
+    z-index: 2;
 }
 
 .pfp {
@@ -37,6 +29,32 @@
     text-decoration: underline;
     cursor: pointer;
 }
+
+.contentWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    z-index: 1;
+    margin-top: 50px;
+}
+
+.headBg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--input-bg-color);
+    border-radius: 30px;
+    z-index: -1;
+}
+
+.contentWrapper {
+    padding-block: 75px 20px;
+}
+
 
 .buttonsCover {
     display: flex;
@@ -84,17 +102,22 @@
     text-align: center;
     align-items: end;
     width: 100%;
+    padding-top: 5px;
     z-index: 1;
 }
 
 .stats {
     position: absolute;
-    bottom: 0px;
+    bottom: +16px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     color: var(--text-color);
-    padding-inline: 10px;
+    padding-inline: 20px;
+}
+
+.stats span {
+    font-size: 14px;
 }
 
 .stats img {
@@ -110,16 +133,21 @@
 
 .status {
     position: absolute;
-    bottom: 0px;
-    right: 10px;
+    bottom: +16px;
+    right: 20px;
     color: var(--text-color);
+}
+
+.status span {
+    font-size: 14px;
 }
 
 .bio {
     display: inline-block;
     text-align: center;
+    max-width: 200px;
     background-color: #dbefff;
-    padding: 5px 30px;
+    padding: 10px 20px;
     border-radius: 30px;
 }
 
