@@ -20,3 +20,11 @@
 body {
   margin: 0;
 }
+
+span {
+  cursor: default;
+}
+
+p {
+  cursor: default;
+}
