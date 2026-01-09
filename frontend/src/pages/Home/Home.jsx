@@ -33,12 +33,8 @@ export default function Home() {
             </div>
 
             <div className={styles.feed}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className={styles.column}>
-                        <ArtCard />
-                        <ArtCard />
-                        <ArtCard />
-                    </div>
+                {Array.from({ length: 30 }).map((_, i) => (
+                    <ArtCard key={i} />
                 ))}
             </div>
 

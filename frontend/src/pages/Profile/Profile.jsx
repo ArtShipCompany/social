@@ -5,6 +5,8 @@ import styles from './Profile.module.css';
 import PFP from '../../assets/WA.jpg';
 import artsIcon from '../../assets/arts-icon.svg';
 import sms from '../../assets/message-icon.svg';
+
+import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
 export default function Profile() {
@@ -57,6 +59,13 @@ export default function Profile() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+
+            <div className={styles.feed}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <ArtCard key={i} />
+                ))}
             </div>
         </>
     );
