@@ -4,7 +4,7 @@ import Footer from './layout/Footer/Footer'
 
 import Login from './pages/Login/Login'
 import Register from './pages/Register/Register'
-import Me from './pages/Me/Me'
+import Profile from './pages/Profile/Profile'
 import Home from './pages/Home/Home'
 import './App.css'
 
@@ -14,7 +14,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <Me />
+          <Profile />
         </div>
       <Footer />
     </div>

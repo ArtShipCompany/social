@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { TEXTS } from '../../assets/texts';
 
-import styles from './Me.module.css';
+import styles from './Profile.module.css';
 import PFP from '../../assets/WA.jpg';
+import artsIcon from '../../assets/arts-icon.svg';
 import sms from '../../assets/message-icon.svg';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
-export default function Me() {
+export default function Profile() {
     const [isSubscribed, setIsSubscribed] = useState(false);
 
     const toggleSubscribe = () => {
@@ -23,6 +25,7 @@ export default function Me() {
                         <span className={styles.link}>some_name</span>
                     </span>
                 </div>
+
                 <div className={styles.buttonsCover}>
                     <DefaultBtn
                     text={isSubscribed ? 'Подписка' : 'Подписаться'}
@@ -32,9 +35,34 @@ export default function Me() {
                     <button className={styles.message}>
                     <img src={sms} alt="sms" className={styles.icon} />
                     </button>
-                </div>               
-            </div>
+                </div> 
 
+                <div className={styles.headSFooter}>
+                    <div className={styles.stats}>
+                        <div className={styles.arts}>
+                            <img src={artsIcon} alt="arts" />
+                            <span>
+                                {' 111'} 
+                            </span>
+                        </div>
+                        <span>
+                            Подписчики: {'5.5M'}
+                        </span>
+                        <span>
+                            Подписки: {'505'}
+                        </span>
+                    </div>
+
+                    <div className={styles.bio}>
+                        <span>{TEXTS.profileTest.desc}</span>
+                    </div>
+
+                    <div className={styles.status}>
+                        <span>Статус: В сети</span>
+                    </div>
+
+                </div>
+            </div>
         </>
     );
 }

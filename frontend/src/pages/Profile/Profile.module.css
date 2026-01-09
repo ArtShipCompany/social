@@ -41,7 +41,7 @@
 .buttonsCover {
     display: flex;
     flex-direction: row;
-    margin-top: 10px;
+    margin-block: 10px;
     gap: 10px;
     z-index: 1;
 }
@@ -79,3 +79,53 @@
     width: 25px;
     height: 25px;
 }
+
+.headSFooter {
+    text-align: center;
+    align-items: end;
+    width: 100%;
+    z-index: 1;
+}
+
+.stats {
+    position: absolute;
+    bottom: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: var(--text-color);
+    padding-inline: 10px;
+}
+
+.stats img {
+    width: 20px;
+    height: 20px;
+}
+
+.arts {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.status {
+    position: absolute;
+    bottom: 0px;
+    right: 10px;
+    color: var(--text-color);
+}
+
+.bio {
+    display: inline-block;
+    text-align: center;
+    background-color: #dbefff;
+    padding: 5px 30px;
+    border-radius: 30px;
+}
+
+.bio span {
+    color: var(--text-color);
+    white-space: pre-line;
+    font-size: 14px;
+}
+
