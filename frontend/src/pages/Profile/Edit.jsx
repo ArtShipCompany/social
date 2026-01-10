@@ -31,8 +31,7 @@ export default function Edit() {
                             onChange={(e) => {
                                 let value = e.target.value;
 
-                                // Убираем все символы, которые не разрешены (по аналогии с Telegram)
-                                value = value.replace(/[^a-zA-Z0-9_]/g, ''); // разрешены только a-z, 0-9, _
+                                value = value.replace(/[^a-zA-Z0-9_]/g, '');
 
                                 if (value.length <= MAX_LENGTH) {
                                     setUsername(value);

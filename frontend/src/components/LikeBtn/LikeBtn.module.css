@@ -1,0 +1,23 @@
+.heartContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--input-bg-color);
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.heartContainer:hover {
+  background-color: #acd7fb;
+}
+
+.heartIcon {
+  width: 16px;
+  height: 16px;
+  fill: var(--layout-color);
+  stroke: var(--layout-color);
+}
