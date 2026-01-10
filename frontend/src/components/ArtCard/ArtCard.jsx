@@ -1,17 +1,13 @@
 import styles from './ArtCard.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 
-export default function ArtCard({ showLikeButton = true }) {
+export default function ArtCard({showLikeButton}) {
+
     return (
         <div className={styles.card}>
             {/*<img> </img>*/}
-            <div className={styles.likeBadge}>
-                <span className={styles.likesText}>1.1k</span>
-
-                {showLikeButton && (
-                    <LikeBtn />
-                )}
-            </div>
+            <LikeBtn showLikeButton={showLikeButton}/>
+            
         </div>
     )
 }

@@ -11,28 +11,3 @@
 .card:hover {
   transform: translateY(3px);
 }
-
-.likeBadge {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  background-color: var(--btn-bg-color); 
-  border-radius: 50px;
-  padding: 4px 8px;
-  border: none;
-  
-  transition: background-color 0.2s ease;
-  gap: 4px;
-}
-
-
-.likesText {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
-  white-space: nowrap;
-}
-
-

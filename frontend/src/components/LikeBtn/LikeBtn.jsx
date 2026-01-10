@@ -4,7 +4,7 @@ import styles from './LikeBtn.module.css';
 import HeartOutlineIcon from '../../assets/heart-outline.svg';
 import HeartFilledIcon from '../../assets/heart-filled.svg';
 
-export default function LikeBtn() {
+export default function LikeBtn({ showLikeButton = true }) {
 
     const [isLiked, setIsLiked] = useState(false);
     const toggleLike = () => {
@@ -12,16 +12,21 @@ export default function LikeBtn() {
     };
 
     return(
-        <button
-            className={styles.heartContainer}
-            onClick={toggleLike}
-            aria-pressed={isLiked}
-        >
-            <img
-            src={isLiked ? HeartFilledIcon : HeartOutlineIcon}
-            alt={isLiked ? "лайк поставлен" : "лайк не поставлен"}
-            className={styles.heartIcon}
-            />
-        </button>
-    )
+        <div className={styles.likeBadge}>
+            <span className={styles.likesText}>1.1k</span>
+            {showLikeButton && (
+                <button
+                className={styles.heartContainer}
+                onClick={toggleLike}
+                aria-pressed={isLiked}
+                >
+                    <img
+                    src={isLiked ? HeartFilledIcon : HeartOutlineIcon}
+                    alt={isLiked ? "лайк поставлен" : "лайк не поставлен"}
+                    className={styles.heartIcon}
+                    />
+                </button>
+            )}
+        </div>
+    );
 }
