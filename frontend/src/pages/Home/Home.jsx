@@ -2,7 +2,14 @@ import styles from './Home.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
-
+// import img1 from '../../assets/mock-images/джейхины.jpg';
+// import img2 from '../../assets/mock-images/клоризли.jpg';
+// import img3 from '../../assets/mock-images/софтикиэимики.jpg';
+// import img4 from '../../assets/mock-images/biliie.jpg';
+// import img5 from '../../assets/mock-images/pfp.jpg';
+// import img6 from '../../assets/mock-images/wenclair.jpg';
+// const mockImages = [img1, img2, img3, img4, img5, img6];
+const mockImages = [];
 import SearchIcon from '../../assets/search-icon.svg';
 import { TEXTS } from '../../assets/texts';
 
@@ -33,9 +40,10 @@ export default function Home() {
             </div>
 
             <div className={styles.feed}>
-                {Array.from({ length: 30 }).map((_, i) => (
-                    <ArtCard key={i} />
-                ))}
+                {Array.from({ length: 30 }).map((_, i) => {
+                    const image = mockImages[i % mockImages.length];
+                    return <ArtCard key={i} image={image} showLikeButton={true} />;
+                })}
             </div>
 
             <DefaultBtn text={'Показать ещё'} />

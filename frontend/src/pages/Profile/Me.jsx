@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TEXTS } from '../../assets/texts';
-
+const mockImages = [];
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
@@ -60,9 +60,10 @@ export default function Me() {
 
 
             <div className={styles.feed}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <ArtCard key={i} showLikeButton={false} />
-                ))}
+                {Array.from({ length: 30 }).map((_, i) => {
+                    const image = mockImages[i % mockImages.length];
+                    return <ArtCard key={i} image={image} showLikeButton={false} />;
+                })}
             </div>
         </>
     );

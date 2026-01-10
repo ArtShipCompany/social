@@ -21,7 +21,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <ArtView />
+          <Home />
         </div>
       <Footer />
     </div>

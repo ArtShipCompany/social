@@ -159,9 +159,8 @@
 }
 
 .feed {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  max-width: 100%;
-  margin-top: 20px;
+    margin-top: 20px;
+    columns: 300px;
+    column-gap: 20px;
+    max-width: 100%;
 }

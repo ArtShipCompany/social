@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TEXTS } from '../../assets/texts';
-
+const mockImages = [];
 import styles from './Profile.module.css';
 import PFP from '../../assets/WA.jpg';
 import artsIcon from '../../assets/arts-icon.svg';
@@ -63,9 +63,10 @@ export default function Profile() {
 
 
             <div className={styles.feed}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <ArtCard key={i} />
-                ))}
+                {Array.from({ length: 30 }).map((_, i) => {
+                    const image = mockImages[i % mockImages.length];
+                    return <ArtCard key={i} image={image} showLikeButton={true} />;
+                })}
             </div>
         </>
     );
