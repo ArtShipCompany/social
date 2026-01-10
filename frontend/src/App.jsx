@@ -9,7 +9,7 @@ import Register from './pages/Register/Register'
 import ArtView from './pages/ArtView/ArtView'
 
 import Profile from './pages/Profile/Profile'
-import ArtView from './pages/Profile/Me'
+import Me from './pages/Profile/Me'
 import Edit from './pages/Profile/Edit'
 
 import './App.css'
@@ -20,7 +20,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <Me />
+          <ArtView />
         </div>
       <Footer />
     </div>
