@@ -7,6 +7,7 @@ import Login from './pages/Login/Login'
 import Register from './pages/Register/Register'
 
 import ArtView from './pages/ArtView/ArtView'
+import EditArt from './pages/ArtView/EditArt'
 
 import Profile from './pages/Profile/Profile'
 import Me from './pages/Profile/Me'
@@ -20,7 +21,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <ArtView />
+          <EditArt />
         </div>
       <Footer />
     </div>
