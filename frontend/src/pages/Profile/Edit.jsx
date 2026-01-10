@@ -8,7 +8,7 @@ import blankPfp from '../../assets/blank-pfp.svg'
 export default function Edit() {
     const MAX_LENGTH = 100;
     const [bio, setBio] = useState('');
-
+    const [username, setUsername] = useState('');
 
     return (
         <>
@@ -22,11 +22,30 @@ export default function Edit() {
 
             <div className={styles.inputGroup}>
                 <div className={styles.nameInput}>
-                    <label htmlFor="">Имя пользователя</label>
-                    <input type="text" placeholder="Имя пользователя"/>
+                    <label htmlFor="">Имя</label>
+                    <div className={styles.usernameWrapper}>
+                        <span className={styles.prefix}>@</span>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => {
+                                let value = e.target.value;
+
+                                // Убираем все символы, которые не разрешены (по аналогии с Telegram)
+                                value = value.replace(/[^a-zA-Z0-9_]/g, ''); // разрешены только a-z, 0-9, _
+
+                                if (value.length <= MAX_LENGTH) {
+                                    setUsername(value);
+                                }
+                            }}
+                            placeholder="имя_пользователя"
+                            className={styles.usernameInput}
+                        />
+                    </div>
                 </div>
                 
                 <div className={styles.textareaWrapper}>
+                    <label htmlFor="">Описание профиля</label>
                     <textarea
                         value={bio}
                         onChange={(e) => {
