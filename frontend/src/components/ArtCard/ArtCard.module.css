@@ -5,6 +5,11 @@
   border-radius: 30px;
   background-color: var(--input-bg-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(3px);
 }
 
 .likeBadge {

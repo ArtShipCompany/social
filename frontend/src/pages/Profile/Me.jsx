@@ -6,7 +6,6 @@ import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
 import artsIcon from '../../assets/arts-icon.svg';
 import sortIcon from '../../assets/sort-arts-pf-icon.svg';
-import sms from '../../assets/message-icon.svg';
 
 import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
@@ -24,7 +23,7 @@ export default function Me() {
                 <div className={styles.faceName}>
                     <img src={PFP} alt="profile-photo" className={styles.pfp}/>
                     <span className={styles.nickname}>@
-                        <span className={styles.link}>some_name</span>
+                        <span>some_name</span>
                     </span>
                 </div>
 
@@ -62,7 +61,7 @@ export default function Me() {
 
             <div className={styles.feed}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                    <ArtCard key={i} />
+                    <ArtCard key={i} showLikeButton={false} />
                 ))}
             </div>
         </>

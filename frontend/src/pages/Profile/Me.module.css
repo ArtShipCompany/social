@@ -26,11 +26,6 @@
     font-weight: 600;
 }
 
-.link:hover {
-    text-decoration: underline;
-    cursor: pointer;
-}
-
 .contentWrapper {
     position: relative;
     display: flex;
