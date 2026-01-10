@@ -2,11 +2,14 @@ import { useState } from 'react'
 import Header from './layout/Header/Header'
 import Footer from './layout/Footer/Footer'
 
+import Home from './pages/Home/Home'
 import Login from './pages/Login/Login'
 import Register from './pages/Register/Register'
+
 import Profile from './pages/Profile/Profile'
 import Me from './pages/Profile/Me'
-import Home from './pages/Home/Home'
+import Edit from './pages/Profile/Edit'
+
 import './App.css'
 
 function App() {
@@ -15,7 +18,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <Me />
+          <Edit />
         </div>
       <Footer />
     </div>

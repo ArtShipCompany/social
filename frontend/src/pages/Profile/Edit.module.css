@@ -1,0 +1,176 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--btn-bg-color);
+    width: 500px;
+    border-radius: 30px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.form span, label {
+    color: var(--text-color);
+}
+
+.pfp {
+    position: relative;
+    background-color: #dbefff;
+    border-radius: 50%;
+    border: 1px solid var(--text-color);
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    overflow: hidden;
+}
+
+.pfp::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #1049784a;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.photoIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.pfp:hover::after,
+.pfp:hover .photoIcon {
+    opacity: 1;
+}
+
+.text {
+    color: var(--text-color);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    min-width: 80%;
+    padding-block: 10px 20px;
+    gap: 20px;
+}
+
+.inputGroup input {
+    background-color: var(--input-bg-color);
+    border-radius: 15px;
+    border: 0px solid;
+    padding: 12px;
+    color: var(--text-color);
+    font-size: 14px;
+    outline: none;
+
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px var(--input-bg-color) inset !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+}
+
+.inputGroup input::placeholder {
+    color: var(--text-color);
+    opacity: 70%;
+}
+
+.nameInput {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+}
+
+.nameInput label {
+    padding-left: 12px;
+    font-size: 14px;
+}
+
+.textareaWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.bioTextarea {
+    min-height: 100px;
+    padding: 12px;
+    border: 0px solid;
+    border-radius: 15px;
+    background-color: var(--input-bg-color);
+    color: var(--text-color);
+    font-size: 14px;
+    resize: none; 
+    box-sizing: border-box;
+}
+
+.bioTextarea::placeholder {
+    color: var(--text-color);
+    font-size: 14px;
+    opacity: 70%;
+}
+
+.bioTextarea:focus {
+    outline: none;
+    border-color: var(--btn-bg-color);
+}
+
+.charCount {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 12px;
+    color: var(--text-color);
+    pointer-events: none;
+}
+
+
+.loginBtn {
+    background-color: #59b4ff !important;
+    padding: 10px 30px !important;
+}
+
+.loginBtn:hover {
+    background-color: #48adff !important;
+}
+
+.footerText {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-color);
+    font-size: 14px;
+    cursor: default;
+}
+
+.link {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.link:hover {
+    opacity: 0.8;
+}
+
