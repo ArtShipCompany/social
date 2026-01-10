@@ -35,7 +35,7 @@ export default function ArtView() {
     return (
         <div className={styles.content}>
             <div ref={artPostRef}>
-                <ArtPost />
+                <ArtPost isOwner={true}/> {/* здесь проверка пост пользавателя или нет */}
             </div>
 
 

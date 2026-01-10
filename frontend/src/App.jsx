@@ -21,7 +21,7 @@ function App() {
     <div className="app">
       <Header />
         <div className="main">
-          <EditArt />
+          <ArtView />
         </div>
       <Footer />
     </div>

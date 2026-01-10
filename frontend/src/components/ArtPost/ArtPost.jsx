@@ -4,7 +4,9 @@ import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
 
-export default function ArtPost({edited = false}) {
+import editIcon from '../../assets/edit-profile-icon.svg'
+
+export default function ArtPost({edited = false, isOwner = false}) {
     const MAX_LENGTH = 500;
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
@@ -63,6 +65,14 @@ export default function ArtPost({edited = false}) {
                     </div>
                 </div>
             )}
+
+            {!edited && isOwner && (
+                <div className={styles.edit}>
+                    <img src={editIcon} alt="arts" />
+                    <span>Редактировать</span>
+                </div>
+            )}
+
         </div>
     );
 }
