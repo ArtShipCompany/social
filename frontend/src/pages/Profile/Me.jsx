@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { TEXTS } from '../../assets/texts';
-const mockImages = [];
+import img1 from '../../assets/mock-images/джейхины.jpg';
+import img2 from '../../assets/mock-images/клоризли.jpg';
+import img3 from '../../assets/mock-images/софтикиэимики.jpg';
+import img4 from '../../assets/mock-images/biliie.jpg';
+import img5 from '../../assets/mock-images/pfp.jpg';
+import img6 from '../../assets/mock-images/wenclair.jpg';
+const mockImages = [img1, img2, img3, img4, img5, img6];
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
