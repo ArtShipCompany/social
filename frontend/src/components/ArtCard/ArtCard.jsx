@@ -14,15 +14,17 @@ export default function ArtCard({
     typeShow, 
     showDeleteIcon = false, 
     showPrivacyIcon = false,
-    initialIsPrivate = false, 
+    initialIsPrivate = false,
+    onOpenConfirmModal, 
 }) {
     const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
 
     const handleDeleteClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        alert(`Удалить арт ${id}?`);
-        // Тут будет вызов API или dispatch
+        if (onOpenConfirmModal) {
+            onOpenConfirmModal(id);
+        }
     };
 
     const handlePrivacyClick = (e) => {

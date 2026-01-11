@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { mockArts } from '../../mock-images/mockArts';
 import styles from './Me.module.css';
+//mock
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
 import artsIcon from '../../assets/arts-icon.svg';
 import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
-
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import ArtCard from '../../components/ArtCard/ArtCard';
 
 export default function Me() {
@@ -19,6 +20,8 @@ export default function Me() {
     // const toggleSubscribe = () => {
     //     setIsSubscribed(!isSubscribed);
     // };
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [modalArtId, setModalArtId] = useState(null);
 
     const closeMenuAndResetModes = () => {
         setShowDeleteIcons(false);
@@ -42,6 +45,22 @@ export default function Me() {
     const handleDeleteClick = () => {
         setShowDeleteIcons(prev => !prev);
         setShowPrivacyIcons(false);
+    };
+
+    const openConfirmModal = (id) => {
+        setModalArtId(id);
+        setShowConfirmModal(true);
+    };
+
+    const confirmDelete = () => {
+        alert(`Арт ${modalArtId} удалён!`);
+        setShowConfirmModal(false);
+        setModalArtId(null);
+    };
+
+    const cancelDelete = () => {
+        setShowConfirmModal(false);
+        setModalArtId(null);
     };
 
     return (
@@ -105,9 +124,18 @@ export default function Me() {
                         typeShow={"amount"} 
                         showDeleteIcon={showDeleteIcons}
                         showPrivacyIcon={showPrivacyIcons}
+                        onOpenConfirmModal={openConfirmModal}
                     />
                 ))}
             </div>
+
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                onClose={cancelDelete}
+                onConfirm={confirmDelete}
+                title="Удаление арта"
+                message={`Вы точно хотите удалить арт ${modalArtId}?`}
+            />
         </>
     );
 }

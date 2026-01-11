@@ -12,19 +12,6 @@ export default function ProfileOptionsMenu({
 }) {
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        onToggle();
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isOpen, onToggle]);
-
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
       <button
