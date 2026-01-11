@@ -4,34 +4,32 @@ import privacyIcon from '../../assets/private-edit.svg';
 import deleteIcon from '../../assets/delete-icon.svg';
 import ellipsisIcon from '../../assets/ellipsis-icon.svg';
 
-export default function ProfileOptionsMenu({ onPrivacyClick, onDeleteClick }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ProfileOptionsMenu({ 
+  isOpen, 
+  onToggle, 
+  onPrivacyClick, 
+  onDeleteClick 
+}) {
   const menuRef = useRef(null);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
-
-  const handleClickOutside = (e) => {
-    if (!e.target.closest(`.${styles.menu}`)) {
-      setIsOpen(false);
-    }
-  };
-
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setIsOpen(false);
+        onToggle();
       }
     };
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  }, [isOpen, onToggle]);
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
       <button
         className={styles.ellipsisBtn}
-        onClick={toggleMenu}
+        onClick={onToggle}
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
@@ -42,20 +40,14 @@ export default function ProfileOptionsMenu({ onPrivacyClick, onDeleteClick }) {
         <div className={styles.menu}>
           <button
             className={styles.menuItem}
-            onClick={() => {
-              onPrivacyClick();
-              setIsOpen(false);
-            }}
+            onClick={onPrivacyClick}
           >
             <img src={privacyIcon} alt="Приватность" className={styles.icon} />
           </button>
 
           <button
             className={styles.menuItem}
-            onClick={() => {
-              onDeleteClick();
-              setIsOpen(false);
-            }}
+            onClick={onDeleteClick}
           >
             <img src={deleteIcon} alt="Удалить" className={styles.icon} />
           </button>

@@ -11,9 +11,36 @@ import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
 export default function Me() {
     const [isSubscribed, setIsSubscribed] = useState(false);
+    const [showDeleteIcons, setShowDeleteIcons] = useState(false);
+    const [showPrivacyIcons, setShowPrivacyIcons] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const toggleSubscribe = () => {
         setIsSubscribed(!isSubscribed);
+    };
+
+    const closeMenuAndResetModes = () => {
+        setShowDeleteIcons(false);
+        setShowPrivacyIcons(false);
+        setIsMenuOpen(false);
+    };
+
+    const toggleMenu = () => {
+        if (isMenuOpen) {
+            closeMenuAndResetModes();
+        } else {
+            setIsMenuOpen(true);
+        }
+    };
+
+    const handlePrivacyClick = () => {
+        setShowPrivacyIcons(prev => !prev);
+        setShowDeleteIcons(false);
+    };
+
+    const handleDeleteClick = () => {
+        setShowDeleteIcons(prev => !prev);
+        setShowPrivacyIcons(false);
     };
 
     return (
@@ -50,10 +77,12 @@ export default function Me() {
 
                         <div className={styles.buttonsCover}>
                             <ProfileOptionsMenu 
-                                onPrivacyClick={() => alert('Настройки приватности')}
-                                onDeleteClick={() => alert('Удаление профиля')}
+                                isOpen={isMenuOpen}
+                                onToggle={toggleMenu}
+                                onPrivacyClick={handlePrivacyClick}
+                                onDeleteClick={handleDeleteClick}
                             />
-                        </div> 
+                        </div>  
                     </div>
                 </div>
             </div>
@@ -61,7 +90,14 @@ export default function Me() {
 
             <div className={styles.feed}>
                 {mockArts.map(art => (
-                    <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"amount"} />
+                    <ArtCard 
+                        key={art.id} 
+                        id={art.id} 
+                        image={art.image} 
+                        typeShow={"amount"} 
+                        showDeleteIcon={showDeleteIcons}
+                        showPrivacyIcon={showPrivacyIcons}
+                    />
                 ))}
             </div>
         </>
