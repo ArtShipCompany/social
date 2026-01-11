@@ -26,10 +26,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Profile />}>
-              <Route index element={<Me />} />
+            <Route path="/me" element={<Me />}>
               <Route path="edit" element={<Edit />} />
             </Route>
+            <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/art/:id" element={<ArtView />} />
             <Route path="/art/:id/edit" element={<EditArt />} />
           </Routes>

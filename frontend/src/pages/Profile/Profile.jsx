@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { TEXTS } from '../../assets/texts';
+import { useParams } from 'react-router-dom';
+import { mockUsersMap } from '../../mock-images/mockArts';
 import { mockArts } from '../../mock-images/mockArts';
 import styles from './Profile.module.css';
 import PFP from '../../assets/WA.jpg';
@@ -10,20 +12,18 @@ import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
 export default function Profile() {
-    const [isSubscribed, setIsSubscribed] = useState(false);
+    const { userId } = useParams();
+    const user = mockUsersMap[userId] || { id: userId, nickname: 'unknown', pfp: PFP };
 
-    const toggleSubscribe = () => {
-        setIsSubscribed(!isSubscribed);
-    };
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const toggleSubscribe = () => setIsSubscribed(!isSubscribed);
 
     return (
         <>
             <div className={styles.headContent}>
                 <div className={styles.faceName}>
-                    <img src={PFP} alt="profile-photo" className={styles.pfp}/>
-                    <span className={styles.nickname}>@
-                        <span className={styles.link}>some_name</span>
-                    </span>
+                    <img src={user.pfp} alt="profile-photo" className={styles.pfp}/>
+                    <span className={styles.nickname}>@{user.nickname}</span>
                 </div>
 
                 <div className={styles.contentWrapper}>
@@ -51,7 +51,7 @@ export default function Profile() {
                         </div>
 
                         <div className={styles.bio}>
-                            <span>{TEXTS.profileTest.desc}</span>
+                            <span>Профиль пользователя: @{user.nickname}</span>
                         </div>
 
                         <div className={styles.status}>
@@ -60,12 +60,14 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
-
-
+            
             <div className={styles.feed}>
-                {mockArts.map(art => (
-                    <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"full"} />
-                ))}
+                {mockArts
+                    .filter(art => art.ownerId === userId)
+                    .map(art => (
+                        <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"full"} />
+                    ))
+                }
             </div>
         </>
     );

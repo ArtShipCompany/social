@@ -4,13 +4,14 @@ import styles from './ArtView.module.css';
 import UpIcon from '../../assets/up-icon.svg'
 import ArtPost from '../../components/ArtPost/ArtPost';
 import { mockArtsMap } from '../../mock-images/mockArts';
+import { mockUsersMap } from '../../mock-images/mockArts';
 // Пока моковая функция — потом заменишь на fetch или axios
 async function fetchArtById(id) {
   return new Promise(resolve => setTimeout(() => resolve(mockArtsMap[id]), 300));
 }
 
 export default function ArtView() {
-    const { id } = useParams(); // ← получаем id из URL
+    const { id } = useParams();
     const [art, setArt] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -61,6 +62,12 @@ export default function ArtView() {
     if (error) return <div className={styles.container}>Ошибка: {error}</div>;
     if (!art) return <div className={styles.container}>Арт не найден</div>;
 
+    const owner = mockUsersMap[art.ownerId] || { 
+        id: 'unknown', 
+        nickname: 'unknown', 
+        pfp: img5 
+    };
+
     return (
         <div className={styles.container}>
             <div ref={artPostRef}>
@@ -70,6 +77,7 @@ export default function ArtView() {
                     image={art.image}
                     description={art.description}
                     tags={art.tags}
+                    owner={owner} 
                 />
             </div>
 

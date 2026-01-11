@@ -12,9 +12,10 @@ export default function ArtPost({
   edited = false, 
   isOwner = false,
   artId,  
-  image, 
+  image,
+  owner, 
   description = '', 
-  tags = '' 
+  tags = '', 
 }) {
     const MAX_LENGTH = 500;
     const [editDescription, setDescription] = useState('');
@@ -47,10 +48,12 @@ export default function ArtPost({
                     {!isOwner && (
                         <div className={styles.textAndLike}>
                             <div className={styles.owner}>
-                                <img src={PFP} alt="" className={styles.pfp}/>
-                                <span className={styles.nickname}>@
-                                    <span className={styles.link}>crow_666_wa</span>
-                                </span>
+                                <Link to={`/profile/${owner.id}`} className={styles.ownerLink}>
+                                    <img src={owner.pfp} alt="" className={styles.pfp}/>
+                                    <span className={styles.nickname}>@
+                                    <span className={styles.link}>{owner.nickname}</span>
+                                    </span>
+                                </Link>
                             </div>
                             <LikeBtn className={styles.like} typeShow={"full"} />
                         </div>

@@ -19,16 +19,14 @@
     width: 100px;
     height: 100px;
     border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+    overflow: hidden;
 }
 
 .nickname {
     color: var(--text-color);
     font-weight: 600;
-}
-
-.link:hover {
-    text-decoration: underline;
-    cursor: pointer;
 }
 
 .contentWrapper {
