@@ -4,15 +4,16 @@ import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
-import PFP from '../../assets/WA.jpg'
 
 import editIcon from '../../assets/edit-profile-icon.svg'
 
 export default function ArtPost({ 
   edited = false, 
+// этот флаг мок на то ты владелец арта, который открыл, или нет   
   isOwner = false,
   artId,  
   image,
+// владелец арта   
   owner, 
   description = '', 
   tags = '', 
@@ -45,6 +46,7 @@ export default function ArtPost({
 
             {!edited && (
                 <div className={styles.content}>
+                    {/* вот тут как раз отображается владелец арта */}
                     {!isOwner && (
                         <div className={styles.textAndLike}>
                             <div className={styles.owner}>
@@ -55,18 +57,21 @@ export default function ArtPost({
                                     </span>
                                 </Link>
                             </div>
-                            <LikeBtn className={styles.like} typeShow={"full"} />
+                            <LikeBtn className={styles.like} typeShow={"full"} amountLikes={1249} />
                         </div>
                     )}
                         <div className={styles.textContent}>
                             <div className={styles.tags}>
+                                {/* тэги */}
                                 <span>{tags || '#no-tags'}</span>
                             </div>
-                            <span>{description || 'Без описания'}</span>
+                                {/* описание */}
+                                <span>{description || 'Без описания'}</span>
                         </div>
                 </div>
             )}
             
+            {/* этот компонент используется так же и для изменения поста (на стр. EditArt) */}
             {edited && (
                 <div className={styles.editContent}>
                     <div className={styles.form}>

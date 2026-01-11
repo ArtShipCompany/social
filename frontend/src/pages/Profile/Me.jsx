@@ -10,14 +10,15 @@ import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptio
 import ArtCard from '../../components/ArtCard/ArtCard';
 
 export default function Me() {
-    const [isSubscribed, setIsSubscribed] = useState(false);
+    // const [isSubscribed, setIsSubscribed] = useState(false);
     const [showDeleteIcons, setShowDeleteIcons] = useState(false);
     const [showPrivacyIcons, setShowPrivacyIcons] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const toggleSubscribe = () => {
-        setIsSubscribed(!isSubscribed);
-    };
+    // на будущее
+    // const toggleSubscribe = () => {
+    //     setIsSubscribed(!isSubscribed);
+    // };
 
     const closeMenuAndResetModes = () => {
         setShowDeleteIcons(false);
@@ -49,6 +50,7 @@ export default function Me() {
                 <div className={styles.faceName}>
                     <img src={PFP} alt="profile-photo" className={styles.pfp}/>
                     <span className={styles.nickname}>@
+                        {/* здесь никнем юзера */}
                         <span>some_name</span>
                     </span>
                 </div>
@@ -56,6 +58,8 @@ export default function Me() {
                 <div className={styles.contentWrapper}>
                     <div className={styles.headBg}></div>
 
+                    {/* переход на Edit возможно нужно сделать передачу id? или нет*/}
+                    {/* хотя если ты переходишь и так со своей страницы Me */}
                     <Link to="/edit" className={styles.edit}>
                         <img src={editIcon} alt="arts" />
                         <span>Редактировать</span>
@@ -65,13 +69,16 @@ export default function Me() {
                         <div className={styles.stats}>
                             <div className={styles.arts}>
                                 <img src={artsIcon} alt="arts" />
+                                {/* соответсвенно кол-во артов */}
                                 <span>{' 111'}</span>
                             </div>
+                            {/* кол-во */}
                             <span>Подписчики: {'5.5M'}</span>
                             <span>Подписки: {'505'}</span>
                         </div>
 
                         <div className={styles.bio}>
+                            {/* так же передача сюда */}
                             <span>{"some desription"}</span>
                         </div>
 
@@ -89,6 +96,7 @@ export default function Me() {
 
 
             <div className={styles.feed}>
+                {/* здесь то же не mockArts а арты пользователя */}
                 {mockArts.map(art => (
                     <ArtCard 
                         key={art.id} 

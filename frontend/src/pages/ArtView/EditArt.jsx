@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { mockArtsMap } from '../../mock-images/mockArts';
 import ArtPost from '../../components/ArtPost/ArtPost';
 
+// мок
 async function fetchArtById(id) {
   return new Promise(resolve => setTimeout(() => resolve(mockArtsMap[id]), 300));
 }

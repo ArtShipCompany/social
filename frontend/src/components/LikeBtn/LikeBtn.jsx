@@ -3,16 +3,22 @@ import { useState } from 'react';
 import styles from './LikeBtn.module.css';
 import HeartOutlineIcon from '../../assets/heart-outline.svg';
 import HeartFilledIcon from '../../assets/heart-filled.svg';
+import { formatNumber } from '../../utils/formatNumber';
 
+// кол-во лайков сюда
 export default function LikeBtn({ 
   typeShow = 'full',
-  className 
+  className, 
+  amountLikes = 0,
 }) {
-
     const [isLiked, setIsLiked] = useState(false);
+
     const toggleLike = () => {
-        setIsLiked(!isLiked);
+        setIsLiked(prev => !prev);
     };
+
+    const displayedLikes = isLiked ? amountLikes + 1 : amountLikes;
+    const formattedLikes = formatNumber(displayedLikes);
 
     const showText = typeShow === 'amount' || typeShow === 'full';
     const showHeart = typeShow === 'like' || typeShow === 'full';
@@ -20,7 +26,7 @@ export default function LikeBtn({
     return (
         <div className={`${styles.likeBadge} ${className || ''}`}>
             {showText && (
-                <span className={styles.likesText}>1.1k</span>
+                <span className={styles.likesText}>{formattedLikes}</span>
             )}
             
             {showHeart && (

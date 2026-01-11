@@ -8,7 +8,8 @@ import Unlock from '../../assets/unlock-privacy.svg'
 
 export default function ArtCard({ 
     id, 
-    image, 
+    image,
+    // countLikes, 
     typeShow, 
     showDeleteIcon = false, 
     showPrivacyIcon = false 
@@ -53,7 +54,8 @@ export default function ArtCard({
                     </button>
                 )}
             </Link>
-            <LikeBtn typeShow={typeShow} />
+            {/* amountLikes={countLikes} */}
+            <LikeBtn typeShow={typeShow} amountLikes={200} />
         </div>
     );
 }

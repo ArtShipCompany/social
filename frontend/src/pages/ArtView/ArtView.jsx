@@ -5,7 +5,7 @@ import UpIcon from '../../assets/up-icon.svg'
 import ArtPost from '../../components/ArtPost/ArtPost';
 import { mockArtsMap } from '../../mock-images/mockArts';
 import { mockUsersMap } from '../../mock-images/mockArts';
-// Пока моковая функция — потом заменишь на fetch или axios
+// Пока моковая функция — потом заменишь на fetch или axios <-- это писал квен
 async function fetchArtById(id) {
   return new Promise(resolve => setTimeout(() => resolve(mockArtsMap[id]), 300));
 }

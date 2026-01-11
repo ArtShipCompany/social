@@ -26,6 +26,7 @@ export default function Edit() {
         <>
         <div className={styles.form}>
 
+            {/* загрузка фото */}
             <div className={styles.pfp}>
                 <label htmlFor="avatarUpload" className={styles.avatarLabel}>
                     <img src={avatarUrl} alt="profile-photo" className={styles.avatarImg} />
@@ -48,6 +49,7 @@ export default function Edit() {
                         <span className={styles.prefix}>@</span>
                         <input
                             type="text"
+                            // никнейм
                             value={username}
                             onChange={(e) => {
                                 let value = e.target.value;
@@ -67,6 +69,7 @@ export default function Edit() {
                 <div className={styles.textareaWrapper}>
                     <label htmlFor="">Описание профиля</label>
                     <textarea
+                        // описание
                         value={bio}
                         onChange={(e) => {
                             if (e.target.value.length <= MAX_LENGTH) {
@@ -83,6 +86,7 @@ export default function Edit() {
                 </div>
             </div>
 
+            {/* отпарвка формы? и редирект обратно на Me*/}
             <DefaultBtn 
                 text={'Сохранить'} 
                 className={styles.loginBtn} 

@@ -169,10 +169,12 @@ export default function Register() {
                     error={errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ''}
                 />
 
+                {/* честно я хз зачем там тип указан глянь DefaultBtn */}
                 <DefaultBtn text="Зарегестрироваться" className={styles.regBtn} type="submit" />
                 
                 <p className={styles.footerText}>
                     Есть аккаунт?{' '}
+                    {/* ВОТ тут поменяешь на /login */}
                     <Link to="/me" className={styles.link}>
                         Войти
                     </Link>

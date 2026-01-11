@@ -8,10 +8,8 @@ cd backend
 ## Setup frontend
 ```bash
 cd frontend
-nvm install $(cat .nvmrc)
-nvm use $(cat .nvmrc)
 npm install
-npm start
+npm run dev
 ```
 
 # Requirements
