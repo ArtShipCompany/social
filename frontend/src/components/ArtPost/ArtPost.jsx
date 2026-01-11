@@ -74,7 +74,7 @@ export default function ArtPost({
                             value={editTags}
                             onChange={handleTagsChange}
                             maxLength={MAX_LENGTH}
-                            placeholder="например: #rec #fyp #wenclair.."
+                            placeholder="например: #rec #fyp.."
                             label="Тэги:"
                             id="editTags"
                         />

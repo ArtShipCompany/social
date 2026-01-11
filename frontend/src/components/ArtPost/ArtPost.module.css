@@ -46,6 +46,10 @@
     font-weight: 600;
 }
 
+.ownerLink {
+    text-decoration: none;
+}
+
 .link:hover {
     text-decoration: underline;
     cursor: pointer;

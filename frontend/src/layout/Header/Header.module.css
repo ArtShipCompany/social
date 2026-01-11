@@ -53,3 +53,15 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(1px);
 }
+
+.avatarLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  overflow: hidden;
+}
