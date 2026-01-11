@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { mockArts } from '../../mock-images/mockArts';
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
@@ -7,7 +8,6 @@ import artsIcon from '../../assets/arts-icon.svg';
 import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
 
 import ArtCard from '../../components/ArtCard/ArtCard';
-import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
 export default function Me() {
     const [isSubscribed, setIsSubscribed] = useState(false);
@@ -56,10 +56,10 @@ export default function Me() {
                 <div className={styles.contentWrapper}>
                     <div className={styles.headBg}></div>
 
-                    <div className={styles.edit}>
+                    <Link to="/edit" className={styles.edit}>
                         <img src={editIcon} alt="arts" />
                         <span>Редактировать</span>
-                    </div>
+                    </Link>
 
                     <div className={styles.headSFooter}>
                         <div className={styles.stats}>

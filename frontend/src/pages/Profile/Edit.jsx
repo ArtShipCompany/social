@@ -9,14 +9,35 @@ export default function Edit() {
     const MAX_LENGTH = 100;
     const [bio, setBio] = useState('');
     const [username, setUsername] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState(blankPfp);
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <>
         <div className={styles.form}>
 
             <div className={styles.pfp}>
-                <img src={blankPfp} alt="profile-photo" />
-                <img src={PhotoIcon} alt="edit-photo" className={styles.photoIcon}/>
+                <label htmlFor="avatarUpload" className={styles.avatarLabel}>
+                    <img src={avatarUrl} alt="profile-photo" className={styles.avatarImg} />
+                    <img src={PhotoIcon} alt="edit-photo" className={styles.photoIcon}/>
+                </label>
+                <input
+                    id="avatarUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    style={{ display: 'none' }}
+                />
             </div>
             <span>Изменить фото</span>
 
