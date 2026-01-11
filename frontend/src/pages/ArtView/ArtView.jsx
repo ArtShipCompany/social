@@ -65,7 +65,7 @@ export default function ArtView() {
         <div className={styles.container}>
             <div ref={artPostRef}>
                 <ArtPost 
-                    isOwner={true}
+                    isOwner={false}
                     artId={art.id}
                     image={art.image}
                     description={art.description}

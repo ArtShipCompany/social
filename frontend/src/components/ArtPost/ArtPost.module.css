@@ -13,7 +13,7 @@
     min-width: 700px;
     max-width: 1000px;
     border-radius: 12px;
-    margin-bottom: 15px;
+    border: 1px solid #10497824;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -29,10 +29,39 @@
 
 .content {
     display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.owner {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.nickname {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.link:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.pfp {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.textAndLike {
+    display: flex;
+    flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
-    flex-direction: row;
-    gap: 20px;
 }
 
 .textContent {

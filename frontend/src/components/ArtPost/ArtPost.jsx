@@ -4,6 +4,7 @@ import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
+import PFP from '../../assets/WA.jpg'
 
 import editIcon from '../../assets/edit-profile-icon.svg'
 
@@ -43,13 +44,23 @@ export default function ArtPost({
 
             {!edited && (
                 <div className={styles.content}>
-                <div className={styles.textContent}>
-                    <div className={styles.tags}>
-                        <span>{tags || '#no-tags'}</span>
-                    </div>
-                    <span>{description || 'Без описания'}</span>
-                </div>
-                    <LikeBtn className={styles.like} typeShow={"full"} />
+                    {!isOwner && (
+                        <div className={styles.textAndLike}>
+                            <div className={styles.owner}>
+                                <img src={PFP} alt="" className={styles.pfp}/>
+                                <span className={styles.nickname}>@
+                                    <span className={styles.link}>crow_666_wa</span>
+                                </span>
+                            </div>
+                            <LikeBtn className={styles.like} typeShow={"full"} />
+                        </div>
+                    )}
+                        <div className={styles.textContent}>
+                            <div className={styles.tags}>
+                                <span>{tags || '#no-tags'}</span>
+                            </div>
+                            <span>{description || 'Без описания'}</span>
+                        </div>
                 </div>
             )}
             
