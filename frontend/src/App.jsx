@@ -1,3 +1,4 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState } from 'react'
 import Header from './layout/Header/Header'
 import Footer from './layout/Footer/Footer'
@@ -16,16 +17,27 @@ import Edit from './pages/Profile/Edit'
 import './App.css'
 
 function App() {
-
   return (
-    <div className="app">
-      <Header />
+    <Router>
+      <div className="app">
+        <Header />
         <div className="main">
-          <Register />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/profile" element={<Profile />}>
+              <Route index element={<Me />} />
+              <Route path="edit" element={<Edit />} />
+            </Route>
+            <Route path="/art/:id" element={<ArtView />} />
+            <Route path="/art/:id/edit" element={<EditArt />} />
+          </Routes>
         </div>
-      <Footer />
-    </div>
-  )
+        <Footer />
+      </div>
+    </Router>
+  );
 }
 
 export default App
