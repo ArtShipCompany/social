@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Register.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import Input from '../../components/Input/Input';
@@ -172,12 +173,9 @@ export default function Register() {
                 
                 <p className={styles.footerText}>
                     Есть аккаунт?{' '}
-                    <span
-                        className={styles.link}
-                        // onClick={() => navigate('/login')}
-                    >
+                    <Link to="/me" className={styles.link}>
                         Войти
-                    </span>
+                    </Link>
                 </p>
             </form>
         </div>

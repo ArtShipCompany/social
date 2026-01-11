@@ -39,12 +39,8 @@ function Header() {
                         )}
                     </>
                 )} */}
-                <button className={styles.cover}>
-                    Войти
-                </button>
-                <button className={styles.cover}>
-                    Зарегистрироваться
-                </button>
+                <Link to="/login" className={styles.cover}>Войти</Link>
+                <Link to="/register" className={styles.cover}>Зарегистрироваться</Link>
             </div>
         </div>
     );

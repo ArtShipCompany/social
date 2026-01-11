@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Login.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 
@@ -46,17 +47,12 @@ export default function Login() {
                     className={styles.loginBtn} 
                     onClick={handleLogin}
                 />
-
                 
-
                 <p className={styles.footerText}>
                     Нет аккаунта?{' '}
-                    <span
-                        className={styles.link}
-                        // onClick={() => navigate('/register')}
-                    >
+                    <Link to="/register" className={styles.link}>
                         Зарегистрироваться
-                    </span>
+                    </Link>
                 </p>
 
             </div>
