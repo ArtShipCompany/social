@@ -1,19 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
-
-import img1 from '../../assets/mock-images/клоризли.jpg';
-import img2 from '../../assets/mock-images/biliie.jpg';
-import img3 from '../../assets/mock-images/pfp.jpg';
-import img4 from '../../assets/mock-images/wenclair.jpg';
-// const mockImages = [img1, img6, img3, img4];
+import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import styles from './ArtView.module.css';
-
 import UpIcon from '../../assets/up-icon.svg'
 import ArtPost from '../../components/ArtPost/ArtPost';
+import { mockArtsMap } from '../../mock-images/mockArts';
+// Пока моковая функция — потом заменишь на fetch или axios
+async function fetchArtById(id) {
+  return new Promise(resolve => setTimeout(() => resolve(mockArtsMap[id]), 300));
+}
 
 export default function ArtView() {
+    const { id } = useParams(); // ← получаем id из URL
+    const [art, setArt] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [showUpBtn, setShowUpBtn] = useState(false);
     const artPostRef = useRef(null);
+
+    useEffect(() => {
+        const loadArt = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchArtById(id);
+            if (!data) throw new Error('Art not found');
+            setArt(data);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+        };
+
+        if (id) loadArt();
+    }, [id]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -37,10 +57,20 @@ export default function ArtView() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    if (loading) return <div className={styles.container}>Загрузка...</div>;
+    if (error) return <div className={styles.container}>Ошибка: {error}</div>;
+    if (!art) return <div className={styles.container}>Арт не найден</div>;
+
     return (
         <div className={styles.container}>
             <div ref={artPostRef}>
-                <ArtPost isOwner={true} image={img4}/> {/* здесь проверка пост пользавателя или нет */}
+                <ArtPost 
+                    isOwner={true}
+                    artId={art.id}
+                    image={art.image}
+                    description={art.description}
+                    tags={art.tags}
+                />
             </div>
 
 
@@ -58,5 +88,5 @@ export default function ArtView() {
                 {/* <Comment /> */}
             </div>
         </div>
-    )
+    );
 }

@@ -1,18 +1,33 @@
+import { useState } from 'react';
 import styles from './Home.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
-import img1 from '../../assets/mock-images/джейхины.jpg';
-import img2 from '../../assets/mock-images/клоризли.jpg';
-import img3 from '../../assets/mock-images/софтикиэимики.jpg';
-import img4 from '../../assets/mock-images/biliie.jpg';
-import img5 from '../../assets/mock-images/pfp.jpg';
-import img6 from '../../assets/mock-images/wenclair.jpg';
-const mockImages = [img1, img2, img3, img4, img5, img6];
+import { mockArts } from '../../mock-images/mockArts';
 import SearchIcon from '../../assets/search-icon.svg';
 import { TEXTS } from '../../assets/texts';
 
 export default function Home() {
+    const [searchInput, setSearchInput] = useState('');
+    const [searchQuery, setSearchQuery] = useState(''); 
+
+    const filteredArts = mockArts.filter(art => {
+        if (!searchQuery.trim()) return true;
+
+        const query = searchQuery.trim().toLowerCase();
+        const tagsArray = (art.tags || '').toLowerCase().match(/#[^\s#]+/g) || [];
+        return tagsArray.some(tag => tag === query);
+    });
+
+    const handleInputChange = (e) => {
+        setSearchInput(e.target.value);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            setSearchQuery(searchInput);
+        }
+    };
 
     return (
         <>
@@ -34,15 +49,25 @@ export default function Home() {
             <div className={styles.search}>
                 <div className={styles.searchInputWrapper}>
                     <img src={SearchIcon} alt="Поиск" className={styles.icon} />
-                    <input type="text" placeholder="Поиск..." className={styles.searchInput} />
+                    <input
+                        type="text"
+                        placeholder="Поиск по тегу, например: #duo"
+                        className={styles.searchInput}
+                        value={searchInput}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                    />
                 </div>
             </div>
 
             <div className={styles.feed}>
-                {Array.from({ length: 30 }).map((_, i) => {
-                    const image = mockImages[i % mockImages.length];
-                    return <ArtCard key={i} image={image} showLikeButton={true} />;
-                })}
+                {filteredArts.length > 0 ? (
+                    filteredArts.map(art => (
+                        <ArtCard key={art.id} id={art.id} image={art.image} showLikeButton={true} />
+                    ))
+                    ) : (
+                    <div className={styles.noResults}>Ничего не найдено</div>
+                )}
             </div>
 
             <DefaultBtn text={'Показать ещё'} />

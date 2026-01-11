@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import img1 from '../../assets/mock-images/джейхины.jpg';
-import img2 from '../../assets/mock-images/клоризли.jpg';
-import img3 from '../../assets/mock-images/софтикиэимики.jpg';
-import img4 from '../../assets/mock-images/biliie.jpg';
-import img5 from '../../assets/mock-images/pfp.jpg';
-import img6 from '../../assets/mock-images/wenclair.jpg';
-const mockImages = [img1, img6, img3, img4, img5];
+import { mockArts } from '../../mock-images/mockArts';
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
@@ -65,10 +59,9 @@ export default function Me() {
 
 
             <div className={styles.feed}>
-                {Array.from({ length: 30 }).map((_, i) => {
-                    const image = mockImages[i % mockImages.length];
-                    return <ArtCard key={i} image={image} showLikeButton={false} />;
-                })}
+                {mockArts.map(art => (
+                    <ArtCard key={art.id} id={art.id} image={art.image} showLikeButton={false} />
+                ))}
             </div>
         </>
     );

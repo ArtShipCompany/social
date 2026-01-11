@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
@@ -6,10 +7,17 @@ import CustomTextArea from '../CustomTextArea/CustomTextArea';
 
 import editIcon from '../../assets/edit-profile-icon.svg'
 
-export default function ArtPost({ edited = false, isOwner = false, image }) {
+export default function ArtPost({ 
+  edited = false, 
+  isOwner = false,
+  artId,  
+  image, 
+  description = '', 
+  tags = '' 
+}) {
     const MAX_LENGTH = 500;
-    const [description, setDescription] = useState('');
-    const [tags, setTags] = useState('');
+    const [editDescription, setDescription] = useState('');
+    const [editTags, setTags] = useState('');
 
     const handleTagsChange = (e) => {
         if (e.target.value.length <= MAX_LENGTH) {
@@ -33,15 +41,15 @@ export default function ArtPost({ edited = false, isOwner = false, image }) {
                 />
             </div>
 
-            {!edited &&(
+            {!edited && (
                 <div className={styles.content}>
-                    <div className={styles.textContent}>
-                            <div className={styles.tags}>
-                                <span>#kfldfk #dkslk #dfjsldf #dkfldskf</span>
-                            </div>
-                            <span>mamds podvvv;d|dspcdosk fdfldskf;dlfsd ;fkds;fdkf;fdlkfdfkdl fkld lf dkfldfk ldl kdfifk</span>
-                        </div>
-                        <LikeBtn className={styles.like}/>
+                <div className={styles.textContent}>
+                    <div className={styles.tags}>
+                        <span>{tags || '#no-tags'}</span>
+                    </div>
+                    <span>{description || 'Без описания'}</span>
+                </div>
+                    <LikeBtn className={styles.like} />
                 </div>
             )}
             
@@ -49,21 +57,21 @@ export default function ArtPost({ edited = false, isOwner = false, image }) {
                 <div className={styles.editContent}>
                     <div className={styles.form}>
                         <CustomTextArea
-                            value={tags}
+                            value={editTags}
                             onChange={handleTagsChange}
                             maxLength={MAX_LENGTH}
                             placeholder="например: #rec #fyp #wenclair.."
                             label="Тэги:"
-                            id="tags"
+                            id="editTags"
                         />
 
                         <CustomTextArea
-                            value={description}
+                            value={editDescription}
                             onChange={handleDescriptionChange}
                             maxLength={MAX_LENGTH}
                             placeholder="Пара слов.."
                             label="Описание:"
-                            id="description"
+                            id="editDescription"
                         />
                     </div>
                     <div className={styles.btnArea}>
@@ -73,10 +81,10 @@ export default function ArtPost({ edited = false, isOwner = false, image }) {
             )}
 
             {!edited && isOwner && (
-                <div className={styles.edit}>
-                    <img src={editIcon} alt="arts" />
+                <Link to={`/art/${artId}/edit`} className={styles.edit}>
+                    <img src={editIcon} alt="Редактировать" />
                     <span>Редактировать</span>
-                </div>
+                </Link>
             )}
 
         </div>

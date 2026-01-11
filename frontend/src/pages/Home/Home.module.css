@@ -66,4 +66,12 @@
   columns: 200px;
   column-gap: 20px;
   max-width: 100%;
+  padding-bottom: 20px;
+}
+
+.noResults {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-color);
+  padding: 40px 0;
 }
