@@ -52,3 +52,8 @@
 .actionIcon:hover {
   transform: scale(1.2);
 }
+
+.privateImage {
+  filter: grayscale(100%) brightness(80%);
+  transition: filter 0.3s ease;
+}

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import styles from './ArtCard.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 
@@ -9,15 +10,17 @@ import Unlock from '../../assets/unlock-privacy.svg'
 export default function ArtCard({ 
     id, 
     image,
-    // countLikes, 
+    // countLikes,
+    // isPrivate, 
     typeShow, 
     showDeleteIcon = false, 
     showPrivacyIcon = false 
 }) {
+    const [isPrivate, setIsPrivate] = useState(false);
 
-  const handleDeleteClick = (e) => {
+    const handleDeleteClick = (e) => {
         e.preventDefault();
-        e.stopPropagation(); // чтобы не срабатывал Link
+        e.stopPropagation();
         alert(`Удалить арт ${id}?`);
         // Тут будет вызов API или dispatch
     };
@@ -25,14 +28,18 @@ export default function ArtCard({
     const handlePrivacyClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        alert(`Переключить приватность арта ${id}`);
+        setIsPrivate(prev => !prev);
         // Тут будет логика переключения приватности
     };
 
-  return (
+    return (
         <div className={styles.card}>
             <Link to={`/art/${id}`} className={styles.imageContainer}>
-                <img src={image} alt="art" className={styles.artImage} />
+                <img 
+                    src={image} 
+                    alt="art" 
+                    className={`${styles.artImage} ${isPrivate ? styles.privateImage : ''}`} 
+                />
                 
                 {showDeleteIcon && (
                     <button 
@@ -48,9 +55,12 @@ export default function ArtCard({
                     <button 
                         className={`${styles.actionIcon} ${styles.privacyIcon}`}
                         onClick={handlePrivacyClick}
-                        aria-label="Сделать приватным"
+                        aria-label={isPrivate ? "Сделать публичным" : "Сделать приватным"}
                     >
-                        <img src={Lock} alt="Приватность" />
+                        <img 
+                            src={isPrivate ? Lock : Unlock} 
+                            alt={isPrivate ? "Приватный" : "Публичный"} 
+                        />
                     </button>
                 )}
             </Link>
