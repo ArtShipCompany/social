@@ -4,7 +4,7 @@ import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg'
 import artsIcon from '../../assets/arts-icon.svg';
-import sortIcon from '../../assets/sort-arts-pf-icon.svg';
+import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
 
 import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
@@ -49,9 +49,10 @@ export default function Me() {
                         </div>
 
                         <div className={styles.buttonsCover}>
-                            <button className={styles.sort}>
-                                <img src={sortIcon} alt="sort" className={styles.icon} />
-                            </button>
+                            <ProfileOptionsMenu 
+                                onPrivacyClick={() => alert('Настройки приватности')}
+                                onDeleteClick={() => alert('Удаление профиля')}
+                            />
                         </div> 
                     </div>
                 </div>
