@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
+import img1 from '../../assets/mock-images/клоризли.jpg';
+import img2 from '../../assets/mock-images/biliie.jpg';
+import img3 from '../../assets/mock-images/pfp.jpg';
+import img4 from '../../assets/mock-images/wenclair.jpg';
+// const mockImages = [img1, img6, img3, img4];
 import styles from './ArtView.module.css';
 
 import UpIcon from '../../assets/up-icon.svg'
@@ -33,9 +38,9 @@ export default function ArtView() {
     };
 
     return (
-        <div className={styles.content}>
+        <div className={styles.container}>
             <div ref={artPostRef}>
-                <ArtPost isOwner={true}/> {/* здесь проверка пост пользавателя или нет */}
+                <ArtPost isOwner={true} image={img4}/> {/* здесь проверка пост пользавателя или нет */}
             </div>
 
 

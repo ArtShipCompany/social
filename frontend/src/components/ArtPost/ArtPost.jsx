@@ -6,7 +6,7 @@ import CustomTextArea from '../CustomTextArea/CustomTextArea';
 
 import editIcon from '../../assets/edit-profile-icon.svg'
 
-export default function ArtPost({edited = false, isOwner = false}) {
+export default function ArtPost({ edited = false, isOwner = false, image }) {
     const MAX_LENGTH = 500;
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
@@ -25,7 +25,13 @@ export default function ArtPost({edited = false, isOwner = false}) {
 
     return(
         <div className={styles.artWrapp}>
-            <div className={styles.artImage}></div>
+            <div className={styles.artImage}>
+                <img 
+                    src={image} 
+                    alt="art" 
+                    className={styles.art}
+                />
+            </div>
 
             {!edited &&(
                 <div className={styles.content}>
