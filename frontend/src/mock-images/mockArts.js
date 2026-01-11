@@ -20,42 +20,48 @@ export const mockArts = [
     image: img1, 
     description: 'Джейхины', 
     tags: '#duo #anime',
-    ownerId: 'user5'
+    ownerId: 'user5',
+    isPrivate: false,
   },
   { 
     id: '2', 
     image: img2, 
     description: 'Клоризли', 
     tags: '#solo #mood',
-    ownerId: 'user6'
+    ownerId: 'user6',
+    isPrivate: true,
   },
   { 
     id: '3', 
     image: img3, 
     description: 'Софтика и Эймика', 
     tags: '#cute #pastel',
-    ownerId: 'user3'
+    ownerId: 'user3',
+    isPrivate: false,
   },
   { 
     id: '4', 
     image: img4, 
     description: 'Biliie', 
     tags: '#portrait #vibe',
-    ownerId: 'user2'
+    ownerId: 'user2',
+    isPrivate: true,
   },
   { 
     id: '5', 
     image: img5, 
     description: 'PFP', 
     tags: '#avatar #simple',
-    ownerId: 'user1'
+    ownerId: 'user1',
+    isPrivate: false,
   },
   { 
     id: '6', 
     image: img6, 
     description: 'Wenclair', 
     tags: '#wenclair #aesthetic',
-    ownerId: 'user4'
+    ownerId: 'user4',
+    isPrivate: true,
   },
 ];
 

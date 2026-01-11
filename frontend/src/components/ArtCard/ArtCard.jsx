@@ -10,13 +10,13 @@ import Unlock from '../../assets/unlock-privacy.svg'
 export default function ArtCard({ 
     id, 
     image,
-    // countLikes,
-    // isPrivate, 
+    // countLikes, 
     typeShow, 
     showDeleteIcon = false, 
-    showPrivacyIcon = false 
+    showPrivacyIcon = false,
+    initialIsPrivate = false, 
 }) {
-    const [isPrivate, setIsPrivate] = useState(false);
+    const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
 
     const handleDeleteClick = (e) => {
         e.preventDefault();

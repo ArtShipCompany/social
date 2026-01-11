@@ -64,8 +64,15 @@ export default function Profile() {
             <div className={styles.feed}>
                 {mockArts
                     .filter(art => art.ownerId === userId)
+                    .filter(art => !art.isPrivate)
                     .map(art => (
-                        <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"full"} />
+                        <ArtCard 
+                            key={art.id} 
+                            id={art.id} 
+                            image={art.image} 
+                            typeShow={"full"} 
+                            initialIsPrivate={art.isPrivate || false}
+                        />
                     ))
                 }
             </div>

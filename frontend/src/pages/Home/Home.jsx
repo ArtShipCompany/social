@@ -13,7 +13,9 @@ export default function Home() {
     const [searchQuery, setSearchQuery] = useState(''); 
 
     // не mockArts, а реальные арты
-    const filteredArts = mockArts.filter(art => {
+    const filteredArts = mockArts
+    // .filter(art => !art.isPrivate) - включить обратно 
+    .filter(art => {
         if (!searchQuery.trim()) return true;
 
         const query = searchQuery.trim().toLowerCase();
