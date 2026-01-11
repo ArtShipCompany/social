@@ -63,7 +63,7 @@ export default function Home() {
             <div className={styles.feed}>
                 {filteredArts.length > 0 ? (
                     filteredArts.map(art => (
-                        <ArtCard key={art.id} id={art.id} image={art.image} showLikeButton={true} />
+                        <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"like"} />
                     ))
                     ) : (
                     <div className={styles.noResults}>Ничего не найдено</div>

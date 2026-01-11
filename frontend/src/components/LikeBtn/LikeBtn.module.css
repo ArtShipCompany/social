@@ -11,8 +11,11 @@
   
   transition: background-color 0.2s ease;
   gap: 4px;
-}
 
+  &.only-heart {
+    padding: 4px;
+  }
+}
 
 .likesText {
   font-size: 14px;

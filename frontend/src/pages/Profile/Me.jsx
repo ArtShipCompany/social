@@ -60,7 +60,7 @@ export default function Me() {
 
             <div className={styles.feed}>
                 {mockArts.map(art => (
-                    <ArtCard key={art.id} id={art.id} image={art.image} showLikeButton={false} />
+                    <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"amount"} />
                 ))}
             </div>
         </>

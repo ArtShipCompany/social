@@ -49,7 +49,7 @@ export default function ArtPost({
                     </div>
                     <span>{description || 'Без описания'}</span>
                 </div>
-                    <LikeBtn className={styles.like} />
+                    <LikeBtn className={styles.like} typeShow={"full"} />
                 </div>
             )}
             

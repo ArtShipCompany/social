@@ -64,7 +64,7 @@ export default function Profile() {
 
             <div className={styles.feed}>
                 {mockArts.map(art => (
-                    <ArtCard key={art.id} id={art.id} image={art.image} showLikeButton={true} />
+                    <ArtCard key={art.id} id={art.id} image={art.image} typeShow={"full"} />
                 ))}
             </div>
         </>
