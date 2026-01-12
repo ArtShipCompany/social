@@ -2,11 +2,11 @@ package com.example.artship.social.dto;
 
 import org.springframework.web.multipart.MultipartFile;
 
-public class CreateArtRequest {
+public class UpdateArtRequest {
         private String title;
         private String description;
         private String projectDataUrl;
-        private Boolean isPublic = true;
+        private Boolean isPublic;
         private MultipartFile imageFile;
         
         // Getters and setters
