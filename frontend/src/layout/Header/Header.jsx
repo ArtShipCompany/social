@@ -1,13 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-// import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './Header.module.css';
 
 function Header() {
-    // const { user, logout } = useAuth();
-    const location = useLocation()
+    const { user, isAuthenticated, logout } = useAuth();
+    const location = useLocation();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error('Ошибка при выходе:', error);
+        }
     };
 
     return (
@@ -18,7 +22,7 @@ function Header() {
             </Link>
 
             <div className={styles.container}>
-                {/* {!user ? (
+                {!user ? (
                     <>
                         <Link to="/login" className={styles.coverBtn}>Войти</Link>
                         <Link to="/register" className={styles.coverBtn}>Зарегистрироваться</Link>
@@ -38,9 +42,8 @@ function Header() {
                             </Link>
                         )}
                     </>
-                )} */}
-                <Link to="/login" className={styles.cover}>Войти</Link>
-                <Link to="/register" className={styles.cover}>Зарегистрироваться</Link>
+                )}
+                
             </div>
         </div>
     );

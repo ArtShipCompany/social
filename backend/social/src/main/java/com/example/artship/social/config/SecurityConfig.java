@@ -146,7 +146,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",     // React/Vue dev server
+            "http://localhost:5173",     // React/Vue dev server
             "http://localhost:8081",     // Ваш Spring Boot
             "http://localhost:8080",     // Другой порт
             "http://127.0.0.1:3000",     // Альтернативный localhost

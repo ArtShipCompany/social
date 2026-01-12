@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './Register.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import Input from '../../components/Input/Input';
 import PasswordInput from '../../components/InputPassword/InputPassword';
+import { authApi } from '../../api/authApi';
 
 export default function Register() {
-
+    const navigate = useNavigate();
+    
     const [formData, setFormData] = useState({
         login: '',
         email: '',
@@ -18,7 +20,8 @@ export default function Register() {
         login: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        form: '' 
     });
 
     const [touched, setTouched] = useState({
@@ -27,6 +30,8 @@ export default function Register() {
         password: false,
         confirmPassword: false
     });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const validateLogin = (value) => {
         if (!value) return 'Логин обязателен';
@@ -72,8 +77,8 @@ export default function Register() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
+        if (errors[name] || errors.form) {
+            setErrors(prev => ({ ...prev, [name]: '', form: '' }));
         }
     };
 
@@ -102,14 +107,15 @@ export default function Register() {
         setErrors(prev => ({ ...prev, [name]: error }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         const newErrors = {
             login: validateLogin(formData.login),
             email: validateEmail(formData.email),
             password: validatePassword(formData.password),
-            confirmPassword: validateConfirmPassword(formData.confirmPassword, formData.password)
+            confirmPassword: validateConfirmPassword(formData.confirmPassword, formData.password),
+            form: ''
         };
         
         setErrors(newErrors);
@@ -121,8 +127,80 @@ export default function Register() {
         });
         
         const hasErrors = Object.values(newErrors).some(error => error !== '');
-        if (!hasErrors) {
-            console.log('Форма валидна, отправляем данные:', formData);
+        if (hasErrors) {
+            return;
+        }
+        
+        setIsSubmitting(true);
+        setErrors(prev => ({ ...prev, form: '' }));
+        
+        try {
+            console.log('Отправка данных на регистрацию:', {
+                login: formData.login,
+                email: formData.email,
+                password: formData.password
+            });
+            
+            // Отправляем данные на бэкенд
+            const response = await authApi.register({
+                login: formData.login,
+                email: formData.email,
+                password: formData.password
+            });
+            
+            console.log('Успешная регистрация:', response);
+            
+            // Если регистрация успешна, сразу логиним пользователя
+            try {
+                const loginResponse = await authApi.login({
+                    login: formData.login,
+                    password: formData.password
+                });
+                
+                console.log('Автоматический вход после регистрации:', loginResponse);
+                
+                // Сохраняем токены в localStorage
+                if (loginResponse.accessToken && loginResponse.refreshToken) {
+                    localStorage.setItem('accessToken', loginResponse.accessToken);
+                    localStorage.setItem('refreshToken', loginResponse.refreshToken);
+                    
+                    // Можно сохранить информацию о пользователе
+                    localStorage.setItem('user', JSON.stringify(loginResponse.user || response));
+                }
+                
+                // Перенаправляем на главную страницу или профиль
+                navigate('/me');
+                
+            } catch (loginError) {
+                console.log('Регистрация успешна, но автоматический вход не удался:', loginError);
+                // Перенаправляем на страницу логина
+                navigate('/login', { 
+                    state: { 
+                        message: 'Регистрация успешна! Теперь войдите в систему',
+                        email: formData.email 
+                    } 
+                });
+            }
+            
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            
+            let errorMessage = 'Ошибка при регистрации';
+            
+            if (error.message.includes('409') || error.message.toLowerCase().includes('exist')) {
+                errorMessage = 'Пользователь с таким логином или email уже существует';
+            } else if (error.message.includes('400')) {
+                errorMessage = 'Некорректные данные';
+            } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                errorMessage = 'Не удалось подключиться к серверу. Проверьте соединение';
+            } else {
+                errorMessage = error.message || 'Неизвестная ошибка';
+            }
+            
+            setErrors(prev => ({ ...prev, form: errorMessage }));
+            
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -130,6 +208,13 @@ export default function Register() {
     <>
         <div className={styles.form}>
             <span className={styles.text}>Регистрация</span>
+
+            {/* Общая ошибка формы */}
+            {errors.form && (
+                <div className={styles.formError}>
+                    {errors.form}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className={styles.inputGroup}>
                 <Input
@@ -139,6 +224,7 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.login && touched.login ? errors.login : ''}
+                    disabled={isSubmitting}
                 />
 
                 <Input
@@ -149,6 +235,7 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.email && touched.email ? errors.email : ''}
+                    disabled={isSubmitting}
                 />
 
                 <PasswordInput
@@ -158,6 +245,7 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.password && touched.password ? errors.password : ''}
+                    disabled={isSubmitting}
                 />
 
                 <PasswordInput
@@ -167,15 +255,19 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ''}
+                    disabled={isSubmitting}
                 />
 
-                {/* честно я хз зачем там тип указан глянь DefaultBtn */}
-                <DefaultBtn text="Зарегестрироваться" className={styles.regBtn} type="submit" />
+                <DefaultBtn 
+                    text={isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+                    className={styles.regBtn} 
+                    type="submit"
+                    disabled={isSubmitting}
+                />
                 
                 <p className={styles.footerText}>
                     Есть аккаунт?{' '}
-                    {/* ВОТ тут поменяешь на /login */}
-                    <Link to="/me" className={styles.link}>
+                    <Link to="/login" className={styles.link}>
                         Войти
                     </Link>
                 </p>

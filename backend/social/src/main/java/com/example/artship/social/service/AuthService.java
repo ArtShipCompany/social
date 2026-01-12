@@ -322,39 +322,6 @@ public class AuthService {
         return savedUser;
     }
     
-    // Метод для регистрации с отдельным email
-    @Transactional
-    public User registerWithEmail(AuthRequest authRequest, String email) {
-        logger.info("=== РЕГИСТРАЦИЯ С ОТДЕЛЬНЫМ EMAIL ===");
-        logger.info("Username: {}, Email: {}", authRequest.getUsername(), email);
-        
-        // Проверка существования пользователя
-        if (userRepository.existsByUsername(authRequest.getUsername())) {
-            throw new RuntimeException("Username already exists");
-        }
-        
-        if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already exists");
-        }
-        
-        String password = authRequest.getPassword();
-        if (password.length() > 72) {
-            logger.warn("Пароль будет обрезан BCrypt");
-        }
-        
-        User user = new User(
-            authRequest.getUsername(),
-            email,
-            passwordEncoder.encode(password),
-            authRequest.getUsername()
-        );
-        
-        User savedUser = userRepository.save(user);
-        logger.info("Пользователь зарегистрирован: {} (ID: {})", 
-            savedUser.getUsername(), savedUser.getId());
-        
-        return savedUser;
-    }
     
     // Метод для проверки пользователя по username или email
     public Optional<User> findByUsernameOrEmail(String identifier) {
