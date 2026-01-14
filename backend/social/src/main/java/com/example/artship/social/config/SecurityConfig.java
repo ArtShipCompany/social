@@ -1,12 +1,8 @@
 package com.example.artship.social.config;
 
-import com.example.artship.social.security.JwtAuthenticationFilter;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.servers.Server;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,8 +21,14 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.example.artship.social.security.JwtAuthenticationFilter;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 @EnableWebSecurity
@@ -107,7 +109,18 @@ public class SecurityConfig {
                     "/configuration/ui",
                     "/configuration/security",
                     "/favicon.ico",
-                    "/error"
+                    "/error",
+                    "/uploads/**",
+                    "/uploads",
+                    "/api/files/images/**",
+                    "/static/**",
+                    "/api/arts/public",
+                    "/api/arts/{id}",
+                    "/api/arts/public/**",
+                    "/api/arts/tag/**",
+                    "/api/likes/art/**",
+                    "/api/art-tags/**",
+                    "/api/arts/authors/**"
                 ).permitAll()
                 
                 // Публичные API
@@ -119,7 +132,7 @@ public class SecurityConfig {
                     "/api/arts/public/**",    // Публичные арты
                     "/api/arts/{id}/access",  // Проверка доступа к арту
                     "/api/tags/public/**",    // Публичные теги
-                    "/api/files/images/**"    // Изображения (ДОБАВЬТЕ ЭТО!)
+                    "/api/files/images/**"    // Изображения 
                 ).permitAll()
                 
                 // Все остальные запросы требуют аутентификации

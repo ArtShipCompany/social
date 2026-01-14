@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { mockArtsMap } from '../../mock-images/mockArts';
 import ArtPost from '../../components/ArtPost/ArtPost';
-
-// мок
-async function fetchArtById(id) {
-  return new Promise(resolve => setTimeout(() => resolve(mockArtsMap[id]), 300));
-}
+import { artApi } from '../../api/artApi';
 
 export default function EditArt() {
     const { id } = useParams();
@@ -18,29 +13,82 @@ export default function EditArt() {
         const loadArt = async () => {
             try {
                 setLoading(true);
-                const data = await fetchArtById(id);
-                if (!data) throw new Error('Art not found');
+                setError(null);
+                
+                console.log(`Загрузка арта с ID: ${id}`);
+                const data = await artApi.getArtById(id);
+                
+                if (!data) {
+                    throw new Error('Арт не найден');
+                }
+                
+                console.log('Арт загружен:', data);
                 setArt(data);
             } catch (err) {
-                setError(err.message);
+                console.error('Ошибка загрузки арта:', err);
+                setError(err.message || 'Не удалось загрузить арт');
+                setArt(null);
             } finally {
                 setLoading(false);
             }
         };
 
-        if (id) loadArt();
+        if (id) {
+            loadArt();
+        } else {
+            setError('ID арта не указан');
+            setLoading(false);
+        }
     }, [id]);
 
-    if (loading) return <div>Загрузка...</div>;
-    if (error) return <div>Ошибка: {error}</div>;
-    if (!art) return <div>Арт не найден</div>;
+    if (loading) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '50vh' 
+            }}>
+                Загрузка...
+            </div>
+        );
+    }
+    
+    if (error) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '50vh',
+                color: 'red' 
+            }}>
+                Ошибка: {error}
+            </div>
+        );
+    }
+    
+    if (!art) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '50vh' 
+            }}>
+                Арт не найден
+            </div>
+        );
+    }
 
     return (
         <ArtPost 
             edited={true}
-            image={art.image}
+            artId={art.id}
+            image={art.imageUrl}
             description={art.description}
             tags={art.tags}
+            owner={art.author}
         />
     );
 }

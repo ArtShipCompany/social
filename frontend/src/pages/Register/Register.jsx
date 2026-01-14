@@ -4,10 +4,11 @@ import styles from './Register.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import Input from '../../components/Input/Input';
 import PasswordInput from '../../components/InputPassword/InputPassword';
-import { authApi } from '../../api/authApi';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Register() {
     const navigate = useNavigate();
+    const { register: registerApi } = useAuth(); // Используем только register
     
     const [formData, setFormData] = useState({
         login: '',
@@ -77,6 +78,7 @@ export default function Register() {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         
+        // Сбрасываем ошибки при изменении
         if (errors[name] || errors.form) {
             setErrors(prev => ({ ...prev, [name]: '', form: '' }));
         }
@@ -88,20 +90,20 @@ export default function Register() {
         
         let error = '';
         switch (name) {
-        case 'login':
-            error = validateLogin(value);
-            break;
-        case 'email':
-            error = validateEmail(value);
-            break;
-        case 'password':
-            error = validatePassword(value);
-            break;
-        case 'confirmPassword':
-            error = validateConfirmPassword(value, formData.password);
-            break;
-        default:
-            break;
+            case 'login':
+                error = validateLogin(value);
+                break;
+            case 'email':
+                error = validateEmail(value);
+                break;
+            case 'password':
+                error = validatePassword(value);
+                break;
+            case 'confirmPassword':
+                error = validateConfirmPassword(value, formData.password);
+                break;
+            default:
+                break;
         }
         
         setErrors(prev => ({ ...prev, [name]: error }));
@@ -110,6 +112,7 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
+        // Проверяем все поля
         const newErrors = {
             login: validateLogin(formData.login),
             email: validateEmail(formData.email),
@@ -126,8 +129,10 @@ export default function Register() {
             confirmPassword: true
         });
         
+        // Проверяем есть ли ошибки
         const hasErrors = Object.values(newErrors).some(error => error !== '');
         if (hasErrors) {
+            console.log('❌ Форма содержит ошибки:', newErrors);
             return;
         }
         
@@ -135,66 +140,52 @@ export default function Register() {
         setErrors(prev => ({ ...prev, form: '' }));
         
         try {
-            console.log('Отправка данных на регистрацию:', {
+            console.log('🚀 Начинаем регистрацию пользователя:', {
+                login: formData.login,
+                email: formData.email
+            });
+            
+            // Выполняем регистрацию
+            const registerResult = await registerApi({
                 login: formData.login,
                 email: formData.email,
                 password: formData.password
             });
             
-            // Отправляем данные на бэкенд
-            const response = await authApi.register({
-                login: formData.login,
-                email: formData.email,
-                password: formData.password
-            });
-            
-            console.log('Успешная регистрация:', response);
-            
-            // Если регистрация успешна, сразу логиним пользователя
-            try {
-                const loginResponse = await authApi.login({
-                    login: formData.login,
-                    password: formData.password
-                });
-                
-                console.log('Автоматический вход после регистрации:', loginResponse);
-                
-                // Сохраняем токены в localStorage
-                if (loginResponse.accessToken && loginResponse.refreshToken) {
-                    localStorage.setItem('accessToken', loginResponse.accessToken);
-                    localStorage.setItem('refreshToken', loginResponse.refreshToken);
-                    
-                    // Можно сохранить информацию о пользователе
-                    localStorage.setItem('user', JSON.stringify(loginResponse.user || response));
-                }
-                
-                // Перенаправляем на главную страницу или профиль
-                navigate('/me');
-                
-            } catch (loginError) {
-                console.log('Регистрация успешна, но автоматический вход не удался:', loginError);
-                // Перенаправляем на страницу логина
-                navigate('/login', { 
-                    state: { 
-                        message: 'Регистрация успешна! Теперь войдите в систему',
-                        email: formData.email 
-                    } 
-                });
+            if (!registerResult.success) {
+                console.error('❌ Ошибка регистрации:', registerResult.error);
+                setErrors(prev => ({ ...prev, form: registerResult.error }));
+                setIsSubmitting(false);
+                return;
             }
             
+            console.log('✅ Регистрация успешна:', registerResult.data);
+            
+            // Сразу перекидываем на страницу логина
+            navigate('/login', { 
+                replace: true,
+                state: { 
+                    message: 'Регистрация успешна! Теперь войдите в систему.',
+                    username: formData.login,
+                    email: formData.email
+                }
+            });
+            
         } catch (error) {
-            console.error('Ошибка регистрации:', error);
+            console.error('❌ Неожиданная ошибка регистрации:', error);
             
             let errorMessage = 'Ошибка при регистрации';
             
-            if (error.message.includes('409') || error.message.toLowerCase().includes('exist')) {
+            if (error.status === 409 || error.message?.toLowerCase().includes('exist')) {
                 errorMessage = 'Пользователь с таким логином или email уже существует';
-            } else if (error.message.includes('400')) {
-                errorMessage = 'Некорректные данные';
-            } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            } else if (error.status === 400) {
+                errorMessage = 'Некорректные данные. Проверьте правильность ввода';
+            } else if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
                 errorMessage = 'Не удалось подключиться к серверу. Проверьте соединение';
-            } else {
-                errorMessage = error.message || 'Неизвестная ошибка';
+            } else if (error.data?.message) {
+                errorMessage = error.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
             }
             
             setErrors(prev => ({ ...prev, form: errorMessage }));
@@ -205,74 +196,82 @@ export default function Register() {
     };
 
     return (
-    <>
-        <div className={styles.form}>
-            <span className={styles.text}>Регистрация</span>
+        <>
+            <div className={styles.form}>
+                <span className={styles.text}>Регистрация</span>
 
-            {/* Общая ошибка формы */}
-            {errors.form && (
-                <div className={styles.formError}>
-                    {errors.form}
-                </div>
-            )}
+                {/* Общая ошибка формы */}
+                {errors.form && (
+                    <div className={styles.formError}>
+                        {errors.form}
+                    </div>
+                )}
 
-            <form onSubmit={handleSubmit} className={styles.inputGroup}>
-                <Input
-                    name="login"
-                    placeholder="Логин"
-                    value={formData.login}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.login && touched.login ? errors.login : ''}
-                    disabled={isSubmitting}
-                />
+                <form onSubmit={handleSubmit} className={styles.inputGroup} noValidate>
+                    <Input
+                        name="login"
+                        placeholder="Логин"
+                        value={formData.login}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={errors.login && touched.login ? errors.login : ''}
+                        disabled={isSubmitting}
+                        autoComplete="username"
+                        required
+                    />
 
-                <Input
-                    name="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.email && touched.email ? errors.email : ''}
-                    disabled={isSubmitting}
-                />
+                    <Input
+                        name="email"
+                        type="email"
+                        placeholder="email@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={errors.email && touched.email ? errors.email : ''}
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                        required
+                    />
 
-                <PasswordInput
-                    name="password"
-                    placeholder="Пароль"
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.password && touched.password ? errors.password : ''}
-                    disabled={isSubmitting}
-                />
+                    <PasswordInput
+                        name="password"
+                        placeholder="Пароль"
+                        value={formData.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={errors.password && touched.password ? errors.password : ''}
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        required
+                    />
 
-                <PasswordInput
-                    name="confirmPassword"
-                    placeholder="Повторите пароль"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ''}
-                    disabled={isSubmitting}
-                />
+                    <PasswordInput
+                        name="confirmPassword"
+                        placeholder="Повторите пароль"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={errors.confirmPassword && touched.confirmPassword ? errors.confirmPassword : ''}
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        required
+                    />
 
-                <DefaultBtn 
-                    text={isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
-                    className={styles.regBtn} 
-                    type="submit"
-                    disabled={isSubmitting}
-                />
-                
-                <p className={styles.footerText}>
-                    Есть аккаунт?{' '}
-                    <Link to="/login" className={styles.link}>
-                        Войти
-                    </Link>
-                </p>
-            </form>
-        </div>
-    </>
-  );
+                    <DefaultBtn 
+                        text={isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+                        className={styles.regBtn} 
+                        type="submit"
+                        disabled={isSubmitting}
+                    />
+                    
+                    <p className={styles.footerText}>
+                        Есть аккаунт?{' '}
+                        <Link to="/login" className={styles.link}>
+                            Войти
+                        </Link>
+                    </p>
+                </form>
+            </div>
+        </>
+    );
 }

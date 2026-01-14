@@ -162,3 +162,26 @@
 .edit:hover {
     transform: translateY(1px);
 }
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-color);
+}
+
+.ownerLikeSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.ownerBadge {
+    background-color: rgba(74, 111, 165, 0.1);
+    color: #4a6fa5;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #4a6fa5;
+}
+

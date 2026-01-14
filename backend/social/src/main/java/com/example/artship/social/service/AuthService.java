@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -49,18 +50,11 @@ public class AuthService {
     public AuthResponse authenticate(AuthRequest authRequest, HttpServletRequest request) {
         logger.info("=== НАЧАЛО АУТЕНТИФИКАЦИИ ===");
         logger.info("Пользователь: {}", authRequest.getUsername());
+        logger.info("Request time: {}", new Date());
         
         try {
             // Логируем информацию о пароле
             String password = authRequest.getPassword();
-            logger.debug("Длина пароля: {} символов, {} байт (UTF-8)", 
-                password.length(), password.getBytes(StandardCharsets.UTF_8).length);
-            
-            // Проверяем, не слишком ли длинный пароль для BCrypt
-            if (password.length() > 72) {
-                logger.warn("Пароль длиннее 72 символов, будет обрезан BCrypt");
-                // Не обрезаем здесь - BCrypt сделает это сам
-            }
             
             logger.debug("Создание UsernamePasswordAuthenticationToken...");
             UsernamePasswordAuthenticationToken authToken = 
@@ -95,7 +89,20 @@ public class AuthService {
             // Генерация access token
             logger.info("Генерация access token...");
             String accessToken = jwtTokenUtil.generateAccessToken(userDetails);
-            logger.debug("Access token сгенерирован, длина: {} символов", accessToken.length());
+            
+            // Получаем информацию о токене для дебага
+            Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(accessToken);
+            Date expiration = jwtTokenUtil.getExpirationDateFromToken(accessToken);
+            String jti = jwtTokenUtil.getJtiFromToken(accessToken);
+            
+            
+            // Вычисляем expiresIn (оставшееся время в миллисекундах)
+            long currentTime = System.currentTimeMillis();
+            long expiresIn = expiration.getTime() - currentTime;
+            
+            logger.info("Current time: {}", new Date(currentTime));
+            logger.info("Expires in (remaining): {} ms ({} minutes)", 
+                expiresIn, expiresIn / 60000);
             
             // Генерация refresh token
             logger.info("Генерация refresh token...");
@@ -105,7 +112,6 @@ public class AuthService {
             
             logger.debug("Информация об устройстве: {}", deviceInfo);
             logger.debug("IP адрес: {}", ipAddress);
-            logger.debug("User-Agent: {}", userAgent);
             
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(
                 user,
@@ -115,22 +121,19 @@ public class AuthService {
             );
             
             logger.debug("Refresh token создан, ID: {}", refreshToken.getId());
+            logger.debug("Refresh token hash: {}", refreshToken.getTokenHash().substring(0, 20) + "...");
             
-            // Получаем время истечения токена
-            long expiresIn = jwtTokenUtil.getExpirationDateFromToken(accessToken).getTime();
-            logger.debug("Access token истекает через: {} мс ({} минут)", 
-                expiresIn, expiresIn / 60000);
-            
-            // Создаем ответ
+            // Создаем ответ с ПРАВИЛЬНЫМ expiresIn
             AuthResponse response = new AuthResponse(
                 accessToken,
-                refreshToken.getTokenHash(), // raw token (не хеш!)
-                expiresIn,
+                refreshToken.getTokenHash(),
+                expiresIn,  // ← ОСТАВШЕЕСЯ время жизни в миллисекундах!
                 new UserDto(user)
             );
             
             logger.info("=== ✅ АУТЕНТИФИКАЦИЯ ЗАВЕРШЕНА УСПЕШНО ===");
             logger.info("Пользователь {} успешно авторизован", authRequest.getUsername());
+            logger.info("Response time: {}", new Date());
             
             return response;
             
@@ -139,7 +142,6 @@ public class AuthService {
             logger.error("Тип исключения: {}", e.getClass().getName());
             logger.error("Сообщение: {}", e.getMessage());
             
-            // Логируем стектрейс для отладки
             if (e.getCause() != null) {
                 logger.error("Причина: {}", e.getCause().getMessage());
                 logger.error("Класс причины: {}", e.getCause().getClass().getName());
@@ -151,6 +153,7 @@ public class AuthService {
     
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest, HttpServletRequest request) {
         logger.info("=== ОБНОВЛЕНИЕ ТОКЕНА ===");
+        logger.info("Request time: {}", new Date());
         
         String rawRefreshToken = refreshTokenRequest.getRefreshToken();
         if (rawRefreshToken == null || rawRefreshToken.trim().isEmpty()) {
@@ -188,7 +191,23 @@ public class AuthService {
         // Генерация нового access token
         logger.info("Генерация нового access token...");
         String newAccessToken = jwtTokenUtil.generateAccessToken(userDetails);
-        logger.debug("Новый access token сгенерирован, длина: {} символов", newAccessToken.length());
+        
+        // Получаем информацию о новом токене
+        Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(newAccessToken);
+        Date expiration = jwtTokenUtil.getExpirationDateFromToken(newAccessToken);
+        String jti = jwtTokenUtil.getJtiFromToken(newAccessToken);
+        
+        logger.info("=== NEW ACCESS TOKEN INFO ===");
+        logger.info("New token JTI: {}", jti);
+        logger.info("New token issued at: {}", issuedAt);
+        logger.info("New token expires at: {}", expiration);
+        
+        // Вычисляем expiresIn для нового токена
+        long currentTime = System.currentTimeMillis();
+        long expiresIn = expiration.getTime() - currentTime;
+        
+        logger.info("Expires in (remaining): {} ms ({} minutes)", 
+            expiresIn, expiresIn / 60000);
         
         // Генерация нового refresh token
         logger.info("Генерация нового refresh token...");
@@ -202,19 +221,18 @@ public class AuthService {
         
         logger.debug("Новый refresh token создан, ID: {}", newRefreshToken.getId());
         
-        // Получаем время истечения нового access token
-        long expiresIn = jwtTokenUtil.getExpirationDateFromToken(newAccessToken).getTime();
-        
         logger.info("✅ Токены успешно обновлены для пользователя: {}", user.getUsername());
+        logger.info("Response time: {}", new Date());
         
         return new AuthResponse(
             newAccessToken,
-            newRefreshToken.getTokenHash(), // raw token
-            expiresIn,
+            newRefreshToken.getTokenHash(),
+            expiresIn,  // ← ОСТАВШЕЕСЯ время жизни!
             new UserDto(user)
         );
     }
     
+
     public void logout(String refreshToken) {
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             logger.warn("Попытка выхода без refresh token");

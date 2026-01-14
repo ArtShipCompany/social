@@ -23,20 +23,24 @@ import com.example.artship.social.repository.UserRepository;
 public class ArtService {
     private final ArtRepository artRepository;
     private final UserRepository userRepository;
-    private final TagManagementService tagManagementService; // Вместо ArtTagService
+    private final TagManagementService tagManagementService; 
     private final TagService tagService;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
 
     public ArtService(ArtRepository artRepository, 
                      UserRepository userRepository,
-                     TagManagementService tagManagementService, // Изменено
+                     TagManagementService tagManagementService, 
                      TagService tagService,
-                     FileStorageService fileStorageService) {
+                     LocalFileStorageService fileStorageService) {
         this.artRepository = artRepository;
         this.userRepository = userRepository;
-        this.tagManagementService = tagManagementService; // Изменено
+        this.tagManagementService = tagManagementService; 
         this.tagService = tagService;
         this.fileStorageService = fileStorageService;
+    }
+
+    public Art save(Art art) {
+        return artRepository.save(art);
     }
 
     public ArtDto createArt(Art art, Long userId) { 

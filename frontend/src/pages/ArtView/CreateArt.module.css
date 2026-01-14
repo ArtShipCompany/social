@@ -1,0 +1,331 @@
+.createArtContainer {
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: calc(100vh - 80px);
+}
+
+.createArtWrapper {
+    width: 100%;
+    max-width: 900px;
+    background-color: #dbefff;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+    color: var(--text-color);
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Секция загрузки изображения */
+.imageUploadSection {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sectionLabel {
+    color: var(--text-color);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.uploadArea {
+    border: 2px dashed #10497824;
+    border-radius: 12px;
+    background-color: white;
+    transition: border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.uploadArea:hover {
+    border-color: #4a6fa5;
+}
+
+.uploadPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.uploadIcon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+    opacity: 0.6;
+}
+
+.uploadText {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.uploadHint {
+    font-size: 14px;
+    opacity: 0.7;
+    margin: 4px 0;
+}
+
+/* Превью изображения */
+.imagePreviewContainer {
+    padding: 20px;
+}
+
+.imagePreviewWrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.imagePreview {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #10497824;
+}
+
+.removeImageButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #ff4444;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.removeImageButton:hover {
+    background-color: white;
+}
+
+.imageInfo {
+    color: var(--text-color);
+    font-size: 14px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* Форма */
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: white;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #10497824;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formLabel {
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.charCount {
+    font-weight: normal;
+    opacity: 0.7;
+    font-size: 12px;
+}
+
+.titleInput {
+    padding: 12px 15px;
+    border: 1px solid #10497824;
+    border-radius: 8px;
+    background-color: var(--input-bg-color);
+    color: var(--text-color);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.titleInput:focus {
+    border-color: #4a6fa5;
+}
+
+.titleInput:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Настройки приватности */
+.privacySettings {
+    padding-top: 15px;
+    border-top: 1px solid #10497824;
+}
+
+.privacyLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.privacyCheckbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.privacyText {
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.privacyHint {
+    color: var(--text-color);
+    font-size: 13px;
+    opacity: 0.7;
+    margin-left: 28px;
+}
+
+/* Автодополнение тегов */
+.tagSuggestions {
+    margin-top: 10px;
+}
+
+.suggestionsLabel {
+    color: var(--text-color);
+    font-size: 13px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.suggestionsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestionTag {
+    padding: 6px 12px;
+    background-color: rgba(74, 111, 165, 0.1);
+    color: #4a6fa5;
+    border: 1px solid #4a6fa5;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestionTag:hover {
+    background-color: #4a6fa5;
+    color: white;
+}
+
+.suggestionTag:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Сообщения об ошибках */
+.errorMessage {
+    background-color: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+/* Кнопки */
+.buttonsSection {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 1px solid #10497824;
+}
+
+.cancelButton {
+    background-color: transparent;
+    border: 1px solid var(--input-bg-color);
+    color: var(--text-color);
+}
+
+.cancelButton:hover {
+    background-color: var(--input-bg-color);
+}
+
+.submitButton {
+    min-width: 150px;
+}
+
+/* Справка */
+.helpText {
+    color: var(--text-color);
+    font-size: 13px;
+    opacity: 0.7;
+    text-align: center;
+    padding-top: 15px;
+    border-top: 1px solid #10497824;
+}
+
+.helpText p {
+    margin: 5px 0;
+}
+
+/* Состояние загрузки */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 10px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--input-bg-color);
+    border-top: 3px solid var(--text-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

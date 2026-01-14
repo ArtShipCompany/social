@@ -1,16 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './ProfileOptionsMenu.module.css';
 import privacyIcon from '../../assets/private-edit.svg';
 import deleteIcon from '../../assets/delete-icon.svg';
 import ellipsisIcon from '../../assets/ellipsis-icon.svg';
+import createIcon from '../../assets/create-icon.svg'
 
 export default function ProfileOptionsMenu({ 
   isOpen, 
   onToggle, 
   onPrivacyClick, 
-  onDeleteClick 
+  onDeleteClick,
+  onCreateClick 
 }) {
   const menuRef = useRef(null);
+
+  
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
@@ -38,9 +43,15 @@ export default function ProfileOptionsMenu({
           >
             <img src={deleteIcon} alt="Удалить" className={styles.icon} />
           </button>
+          
+          <button
+            className={styles.menuItem}
+            onClick={onCreateClick} 
+          >
+            <img src={createIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
+          </button>
         </div>
       )}
     </div>
   );
 }
-

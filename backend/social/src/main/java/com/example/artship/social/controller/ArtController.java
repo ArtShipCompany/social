@@ -1,20 +1,9 @@
 package com.example.artship.social.controller;
 
-import com.example.artship.social.dto.ArtDto;
-import com.example.artship.social.dto.CreateArtRequest;
-import com.example.artship.social.dto.UpdateArtRequest;
-import com.example.artship.social.model.Art;
-import com.example.artship.social.model.User;
-import com.example.artship.social.service.ArtService;
-import com.example.artship.social.service.FileStorageService;
-import com.example.artship.social.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -25,11 +14,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.artship.social.dto.ArtDto;
+import com.example.artship.social.model.Art;
+import com.example.artship.social.model.User;
+import com.example.artship.social.requests.ArtUpdateRequest;
+import com.example.artship.social.service.ArtService;
+import com.example.artship.social.service.LocalFileStorageService;
+import com.example.artship.social.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/arts")
@@ -40,10 +51,10 @@ public class ArtController {
     
     private final ArtService artService;
     private final UserService userService;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
     
     public ArtController(ArtService artService, UserService userService, 
-                        FileStorageService fileStorageService) {
+                        LocalFileStorageService fileStorageService) {
         this.artService = artService;
         this.userService = userService;
         this.fileStorageService = fileStorageService;
@@ -264,19 +275,8 @@ public class ArtController {
     }
 
     // Обновление арта с возможностью загрузки нового изображения
-    @Operation(
-        summary = "Обновить арт",
-        description = "Обновляет данные арта. Можно загрузить новое изображение. Формат запроса: multipart/form-data"
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Арт успешно обновлен",
-                    content = @Content(schema = @Schema(implementation = ArtDto.class))),
-        @ApiResponse(responseCode = "400", description = "Неверные данные запроса"),
-        @ApiResponse(responseCode = "403", description = "Нет прав для обновления"),
-        @ApiResponse(responseCode = "404", description = "Арт не найден")
-    })
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-               produces = MediaType.APPLICATION_JSON_VALUE)
+           produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ArtDto> updateArt(
         @Parameter(description = "ID арта", required = true) @PathVariable Long id,
         @Parameter(
@@ -292,6 +292,10 @@ public class ArtController {
     ) {
         logger.info("=== НАЧАЛО ОБНОВЛЕНИЯ АРТА ID: {} ===", id);
         logger.info("Пользователь: {}", userDetails != null ? userDetails.getUsername() : "null");
+        logger.info("Данные запроса - title: {}, description: {}, hasImage: {}", 
+                request.getTitle(), 
+                request.getDescription(),
+                request.getImageFile() != null && !request.getImageFile().isEmpty());
         
         try {
             if (userDetails == null) {
@@ -311,7 +315,7 @@ public class ArtController {
             // Проверяем права
             if (!artService.isUserAuthorOfArt(id, currentUser.getId())) {
                 logger.error("ОШИБКА: Пользователь {} не является автором арта {}", 
-                           currentUser.getId(), id);
+                        currentUser.getId(), id);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
@@ -349,7 +353,7 @@ public class ArtController {
             // Обновляем изображение, если загружено новое
             if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
                 logger.info("Загружено новое изображение: {}", 
-                           request.getImageFile().getOriginalFilename());
+                        request.getImageFile().getOriginalFilename());
                 
                 // Валидация формата
                 String contentType = request.getImageFile().getContentType();
@@ -380,6 +384,7 @@ public class ArtController {
                 existingArt.setImageUrl(newImageUrl);
             }
             
+            existingArt.setUpdatedAt(LocalDateTime.now());
             ArtDto updatedArt = artService.updateArt(id, existingArt);
             logger.info("=== АРТ УСПЕШНО ОБНОВЛЕН. ID: {} ===", id);
             
@@ -391,6 +396,7 @@ public class ArtController {
         }
     }
 
+    
     // Получение арта по ID
     @Operation(summary = "Получить арт по ID")
     @ApiResponses({

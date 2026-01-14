@@ -7,58 +7,122 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
-public class LocalFileStorageService implements FileStorageService {
+public class LocalFileStorageService {
     
-    private final String UPLOAD_DIR = "uploads/images/";
+    private final Path uploadDir;
     
     public LocalFileStorageService() {
+        // Сохраняем в uploads/images/
+        this.uploadDir = Paths.get("uploads/images").toAbsolutePath().normalize();
+        
+        System.out.println("=== FILE STORAGE SERVICE INIT ===");
+        System.out.println("Upload directory: " + this.uploadDir);
+        System.out.println("Directory exists: " + Files.exists(this.uploadDir));
+        
         try {
-            Files.createDirectories(Paths.get(UPLOAD_DIR));
+            Files.createDirectories(this.uploadDir);
+            System.out.println("Directory created/verified");
+            
+            // Показываем файлы в директории для отладки
+            if (Files.exists(this.uploadDir)) {
+                System.out.println("Files in directory:");
+                Files.list(this.uploadDir)
+                     .limit(10)
+                     .forEach(path -> System.out.println("  - " + path.getFileName()));
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Could not create upload directory", e);
+            throw new RuntimeException("Не удалось создать директорию для загрузки файлов", e);
         }
     }
     
-    @Override
     public String uploadFile(MultipartFile file) {
         try {
+            // Генерируем уникальное имя файла
             String originalFileName = file.getOriginalFilename();
             String fileExtension = getFileExtension(originalFileName);
             String fileName = UUID.randomUUID() + fileExtension;
             
-            Path filePath = Paths.get(UPLOAD_DIR + fileName);
-            Files.copy(file.getInputStream(), filePath);
+            // Сохраняем файл
+            Path targetLocation = this.uploadDir.resolve(fileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             
-            return "/api/files/images/" + fileName;
+            System.out.println("=== FILE UPLOADED ===");
+            System.out.println("Original filename: " + originalFileName);
+            System.out.println("Saved to: " + targetLocation);
+            System.out.println("File size: " + Files.size(targetLocation) + " bytes");
+            System.out.println("File exists: " + Files.exists(targetLocation));
             
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file", e);
+            // Возвращаем относительный путь для доступа через браузер
+            return "/uploads/images/" + fileName;
+            
+        } catch (IOException ex) {
+            throw new RuntimeException("Не удалось сохранить файл: " + ex.getMessage(), ex);
         }
     }
     
-    @Override
     public void deleteFile(String fileUrl) {
-        try {
-            String fileName = extractFileNameFromUrl(fileUrl);
-            Path filePath = Paths.get(UPLOAD_DIR + fileName);
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            // Log error but don't throw
-            System.err.println("Failed to delete file: " + fileUrl);
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return;
         }
+        
+        try {
+            // Извлекаем имя файла из URL
+            String fileName = extractFileNameFromUrl(fileUrl);
+            if (fileName == null || fileName.isEmpty()) {
+                System.err.println("Cannot extract filename from URL: " + fileUrl);
+                return;
+            }
+            
+            Path filePath = this.uploadDir.resolve(fileName);
+            
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                System.out.println("File deleted: " + filePath);
+            } else {
+                System.out.println("File not found for deletion: " + filePath);
+            }
+            
+        } catch (IOException e) {
+            System.err.println("Не удалось удалить файл: " + e.getMessage());
+        }
+    }
+    
+    public boolean fileExists(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return false;
+        }
+        
+        String fileName = extractFileNameFromUrl(fileUrl);
+        if (fileName == null || fileName.isEmpty()) {
+            return false;
+        }
+        
+        Path filePath = this.uploadDir.resolve(fileName);
+        return Files.exists(filePath);
     }
     
     private String getFileExtension(String fileName) {
         if (fileName == null || !fileName.contains(".")) {
-            return ".jpg";
+            return ".jpg"; // дефолтное расширение
         }
         return fileName.substring(fileName.lastIndexOf("."));
     }
     
     private String extractFileNameFromUrl(String fileUrl) {
-        return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return "";
+        }
+        
+        // Извлекаем имя файла из разных форматов путей:
+        // /uploads/images/filename.jpg -> filename.jpg
+        // /uploads/filename.jpg -> filename.jpg
+        // /api/files/images/filename.jpg -> filename.jpg
+        
+        String[] parts = fileUrl.split("/");
+        return parts[parts.length - 1];
     }
 }

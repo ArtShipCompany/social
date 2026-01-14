@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import styles from './ArtCard.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 
@@ -7,47 +7,93 @@ import Delete from '../../assets/cross-delete.svg'
 import Lock from '../../assets/lock-privacy.svg'
 import Unlock from '../../assets/unlock-privacy.svg'
 
-export default function ArtCard({ 
+const ArtCard = memo(function ArtCard({ 
     id, 
     image,
-    // countLikes, 
     typeShow, 
     showDeleteIcon = false, 
     showPrivacyIcon = false,
     initialIsPrivate = false,
     onOpenConfirmModal, 
+    likesCount = 0,
+    title = 'Без названия',
 }) {
     const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
+    const [isLoading, setIsLoading] = useState(false);
+    const [imgSrc, setImgSrc] = useState('');
+    const [imgError, setImgError] = useState(false);
 
-    const handleDeleteClick = (e) => {
+    // Инициализация изображения
+    useEffect(() => {
+        if (image) {
+            setImgSrc(image);
+            setImgError(false);
+        }
+    }, [image, id]);
+
+    const handleDeleteClick = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
         if (onOpenConfirmModal) {
             onOpenConfirmModal(id);
         }
-    };
+    }, [id, onOpenConfirmModal]);
 
-    const handlePrivacyClick = (e) => {
+    const handlePrivacyClick = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
         setIsPrivate(prev => !prev);
-        // Тут будет логика переключения приватности
-    };
+    }, []);
+
+    const handleImageError = useCallback((e) => {
+        console.error(`Failed to load image for art ${id}:`, image);
+        setImgError(true);
+        // Пробуем альтернативные пути
+        if (image.includes('//api/files/')) {
+            const alternativePath = image.replace('//api/files/', '/api/files/');
+            e.target.src = alternativePath;
+        } else {
+            e.target.src = '/default-art.jpg';
+        }
+    }, [id, image]);
+
+    const handleImageLoad = useCallback(() => {
+        setImgError(false);
+    }, []);
 
     return (
         <div className={styles.card}>
             <Link to={`/art/${id}`} className={styles.imageContainer}>
-                <img 
-                    src={image} 
-                    alt="art" 
-                    className={`${styles.artImage} ${isPrivate ? styles.privateImage : ''}`} 
-                />
+                {imgError ? (
+                    <div className={styles.imagePlaceholder}>
+                        <span>Изображение не загружено</span>
+                    </div>
+                ) : (
+                    <img 
+                        src={imgSrc} 
+                        alt={title} 
+                        className={`${styles.artImage} ${isPrivate ? styles.privateImage : ''}`}
+                        onError={handleImageError}
+                        onLoad={handleImageLoad}
+                        loading="lazy"
+                    />
+                )}
+                
+                {/* LikeBtn внутри карточки но не в Link */}
+                <div className={styles.likeBtnContainer}>
+                    <LikeBtn 
+                        typeShow={typeShow} 
+                        amountLikes={likesCount}
+                        artId={id}
+                    />
+                </div>
                 
                 {showDeleteIcon && (
                     <button 
                         className={`${styles.actionIcon} ${styles.deleteIcon}`}
                         onClick={handleDeleteClick}
                         aria-label="Удалить"
+                        disabled={isLoading}
                     >
                         <img src={Delete} alt="Удалить" />
                     </button>
@@ -58,6 +104,7 @@ export default function ArtCard({
                         className={`${styles.actionIcon} ${styles.privacyIcon}`}
                         onClick={handlePrivacyClick}
                         aria-label={isPrivate ? "Сделать публичным" : "Сделать приватным"}
+                        disabled={isLoading}
                     >
                         <img 
                             src={isPrivate ? Lock : Unlock} 
@@ -66,8 +113,8 @@ export default function ArtCard({
                     </button>
                 )}
             </Link>
-            {/* amountLikes={countLikes} */}
-            <LikeBtn typeShow={typeShow} amountLikes={200} />
         </div>
     );
-}
+});
+
+export default ArtCard;

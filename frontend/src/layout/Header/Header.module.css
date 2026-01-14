@@ -56,13 +56,17 @@
 }
 
 .avatarLink {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center;
-  overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px; 
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden; 
+    border: 2px solid #B8DFFF;
+}
+.avatar {
+    width: 40px;
+    height: 40px;
+    object-fit: cover; 
 }

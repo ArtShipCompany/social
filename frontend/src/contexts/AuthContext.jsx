@@ -1,6 +1,5 @@
-// AuthContext.jsx
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { authApi, isAuthenticated, getCurrentUser, setAuthToken } from '../api/authApi';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authApi, isAuthenticated, getCurrentUser, getAuthToken } from '../api/authApi';
 
 const AuthContext = createContext({});
 
@@ -17,37 +16,44 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-    // Загрузка пользователя при инициализации
     useEffect(() => {
-        const loadUser = async () => {
+        const loadUser = () => {
+            console.log('🔄 AuthProvider: loading user...');
             try {
-                setIsLoading(true);
+                const token = getAuthToken();
+                console.log('🔑 Token from localStorage:', token ? 'Exists' : 'None');
                 
-                // Проверяем токен и получаем пользователя из localStorage
-                if (isAuthenticated()) {
+                if (token && isAuthenticated()) {
                     const userData = getCurrentUser();
-                    if (userData) {
+                    console.log('👤 User data from localStorage:', userData);
+                    
+                    if (userData && userData.id) {
                         setUser(userData);
-                        console.log('✅ Пользователь загружен из localStorage:', userData.username);
+                        console.log('✅ User loaded:', userData.username);
+                    } else {
+                        console.log('⚠️ User data invalid or missing');
+                        setUser(null);
                     }
                 } else {
-                    console.log('⚠️ Пользователь не авторизован');
+                    console.log('⚠️ No valid token or not authenticated');
                     setUser(null);
                 }
             } catch (error) {
-                console.error('Ошибка при загрузке пользователя:', error);
+                console.error('❌ Error loading user:', error);
                 setUser(null);
             } finally {
                 setIsLoading(false);
                 setIsAuthChecked(true);
+                console.log('🏁 AuthProvider: initialization complete');
             }
         };
 
         loadUser();
         
-        // Слушаем изменения localStorage (на случай если логин из другого окна)
+        // Слушаем изменения localStorage
         const handleStorageChange = (e) => {
             if (e.key === 'accessToken' || e.key === 'user') {
+                console.log('📦 LocalStorage changed:', e.key);
                 loadUser();
             }
         };
@@ -66,14 +72,15 @@ export const AuthProvider = ({ children }) => {
             
             // Получаем пользователя после успешного логина
             const userData = getCurrentUser();
+            
             if (userData) {
                 setUser(userData);
-                console.log('✅ Пользователь установлен после логина:', userData.username);
+                console.log('✅ User set after login:', userData.username);
             }
             
             return { success: true, data: response, user: userData };
         } catch (error) {
-            console.error('Ошибка при логине:', error);
+            console.error('❌ Login error:', error);
             return { success: false, error: error.message };
         } finally {
             setIsLoading(false);
@@ -84,10 +91,11 @@ export const AuthProvider = ({ children }) => {
         try {
             await authApi.logout();
         } catch (error) {
-            console.error('Ошибка при выходе:', error);
+            console.error('❌ Logout error:', error);
         } finally {
             setUser(null);
             setIsLoading(false);
+            console.log('✅ User logged out');
         }
     };
 
@@ -100,16 +108,43 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const refreshUser = () => {
+        console.log('🔄 AuthProvider: manually refreshing user...');
+        try {
+            const token = getAuthToken();
+            const userData = getCurrentUser();
+            
+            if (token && isAuthenticated() && userData && userData.id) {
+                setUser(userData);
+                console.log('✅ User refreshed:', userData.username);
+            } else {
+                setUser(null);
+                console.log('⚠️ User refresh failed - invalid data');
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing user:', error);
+            setUser(null);
+        }
+    };
+
+    // Добавьте refreshUser в value:
     const value = {
         user,
         isLoading,
         isAuthChecked,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && isAuthenticated(),
         login,
         logout,
         register,
-        setUser // для обновления данных пользователя
+        setUser,
+        refreshUser 
     };
+
+    console.log('AuthContext value:', {
+        user: user?.username,
+        isAuthenticated: value.isAuthenticated,
+        isLoading
+    });
 
     return (
         <AuthContext.Provider value={value}>

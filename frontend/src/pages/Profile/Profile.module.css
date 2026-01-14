@@ -162,3 +162,70 @@
     column-gap: 20px;
     max-width: 100%;
 }
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 10px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--input-bg-color);
+    border-top: 3px solid var(--text-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error, .notFound {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.error h2, .notFound h2 {
+    color: #ff4444;
+    margin-bottom: 10px;
+}
+
+.backButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: var(--input-bg-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.backButton:hover {
+    background-color: #dbefff;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+.createArtButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: var(--input-bg-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.createArtButton:hover {
+    background-color: #dbefff;
+}

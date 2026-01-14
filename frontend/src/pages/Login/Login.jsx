@@ -4,12 +4,12 @@ import styles from './Login.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import Input from '../../components/Input/Input';
 import PasswordInput from '../../components/InputPassword/InputPassword';
-import { authApi } from '../../api/authApi';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
-    
+    const { login } = useAuth();
     
     const message = location.state?.message || '';
     
@@ -52,7 +52,6 @@ export default function Login() {
             setErrors(prev => ({ ...prev, [name]: '', form: '' }));
         }
         
-        // Скрываем сообщение об успехе при начале ввода
         if (showSuccessMessage) {
             setShowSuccessMessage(false);
         }
@@ -103,39 +102,24 @@ export default function Login() {
         try {
             console.log('Отправка данных для входа:', {
                 identifier: formData.identifier,
-                // Не логируем пароль в консоль!
-            });
-            
-            // Проверяем, является ли ввод email'ом
-            const isEmail = formData.identifier.includes('@');
-            
-            // Отправляем данные на бэкенд
-            const loginResponse = await authApi.login({
-                identifier: formData.identifier, 
                 password: formData.password
             });
             
-            console.log('Успешный вход:', loginResponse);
+            // Используем метод login из AuthContext
+            const result = await login({
+                identifier: formData.identifier,
+                password: formData.password
+            });
             
-            // Сохраняем токены в localStorage
-            if (loginResponse.accessToken && loginResponse.refreshToken) {
-                localStorage.setItem('accessToken', loginResponse.accessToken);
-                localStorage.setItem('refreshToken', loginResponse.refreshToken);
-                
-                // Сохраняем информацию о пользователе
-                if (loginResponse.user) {
-                    localStorage.setItem('user', JSON.stringify(loginResponse.user));
-                }
-                
-                // Также сохраняем expiration time если есть
-                if (loginResponse.expiresIn) {
-                    localStorage.setItem('tokenExpiry', 
-                        (Date.now() + loginResponse.expiresIn).toString());
-                }
+            console.log('Результат входа:', result);
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Ошибка входа');
             }
             
+            console.log('Успешный вход, пользователь установлен в AuthContext');
+            
             // Перенаправляем на главную страницу или профиль
-            // Можно проверить, откуда пришел пользователь (из защищенного маршрута)
             const from = location.state?.from?.pathname || '/me';
             navigate(from, { replace: true });
             
@@ -173,28 +157,17 @@ export default function Login() {
         }
     };
 
-    // Функция для быстрого тестирования с тестовыми данными
-    const fillTestCredentials = () => {
-        setFormData({
-            identifier: 'testuser',
-            password: 'password123'
-        });
-        setErrors({ identifier: '', password: '', form: '' });
-    };
-
     return (
         <>
             <div className={styles.form}>
                 <span className={styles.text}>Вход</span>
 
-                {/* Сообщение об успешной регистрации */}
                 {showSuccessMessage && message && (
                     <div className={styles.successMessage}>
                         {message}
                     </div>
                 )}
 
-                {/* Общая ошибка формы */}
                 {errors.form && (
                     <div className={styles.formError}>
                         {errors.form}
@@ -223,7 +196,6 @@ export default function Login() {
                         disabled={isSubmitting}
                     />
 
-
                     <DefaultBtn 
                         text={isSubmitting ? "Вход..." : "Войти"}
                         className={styles.loginBtn} 
@@ -238,7 +210,6 @@ export default function Login() {
                         </Link>
                     </p>
 
-                    {/* Ссылка на восстановление пароля (если реализуете) */}
                     <p className={styles.footerText}>
                         <Link to="/forgot-password" className={styles.link}>
                             Забыли пароль?
