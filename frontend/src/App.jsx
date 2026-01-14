@@ -19,10 +19,6 @@ import Edit from './pages/Profile/Edit'
 
 import './App.css'
 
-// ПОДСКАЗКА как на данный момент попасть на стр. Me или Edit с нее:
-// иди на Register -> нажми внизу на "Есть аккаунт?" >Войти<
-// потом просто поменяешь на странице там есть коммент
-
 function App() {
   return (
     <Router>
