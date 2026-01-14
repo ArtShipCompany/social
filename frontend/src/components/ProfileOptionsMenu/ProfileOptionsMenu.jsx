@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import styles from './ProfileOptionsMenu.module.css';
 import privacyIcon from '../../assets/private-edit.svg';
 import deleteIcon from '../../assets/delete-icon.svg';
 import ellipsisIcon from '../../assets/ellipsis-icon.svg';
+import addIcon from '../../assets/add.svg';
 
 export default function ProfileOptionsMenu({ 
   isOpen, 
@@ -38,6 +40,14 @@ export default function ProfileOptionsMenu({
           >
             <img src={deleteIcon} alt="Удалить" className={styles.icon} />
           </button>
+
+          <Link to="/create">
+            <button
+              className={styles.menuItem}
+            >
+              <img src={addIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
+            </button>
+          </Link>
         </div>
       )}
     </div>

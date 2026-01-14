@@ -9,6 +9,7 @@ import Register from './pages/Register/Register'
 
 import ArtView from './pages/ArtView/ArtView'
 import EditArt from './pages/ArtView/EditArt'
+import CreateArt from './pages/ArtView/CreateArt';
 
 import Profile from './pages/Profile/Profile'
 import Me from './pages/Profile/Me'
@@ -39,6 +40,7 @@ function App() {
             <Route path="/art/:id" element={<ArtView />} />
             {/* EditArt - редактирование поста(лучше при рефакторинге переименовать PostView и EditPost) */}
             <Route path="/art/:id/edit" element={<EditArt />} />
+            <Route path='/create' element={<CreateArt />}/>
           </Routes>
         </div>
         <Footer />
