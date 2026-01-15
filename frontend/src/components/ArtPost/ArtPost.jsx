@@ -44,9 +44,24 @@ export default function ArtPost({
   
   const hasLoadedRef = useRef(false);
   const imgRef = useRef(null);
+
+  const getArtImageUrl = (imagePath) => {
+    if (!imagePath) return '/default-art.jpg';
+    
+    // Для Docker всегда используем прямой URL к бэкенду
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Если путь относительный, добавляем хост бэкенда
+    if (imagePath.startsWith('/')) {
+      return `http://localhost:8081${imagePath}`;
+    }
+    
+    return `http://localhost:8081/uploads/images/${imagePath}`;
+  };
+
   
   // Получаем URL изображения
-  const currentImageUrl = artApi.utils.getImageUrl(
+  const currentImageUrl = getArtImageUrl(
     mode === 'create' ? imagePreview : 
     uploadedImage ? URL.createObjectURL(uploadedImage) : 
     artImage

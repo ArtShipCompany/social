@@ -79,14 +79,7 @@ const ArtCard = memo(function ArtCard({
                     />
                 )}
                 
-                {/* LikeBtn внутри карточки но не в Link */}
-                <div className={styles.likeBtnContainer}>
-                    <LikeBtn 
-                        typeShow={typeShow} 
-                        amountLikes={likesCount}
-                        artId={id}
-                    />
-                </div>
+                
                 
                 {showDeleteIcon && (
                     <button 

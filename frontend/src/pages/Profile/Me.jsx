@@ -128,7 +128,7 @@ export default function Me() {
     // Функция для создания арта
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
-        navigate('/create-art');
+        navigate('/create');
     }, [navigate]);
 
     const openConfirmModal = useCallback((id) => {

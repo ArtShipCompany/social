@@ -83,22 +83,25 @@ const formatTags = (tags) => {
 const getImageUrl = (imageUrl) => {
   if (!imageUrl) return '/default-art.jpg';
   
-  // Если URL уже полный (http://...)
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
   
-  // Если URL начинается с /uploads/images/ или /api/files/images/
-  if (imageUrl.startsWith('/uploads/images/') || imageUrl.startsWith('/api/files/images/')) {
+  // ВСЕГДА используем /uploads/images/ вместо /api/files/images/
+  if (imageUrl.startsWith('/api/files/images/')) {
+    // Конвертируем в /uploads/images/
+    const filename = imageUrl.split('/').pop();
+    return `/uploads/images/${filename}`;
+  }
+  
+  if (imageUrl.startsWith('/uploads/images/')) {
     return imageUrl;
   }
   
-  // Если это относительный путь
   if (imageUrl.startsWith('/')) {
     return imageUrl;
   }
   
-  // Если это просто имя файла
   if (imageUrl && imageUrl.includes('.')) {
     return `/uploads/images/${imageUrl}`;
   }
