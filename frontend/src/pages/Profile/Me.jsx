@@ -335,7 +335,7 @@ export default function Me() {
                 ) : (
                     <div className={styles.emptyState}>
                         <p>У вас пока нет артов. Создайте первый!</p>
-                        <Link to="/create-art" className={styles.createArtButton}>
+                        <Link to="/create" className={styles.createArtButton}>
                             Создать арт
                         </Link>
                     </div>

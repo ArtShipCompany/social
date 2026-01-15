@@ -83,7 +83,7 @@ export default function EditArt() {
 
     return (
         <ArtPost 
-            edited={true}
+            mode='edit'
             artId={art.id}
             image={art.imageUrl}
             description={art.description}

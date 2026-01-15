@@ -38,7 +38,7 @@ function App() {
             <Route path="/art/:id" element={<ArtView />} />
             {/* EditArt - редактирование поста(лучше при рефакторинге переименовать PostView и EditPost) */}
             <Route path="/art/:id/edit" element={<EditArt />} />
-            <Route path="/create-art" element={<CreateArt />} />
+            <Route path="/create" element={<CreateArt />} />
           </Routes>
         </div>
         <Footer />
