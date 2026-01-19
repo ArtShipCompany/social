@@ -16,6 +16,7 @@ import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
+import com.example.artship.social.repository.LikeRepository;
 import com.example.artship.social.repository.UserRepository;
 
 @Service
@@ -26,17 +27,19 @@ public class ArtService {
     private final TagManagementService tagManagementService; 
     private final TagService tagService;
     private final LocalFileStorageService fileStorageService;
+    private final LikeRepository likeRepository;
 
     public ArtService(ArtRepository artRepository, 
                      UserRepository userRepository,
                      TagManagementService tagManagementService, 
                      TagService tagService,
-                     LocalFileStorageService fileStorageService) {
+                     LocalFileStorageService fileStorageService, LikeRepository likeRepository) {
         this.artRepository = artRepository;
         this.userRepository = userRepository;
         this.tagManagementService = tagManagementService; 
         this.tagService = tagService;
         this.fileStorageService = fileStorageService;
+        this.likeRepository = likeRepository;
     }
 
     public Art save(Art art) {
@@ -80,8 +83,13 @@ public class ArtService {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        // Используем TagManagementService вместо artTagService
+        // Сначала удаляем все связанные лайки
+        likeRepository.deleteByArtId(id);
+        
+        // Удаляем все связанные теги
         tagManagementService.removeAllTagsFromArt(id);
+        
+        // Теперь удаляем сам арт
         artRepository.delete(art);
     }
 

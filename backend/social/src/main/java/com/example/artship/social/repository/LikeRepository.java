@@ -31,6 +31,10 @@ public interface LikeRepository extends JpaRepository<Like, Like.LikeId> {
     
     @Query("SELECT COUNT(l) FROM Like l WHERE l.user.id = :userId")
     Long countByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM Like l WHERE l.art.id = :artId")
+    void deleteByArtId(@Param("artId") Long artId);
     
     boolean existsByUserIdAndArtId(Long userId, Long artId);
 }
