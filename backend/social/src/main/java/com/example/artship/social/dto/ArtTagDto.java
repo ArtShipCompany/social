@@ -17,7 +17,6 @@ public class ArtTagDto {
         this.artTitle = artTag.getArt() != null ? artTag.getArt().getTitle() : null;
         this.tagId = artTag.getTag() != null ? artTag.getTag().getId() : null;
         this.tagName = artTag.getTag() != null ? artTag.getTag().getName() : null;
-        // Если нужно добавить дату создания связи, можно добавить поле в ArtTag entity
     }
 
     public ArtTagDto(Long artId, String artTitle, Long tagId, String tagName) {
@@ -27,7 +26,6 @@ public class ArtTagDto {
         this.tagName = tagName;
     }
 
-    // Геттеры и сеттеры
     public Long getArtId() { return artId; }
     public void setArtId(Long artId) { this.artId = artId; }
 

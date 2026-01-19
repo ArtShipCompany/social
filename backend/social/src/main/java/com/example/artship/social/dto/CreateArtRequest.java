@@ -8,8 +8,7 @@ public class CreateArtRequest {
         private String projectDataUrl;
         private Boolean isPublic = true;
         private MultipartFile imageFile;
-        
-        // Getters and setters
+   
         public String getTitle() {
             return title;
         }

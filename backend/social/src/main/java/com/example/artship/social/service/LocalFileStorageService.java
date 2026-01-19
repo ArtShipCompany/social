@@ -41,12 +41,10 @@ public class LocalFileStorageService {
     
     public String uploadFile(MultipartFile file) {
         try {
-            // Генерируем уникальное имя файла
             String originalFileName = file.getOriginalFilename();
             String fileExtension = getFileExtension(originalFileName);
             String fileName = UUID.randomUUID() + fileExtension;
             
-            // Сохраняем файл
             Path targetLocation = this.uploadDir.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             
@@ -55,8 +53,7 @@ public class LocalFileStorageService {
             System.out.println("Saved to: " + targetLocation);
             System.out.println("File size: " + Files.size(targetLocation) + " bytes");
             System.out.println("File exists: " + Files.exists(targetLocation));
-            
-            // Возвращаем относительный путь для доступа через браузер
+
             return "/uploads/images/" + fileName;
             
         } catch (IOException ex) {
@@ -70,7 +67,6 @@ public class LocalFileStorageService {
         }
         
         try {
-            // Извлекаем имя файла из URL
             String fileName = extractFileNameFromUrl(fileUrl);
             if (fileName == null || fileName.isEmpty()) {
                 System.err.println("Cannot extract filename from URL: " + fileUrl);
@@ -107,7 +103,7 @@ public class LocalFileStorageService {
     
     private String getFileExtension(String fileName) {
         if (fileName == null || !fileName.contains(".")) {
-            return ".jpg"; // дефолтное расширение
+            return ".jpg"; 
         }
         return fileName.substring(fileName.lastIndexOf("."));
     }
@@ -116,11 +112,7 @@ public class LocalFileStorageService {
         if (fileUrl == null || fileUrl.isEmpty()) {
             return "";
         }
-        
-        // Извлекаем имя файла из разных форматов путей:
-        // /uploads/images/filename.jpg -> filename.jpg
-        // /uploads/filename.jpg -> filename.jpg
-        // /api/files/images/filename.jpg -> filename.jpg
+
         
         String[] parts = fileUrl.split("/");
         return parts[parts.length - 1];

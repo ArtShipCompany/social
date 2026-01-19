@@ -20,7 +20,6 @@ public class LikeDto {
         this.createdAt = like.getCreatedAt();
     }
 
-    // Геттеры и сеттеры
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 

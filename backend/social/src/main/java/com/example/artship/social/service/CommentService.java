@@ -37,34 +37,30 @@ public class CommentService {
     public CommentDto createComment(String text, Long artId, Long userId, Long parentCommentId) {
         log.info("Creating comment: text='{}', artId={}, userId={}, parentCommentId={}", 
                  text, artId, userId, parentCommentId);
-        
-        // Валидация
+
         if (text == null || text.trim().isEmpty()) {
             throw new IllegalArgumentException("Comment text cannot be empty");
         }
         
-        // Находим пользователя
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
-        // Находим арт
+   
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
-        
-        // Создаем комментарий
+
         Comment comment = new Comment();
         comment.setText(text.trim());
         comment.setUser(user);
         comment.setArt(art);
         comment.setCreatedAt(LocalDateTime.now());
         
-        // Обрабатываем родительский комментарий, если указан
         Comment parentComment = null;
         if (parentCommentId != null && parentCommentId > 0) {
             parentComment = commentRepository.findById(parentCommentId)
                     .orElseThrow(() -> new RuntimeException("Parent comment not found with id: " + parentCommentId));
             
-            // Дополнительная проверка: родительский комментарий должен принадлежать тому же арту
             if (!parentComment.getArt().getId().equals(artId)) {
                 throw new RuntimeException("Parent comment belongs to different art");
             }
@@ -72,11 +68,9 @@ public class CommentService {
             comment.setParentComment(parentComment);
         }
         
-        // Сохраняем
         Comment savedComment = commentRepository.save(comment);
         log.info("Comment created successfully with ID: {}", savedComment.getId());
         
-        // Используем новый конструктор с передачей parentCommentId
         return new CommentDto(savedComment, parentCommentId);
     }
     
@@ -173,7 +167,6 @@ public class CommentService {
         
         return commentRepository.findRepliesByParentCommentId(commentId).stream()
                 .map(reply -> {
-                    // Для ответов parentCommentId всегда равен commentId (ID родительского комментария)
                     return new CommentDto(reply, commentId);
                 })
                 .collect(Collectors.toList());

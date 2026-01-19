@@ -10,12 +10,10 @@ public class WebConfig implements WebMvcConfigurer {
     
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Настраиваем доступ к загруженным изображениям
         registry.addResourceHandler("/uploads/images/**")
                 .addResourceLocations("file:uploads/images/")
-                .setCachePeriod(3600); // Кэширование на 1 час
-        
-        // Также настраиваем путь /api/files/images/ для обратной совместимости
+                .setCachePeriod(3600);
+
         registry.addResourceHandler("/api/files/images/**")
                 .addResourceLocations("file:uploads/images/")
                 .setCachePeriod(3600);
@@ -26,7 +24,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000") // Адрес вашего фронтенда
+                .allowedOrigins("http://localhost:3000") 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)

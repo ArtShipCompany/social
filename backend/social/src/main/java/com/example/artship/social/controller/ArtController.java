@@ -20,16 +20,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.example.artship.social.dto.ArtDto;
+import com.example.artship.social.dto.CreateArtRequest;
+import com.example.artship.social.dto.UpdateArtRequest;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
-import com.example.artship.social.requests.ArtUpdateRequest;
 import com.example.artship.social.service.ArtService;
 import com.example.artship.social.service.LocalFileStorageService;
 import com.example.artship.social.service.UserService;
@@ -60,107 +58,11 @@ public class ArtController {
         this.fileStorageService = fileStorageService;
     }
 
-    // DTO для создания арта
-    public static class CreateArtRequest {
-        private String title;
-        private String description;
-        private String projectDataUrl;
-        private Boolean isPublic = true;
-        private MultipartFile imageFile;
-        
-        // Getters and setters
-        public String getTitle() {
-            return title;
-        }
-        
-        public void setTitle(String title) {
-            this.title = title;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
-        
-        public String getProjectDataUrl() {
-            return projectDataUrl;
-        }
-        
-        public void setProjectDataUrl(String projectDataUrl) {
-            this.projectDataUrl = projectDataUrl;
-        }
-        
-        public Boolean getIsPublic() {
-            return isPublic;
-        }
-        
-        public void setIsPublic(Boolean isPublic) {
-            this.isPublic = isPublic;
-        }
-        
-        public MultipartFile getImageFile() {
-            return imageFile;
-        }
-        
-        public void setImageFile(MultipartFile imageFile) {
-            this.imageFile = imageFile;
-        }
-    }
 
-    // DTO для обновления арта
-    public static class UpdateArtRequest {
-        private String title;
-        private String description;
-        private String projectDataUrl;
-        private Boolean isPublic;
-        private MultipartFile imageFile;
-        
-        // Getters and setters
-        public String getTitle() {
-            return title;
-        }
-        
-        public void setTitle(String title) {
-            this.title = title;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-        
-        public void setDescription(String description) {
-            this.description = description;
-        }
-        
-        public String getProjectDataUrl() {
-            return projectDataUrl;
-        }
-        
-        public void setProjectDataUrl(String projectDataUrl) {
-            this.projectDataUrl = projectDataUrl;
-        }
-        
-        public Boolean getIsPublic() {
-            return isPublic;
-        }
-        
-        public void setIsPublic(Boolean isPublic) {
-            this.isPublic = isPublic;
-        }
-        
-        public MultipartFile getImageFile() {
-            return imageFile;
-        }
-        
-        public void setImageFile(MultipartFile imageFile) {
-            this.imageFile = imageFile;
-        }
-    }
+    
 
-    // Создание арта с загрузкой изображения
+    
+
     @Operation(
         summary = "Создать новый арт",
         description = "Создает арт с загрузкой изображения. Формат запроса: multipart/form-data"
@@ -303,7 +205,7 @@ public class ArtController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             
-            // Находим пользователя в базе
+
             Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
             if (userOpt.isEmpty()) {
                 logger.error("ОШИБКА: Пользователь не найден в базе: {}", userDetails.getUsername());
@@ -311,15 +213,14 @@ public class ArtController {
             }
             
             User currentUser = userOpt.get();
-            
-            // Проверяем права
+
             if (!artService.isUserAuthorOfArt(id, currentUser.getId())) {
                 logger.error("ОШИБКА: Пользователь {} не является автором арта {}", 
                         currentUser.getId(), id);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            // Получаем текущий арт
+         
             Optional<Art> existingArtOpt = artService.getArtById(id);
             if (existingArtOpt.isEmpty()) {
                 logger.error("ОШИБКА: Арт с ID {} не найден", id);
@@ -329,7 +230,7 @@ public class ArtController {
             Art existingArt = existingArtOpt.get();
             logger.info("Найден арт: {}, Автор: {}", existingArt.getTitle(), existingArt.getAuthor().getId());
             
-            // Обновляем поля, если они переданы
+           
             if (request.getTitle() != null && !request.getTitle().trim().isEmpty()) {
                 existingArt.setTitle(request.getTitle().trim());
                 logger.info("Обновлен заголовок: {}", existingArt.getTitle());
@@ -350,30 +251,26 @@ public class ArtController {
                 logger.info("Обновлена публичность: {}", existingArt.getIsPublic());
             }
             
-            // Обновляем изображение, если загружено новое
+            // Обновление изображения, если загружено новое
             if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
                 logger.info("Загружено новое изображение: {}", 
                         request.getImageFile().getOriginalFilename());
                 
-                // Валидация формата
                 String contentType = request.getImageFile().getContentType();
                 if (!isValidImageFormat(contentType)) {
                     logger.error("ОШИБКА: Неподдерживаемый формат изображения: {}", contentType);
                     return ResponseEntity.badRequest().body(null);
                 }
-                
-                // Валидация размера файла
+
                 long fileSize = request.getImageFile().getSize();
                 if (fileSize > 10 * 1024 * 1024) {
                     logger.error("ОШИБКА: Размер файла превышает 10MB: {} байт", fileSize);
                     return ResponseEntity.badRequest().body(null);
                 }
                 
-                // Загружаем новое изображение
                 String newImageUrl = fileStorageService.uploadFile(request.getImageFile());
                 logger.info("Новое изображение загружено. URL: {}", newImageUrl);
                 
-                // Удаляем старое изображение
                 try {
                     fileStorageService.deleteFile(existingArt.getImageUrl());
                     logger.info("Старое изображение удалено: {}", existingArt.getImageUrl());
@@ -440,7 +337,6 @@ public class ArtController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // Находим пользователя в базе
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
             logger.error("ОШИБКА: Пользователь не найден в базе: {}", userDetails.getUsername());
@@ -454,8 +350,7 @@ public class ArtController {
                        currentUser.getId(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
-        // Можно добавить удаление файла изображения
+
         Optional<Art> art = artService.getArtById(id);
         if (art.isPresent()) {
             try {
@@ -471,8 +366,6 @@ public class ArtController {
         
         return ResponseEntity.noContent().build();
     }
-
-    // Получение публичных артов (пагинация)
     @Operation(summary = "Получить публичные арты с пагинацией")
     @GetMapping("/public")
     public ResponseEntity<Page<ArtDto>> getPublicArts(
@@ -514,8 +407,7 @@ public class ArtController {
             logger.error("ОШИБКА: userDetails == null. Возвращаем 401");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
-        // Находим пользователя в базе
+
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
             logger.error("ОШИБКА: Пользователь не найден в базе: {}", userDetails.getUsername());

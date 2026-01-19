@@ -61,8 +61,7 @@ public class UserController {
         }
         return ResponseEntity.notFound().build();
     }
-    
-    // Вариант 1: Multipart/form-data с файлом + JSON данными
+
     @PutMapping(value = "/me", consumes = {"multipart/form-data"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> updateCurrentUserWithAvatar(
@@ -81,31 +80,25 @@ public class UserController {
         
         User existingUser = userOptional.get();
         
-        // Обработка аватарки если загружен файл
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
-                // Проверяем тип файла
                 String contentType = avatarFile.getContentType();
                 if (contentType == null || !contentType.startsWith("image/")) {
                     return ResponseEntity.badRequest().body(null);
                 }
                 
-                // Сохраняем файл
                 String newAvatarUrl = fileStorageService.uploadFile(avatarFile);
                 System.out.println("Avatar uploaded in multipart PUT: " + newAvatarUrl);
                 
-                // Удаляем старую аватарку если она была
                 deleteOldAvatar(existingUser.getAvatarUrl());
                 
-                // Обновляем URL аватарки
                 existingUser.setAvatarUrl(newAvatarUrl);
             } catch (Exception e) {
                 System.err.println("Error uploading avatar in PUT: " + e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
             }
         }
-        
-        // Обновляем остальные поля
+
         if (displayName != null) {
             existingUser.setDisplayName(displayName);
         }
@@ -120,7 +113,6 @@ public class UserController {
         return ResponseEntity.ok(new UserDto(updatedUser));
     }
     
-    // Вариант 2: JSON запрос с URL аватарки
     @PutMapping(value = "/me", consumes = {"application/json"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> updateCurrentUser(@RequestBody UserUpdateRequest updateRequest) {
@@ -134,7 +126,6 @@ public class UserController {
         
         User existingUser = userOptional.get();
         
-        // Обновляем поля если они переданы
         if (updateRequest.getDisplayName() != null) {
             existingUser.setDisplayName(updateRequest.getDisplayName());
         }
@@ -142,17 +133,13 @@ public class UserController {
             existingUser.setBio(updateRequest.getBio());
         }
         if (updateRequest.getAvatarUrl() != null) {
-            // Если передан новый URL аватарки
             String newAvatarUrl = updateRequest.getAvatarUrl();
-            
-            // Если пустая строка - удаляем аватарку
+
             if (newAvatarUrl.isEmpty()) {
                 deleteOldAvatar(existingUser.getAvatarUrl());
                 existingUser.setAvatarUrl(null);
             } 
-            // Иначе обновляем URL
             else {
-                // Удаляем старую аватарку если она была
                 deleteOldAvatar(existingUser.getAvatarUrl());
                 existingUser.setAvatarUrl(newAvatarUrl);
             }
@@ -165,49 +152,6 @@ public class UserController {
         return ResponseEntity.ok(new UserDto(updatedUser));
     }
     
-    // Отдельный метод только для загрузки аватарки (опционально можно оставить)
-    @PostMapping("/me/avatar")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserDto> uploadAvatar(@RequestParam("file") MultipartFile file) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        
-        Optional<User> userOptional = userService.findByUsername(username);
-        if (!userOptional.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        User existingUser = userOptional.get();
-        
-        try {
-            if (file == null || file.isEmpty()) {
-                return ResponseEntity.badRequest().body(null);
-            }
-            
-            // Проверяем тип файла
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body(null);
-            }
-            
-            // Сохраняем файл
-            String newAvatarUrl = fileStorageService.uploadFile(file);
-            System.out.println("Avatar uploaded: " + newAvatarUrl);
-            
-            // Удаляем старую аватарку если она была
-            deleteOldAvatar(existingUser.getAvatarUrl());
-            
-            // Обновляем URL аватарки
-            existingUser.setAvatarUrl(newAvatarUrl);
-            
-            User updatedUser = userService.save(existingUser);
-            return ResponseEntity.ok(new UserDto(updatedUser));
-            
-        } catch (Exception e) {
-            System.err.println("Error uploading avatar: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
     
     // Метод для удаления аватарки
     @DeleteMapping("/me/avatar")

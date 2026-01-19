@@ -26,7 +26,7 @@ public class CommentDto {
         this.username = comment.getUser() != null ? comment.getUser().getUsername() : null;
         this.userAvatarUrl = comment.getUser() != null ? comment.getUser().getAvatarUrl() : null;
         
-        // Сначала проверяем parentComment объект, если его нет - используем ID из запроса
+
         this.parentCommentId = comment.getParentComment() != null 
             ? comment.getParentComment().getId() 
             : parentCommentIdFromRequest;
@@ -34,7 +34,6 @@ public class CommentDto {
         this.replies = null;
     }
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

@@ -86,17 +86,17 @@ public class AuthService {
             
             logger.debug("Пользователь найден в БД: {} (ID: {})", user.getUsername(), user.getId());
             
-            // Генерация access token
+           
             logger.info("Генерация access token...");
             String accessToken = jwtTokenUtil.generateAccessToken(userDetails);
             
-            // Получаем информацию о токене для дебага
+            
             Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(accessToken);
             Date expiration = jwtTokenUtil.getExpirationDateFromToken(accessToken);
             String jti = jwtTokenUtil.getJtiFromToken(accessToken);
             
             
-            // Вычисляем expiresIn (оставшееся время в миллисекундах)
+           
             long currentTime = System.currentTimeMillis();
             long expiresIn = expiration.getTime() - currentTime;
             
@@ -104,7 +104,7 @@ public class AuthService {
             logger.info("Expires in (remaining): {} ms ({} minutes)", 
                 expiresIn, expiresIn / 60000);
             
-            // Генерация refresh token
+            
             logger.info("Генерация refresh token...");
             String deviceInfo = extractDeviceInfo(request);
             String ipAddress = request.getRemoteAddr();
@@ -123,11 +123,11 @@ public class AuthService {
             logger.debug("Refresh token создан, ID: {}", refreshToken.getId());
             logger.debug("Refresh token hash: {}", refreshToken.getTokenHash().substring(0, 20) + "...");
             
-            // Создаем ответ с ПРАВИЛЬНЫМ expiresIn
+            
             AuthResponse response = new AuthResponse(
                 accessToken,
                 refreshToken.getTokenHash(),
-                expiresIn,  // ← ОСТАВШЕЕСЯ время жизни в миллисекундах!
+                expiresIn, 
                 new UserDto(user)
             );
             
@@ -163,7 +163,7 @@ public class AuthService {
         
         logger.debug("Refresh token получен, длина: {} символов", rawRefreshToken.length());
         
-        // Поиск refresh token в БД
+        
         RefreshToken refreshToken = refreshTokenService.findByToken(rawRefreshToken)
                 .orElseThrow(() -> {
                     logger.error("Refresh token не найден или невалиден");
@@ -173,26 +173,26 @@ public class AuthService {
         logger.debug("Refresh token найден в БД, ID: {}, user ID: {}", 
             refreshToken.getId(), refreshToken.getUser().getId());
         
-        // Проверка валидности токена
+        
         if (!refreshToken.isValid()) {
             logger.error("Refresh token истек или отозван. Expiry: {}, Revoked: {}", 
                 refreshToken.getExpiryDate(), refreshToken.isRevoked());
             throw new RuntimeException("Refresh token is expired or revoked");
         }
         
-        // Отзыв старого refresh token
-        logger.debug("Отзыв старого refresh token...");
+        
+      
         refreshTokenService.revokeToken(rawRefreshToken);
         
         User user = refreshToken.getUser();
         logger.debug("Создание CustomUserDetails для пользователя: {}", user.getUsername());
         CustomUserDetails userDetails = new CustomUserDetails(user);
         
-        // Генерация нового access token
+       
         logger.info("Генерация нового access token...");
         String newAccessToken = jwtTokenUtil.generateAccessToken(userDetails);
         
-        // Получаем информацию о новом токене
+        
         Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(newAccessToken);
         Date expiration = jwtTokenUtil.getExpirationDateFromToken(newAccessToken);
         String jti = jwtTokenUtil.getJtiFromToken(newAccessToken);
@@ -202,14 +202,12 @@ public class AuthService {
         logger.info("New token issued at: {}", issuedAt);
         logger.info("New token expires at: {}", expiration);
         
-        // Вычисляем expiresIn для нового токена
         long currentTime = System.currentTimeMillis();
         long expiresIn = expiration.getTime() - currentTime;
         
         logger.info("Expires in (remaining): {} ms ({} minutes)", 
             expiresIn, expiresIn / 60000);
         
-        // Генерация нового refresh token
         logger.info("Генерация нового refresh token...");
         String deviceInfo = extractDeviceInfo(request);
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(
@@ -221,13 +219,13 @@ public class AuthService {
         
         logger.debug("Новый refresh token создан, ID: {}", newRefreshToken.getId());
         
-        logger.info("✅ Токены успешно обновлены для пользователя: {}", user.getUsername());
+        logger.info("Токены успешно обновлены для пользователя: {}", user.getUsername());
         logger.info("Response time: {}", new Date());
         
         return new AuthResponse(
             newAccessToken,
             newRefreshToken.getTokenHash(),
-            expiresIn,  // ← ОСТАВШЕЕСЯ время жизни!
+            expiresIn,  
             new UserDto(user)
         );
     }
@@ -267,7 +265,7 @@ public class AuthService {
         logger.info("Имя пользователя: {}, Email: {}", 
             authRequest.getUsername(), authRequest.getEmail());
         
-        // Валидация входных данных
+
         if (authRequest.getUsername() == null || authRequest.getUsername().trim().isEmpty()) {
             logger.error("Имя пользователя не может быть пустым");
             throw new RuntimeException("Username cannot be empty");
@@ -287,53 +285,47 @@ public class AuthService {
         String email = authRequest.getEmail().trim();
         String password = authRequest.getPassword();
         
-        // Проверка существования пользователя по username
+      
         if (userRepository.existsByUsername(username)) {
-            logger.error("❌ Имя пользователя '{}' уже существует", username);
+            logger.error("Имя пользователя '{}' уже существует", username);
             throw new RuntimeException("Username already exists");
         }
         
-        // Проверка существования пользователя по email
+
         if (userRepository.existsByEmail(email)) {
-            logger.error("❌ Email '{}' уже существует", email);
+            logger.error("Email '{}' уже существует", email);
             throw new RuntimeException("Email already exists");
         }
-        
-        // Логируем информацию о пароле
+
         logger.debug("Пароль при регистрации, длина: {} символов, {} байт (UTF-8)", 
             password.length(), password.getBytes(StandardCharsets.UTF_8).length);
         
-        // BCrypt автоматически обрежет пароль если он длиннее 72 символов
+
         if (password.length() > 72) {
             logger.warn("⚠️ Пароль длиннее 72 символов, будет обрезан BCrypt");
         }
         
-        // Создание нового пользователя с ОТДЕЛЬНЫМ email
+
         logger.debug("Создание объекта User...");
         User user = new User();
         user.setUsername(username);
-        user.setEmail(email); // ← ИСПРАВЛЕНИЕ: используем email из запроса, а не username
-        user.setDisplayName(username); // Можно использовать username как displayName по умолчанию
+        user.setEmail(email); 
+        user.setDisplayName(username); 
         
-        // Хеширование пароля с помощью BCrypt
-        logger.debug("Хеширование пароля с помощью BCrypt...");
+
         String hashedPassword = passwordEncoder.encode(password);
         logger.debug("Хешированный пароль, длина: {} символов", hashedPassword.length());
-        logger.debug("Начало хеша: {}", 
-            hashedPassword.length() > 20 ? hashedPassword.substring(0, 20) + "..." : hashedPassword);
+
         
-        // Проверяем формат BCrypt
         if (!hashedPassword.startsWith("$2")) {
-            logger.warn("⚠️ Хеш не имеет формат BCrypt! Проверьте PasswordEncoder");
+            logger.warn("Хеш не имеет формат BCrypt! Проверьте PasswordEncoder");
         }
         
         user.setPasswordHash(hashedPassword);
         
-        // Сохранение пользователя
         logger.debug("Сохранение пользователя в БД...");
         User savedUser = userRepository.save(user);
-        
-        logger.info("=== ✅ РЕГИСТРАЦИЯ УСПЕШНА ===");
+ 
         logger.info("Пользователь '{}' зарегистрирован с ID: {} и email: {}", 
             savedUser.getUsername(), savedUser.getId(), savedUser.getEmail());
         
@@ -341,7 +333,6 @@ public class AuthService {
     }
     
     
-    // Метод для проверки пользователя по username или email
     public Optional<User> findByUsernameOrEmail(String identifier) {
         logger.debug("Поиск пользователя по identifier: {}", identifier);
         return userRepository.findByUsername(identifier)
@@ -351,7 +342,7 @@ public class AuthService {
                 });
     }
     
-    // Метод для изменения пароля
+
     @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         logger.info("Смена пароля для пользователя: {}", username);
@@ -363,24 +354,21 @@ public class AuthService {
                 });
         
         logger.debug("Проверка старого пароля...");
-        // Проверка старого пароля
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
             logger.error("Старый пароль неверный для пользователя: {}", username);
             throw new RuntimeException("Invalid old password");
         }
         
         logger.debug("Старый пароль верный. Хеширование нового пароля...");
-        // Установка нового пароля
         if (newPassword.length() > 72) {
             logger.warn("Новый пароль длиннее 72 символов, будет обрезан");
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         
         userRepository.save(user);
-        logger.info("✅ Пароль успешно изменен для пользователя: {}", username);
+        logger.info("Пароль успешно изменен для пользователя: {}", username);
     }
     
-    // Метод для проверки пароля (для отладки)
     public boolean checkPassword(String username, String password) {
         logger.debug("Проверка пароля для пользователя: {}", username);
         
@@ -401,7 +389,7 @@ public class AuthService {
         return matches;
     }
     
-    // Метод для получения информации о пользователе (для отладки)
+    // Метод для получения информации о пользователе
     public void logUserPasswordInfo(String username) {
         try {
             User user = userRepository.findByUsername(username)
@@ -431,7 +419,7 @@ public class AuthService {
         }
     }
     
-    // Метод для проверки возможности аутентификации (для тестов)
+    // Метод для проверки возможности аутентификации 
     public boolean canAuthenticate(String username, String password) {
         try {
             logger.debug("Проверка возможности аутентификации для пользователя: {}", username);
@@ -471,25 +459,4 @@ public class AuthService {
         return Optional.empty();
     }
     
-    // Метод для принудительной аутентификации (для тестов)
-    @Transactional
-    public void forceAuthenticate(String username, String password) {
-        logger.info("Принудительная аутентификация пользователя: {}", username);
-        
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Проверяем пароль
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new RuntimeException("Invalid password");
-        }
-        
-        CustomUserDetails userDetails = new CustomUserDetails(user);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-            userDetails, null, userDetails.getAuthorities()
-        );
-        
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        logger.info("✅ Пользователь {} принудительно аутентифицирован", username);
-    }
 }

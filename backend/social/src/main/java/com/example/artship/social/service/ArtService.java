@@ -77,19 +77,17 @@ public class ArtService {
         Art art = artRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
         
-        // Удаляем файл изображения перед удалением арта
+        
         String imageUrl = art.getImageUrl();
         if (imageUrl != null && imageUrl.startsWith("/api/files/images/")) {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        // Сначала удаляем все связанные лайки
+        
         likeRepository.deleteByArtId(id);
         
-        // Удаляем все связанные теги
         tagManagementService.removeAllTagsFromArt(id);
         
-        // Теперь удаляем сам арт
         artRepository.delete(art);
     }
 
@@ -181,7 +179,7 @@ public class ArtService {
                 .map(this::convertToDto);
     }
 
-    // Методы для работы с тегами (используют TagManagementService)
+    // Методы для работы с тегами 
     public ArtDto addTagsToArt(Long artId, List<String> tagNames) {
         tagManagementService.addTagsToArt(artId, tagNames);
         return getArtDtoById(artId)
@@ -208,7 +206,7 @@ public class ArtService {
                 .collect(Collectors.toList());
     }
 
-    // Конвертация Art в ArtDto с тегами
+    
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
         if (art == null) return null;
@@ -223,7 +221,7 @@ public class ArtService {
         artDto.setCreatedAt(art.getCreatedAt());
         artDto.setUpdatedAt(art.getUpdatedAt());
         
-        // Автор
+
         if (art.getAuthor() != null) {
             UserDto authorDto = new UserDto();
             authorDto.setId(art.getAuthor().getId());
@@ -233,7 +231,7 @@ public class ArtService {
             artDto.setAuthor(authorDto);
         }
         
-        // Теги (получаем через TagManagementService)
+  
         List<TagDto> tags = tagManagementService.getTagsByArtId(art.getId());
         artDto.setTags(tags);
         

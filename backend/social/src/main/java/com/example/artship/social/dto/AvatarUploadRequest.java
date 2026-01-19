@@ -3,8 +3,7 @@ package com.example.artship.social.dto;
 
 public class AvatarUploadRequest {
     private String avatarUrl;
-    
-    // Для загрузки через multipart
+
     public AvatarUploadRequest() {}
     
     public AvatarUploadRequest(String avatarUrl) {

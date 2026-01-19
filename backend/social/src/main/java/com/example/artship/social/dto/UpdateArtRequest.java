@@ -9,7 +9,6 @@ public class UpdateArtRequest {
         private Boolean isPublic;
         private MultipartFile imageFile;
         
-        // Getters and setters
         public String getTitle() {
             return title;
         }

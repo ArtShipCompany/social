@@ -8,7 +8,7 @@ public class ArtUpdateRequest {
     private String projectDataUrl;
     private Boolean isPublic;
     
-    // Конструкторы
+    
     public ArtUpdateRequest() {}
     
     // Геттеры и сеттеры

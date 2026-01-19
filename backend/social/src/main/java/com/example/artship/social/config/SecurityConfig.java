@@ -37,7 +37,6 @@ public class SecurityConfig {
     
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     
-    // Используйте конструктор вместо @Autowired
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -92,7 +91,6 @@ public class SecurityConfig {
             )
             
             .authorizeHttpRequests(auth -> auth
-                // OPTIONS запросы для CORS (ВАЖНО!)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 
                 // Swagger UI и документация
@@ -135,12 +133,10 @@ public class SecurityConfig {
                     "/api/files/images/**"    // Изображения 
                 ).permitAll()
                 
-                // Все остальные запросы требуют аутентификации
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             
-            // Обработка ошибок аутентификации
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(401);
@@ -160,7 +156,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5173",     // React/Vue dev server
-            "http://localhost:8081",     // Ваш Spring Boot
+            "http://localhost:8081",     // Spring Boot
             "http://localhost:8080",     // Другой порт
             "http://127.0.0.1:3000",     // Альтернативный localhost
             "http://127.0.0.1:8081"      // Альтернативный localhost

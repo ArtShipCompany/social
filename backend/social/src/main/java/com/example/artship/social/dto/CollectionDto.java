@@ -31,11 +31,11 @@ public class CollectionDto {
         this.userId = collection.getUser() != null ? collection.getUser().getId() : null;
         this.username = collection.getUser() != null ? collection.getUser().getUsername() : null;
         
-        // Получаем коллекцию артов
+
         List<CollectionArt> collectionArts = collection.getCollectionArts();
         if (collectionArts != null && !collectionArts.isEmpty()) {
             this.artCount = collectionArts.size();
-            // Преобразуем в ArtDto
+
             this.arts = collectionArts.stream()
                     .map(CollectionArt::getArt)
                     .filter(art -> art != null)
@@ -43,11 +43,11 @@ public class CollectionDto {
                     .collect(Collectors.toList());
         } else {
             this.artCount = 0;
-            this.arts = Collections.emptyList(); // Пустой список вместо null
+            this.arts = Collections.emptyList();
         }
     }
 
-    // Геттеры и сеттеры
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

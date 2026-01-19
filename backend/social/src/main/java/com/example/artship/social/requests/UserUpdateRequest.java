@@ -14,7 +14,6 @@ public class UserUpdateRequest {
     
     private Boolean isPublic;
     
-    // Конструкторы, геттеры и сеттеры
     public UserUpdateRequest() {}
     
     public String getDisplayName() {
