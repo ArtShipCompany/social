@@ -179,3 +179,30 @@
     column-gap: 20px;
     max-width: 100%;
 }
+
+.emptyState{
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color);
+    align-items: center;
+    padding-block: 20px;
+    gap: 10px;
+}
+
+.createButton {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    background-color: #dbefff;
+    color: var(--text-color);
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+.createButton:hover {
+    background-color: #b8dfff;
+    transform: translateY(1px);
+}

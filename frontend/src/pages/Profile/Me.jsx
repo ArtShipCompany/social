@@ -7,6 +7,7 @@ import { artApi } from '../../api/artApi';
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg';
+import createIcon from '../../assets/create-icon.svg'
 import artsIcon from '../../assets/arts-icon.svg';
 import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
@@ -313,13 +314,13 @@ export default function Me() {
                 </div>
             </div>
 
-            <div className={styles.feed}>
-                {validArts.length > 0 ? (
-                    validArts.map(art => {
-                        const imagePath = art.image || art.imageUrl;
-                        const imageUrl = getImageUrl(imagePath);
-                        
-                        return (
+            {validArts.length > 0 ? (
+                validArts.map(art => {
+                    const imagePath = art.image || art.imageUrl;
+                    const imageUrl = getImageUrl(imagePath);
+                    
+                    return (
+                        <div className={styles.feed}>
                             <ArtCard 
                                 key={art.id} 
                                 id={art.id} 
@@ -333,17 +334,22 @@ export default function Me() {
                                 likesCount={art.likesCount || 0}
                                 isDeleting={deletingArtId === art.id}
                             />
-                        );
-                    })
-                ) : (
-                    <div className={styles.emptyState}>
-                        <p>У вас пока нет артов. Создайте первый!</p>
-                        <Link to="/create" className={styles.createArtButton}>
-                            Создать арт
-                        </Link>
-                    </div>
-                )}
-            </div>
+                        </div>
+                    );
+                })
+            ) : (
+                <div className={styles.emptyState}>
+                    <span>У вас пока нет артов. Создайте первый!</span>
+                    <button
+                        className={styles.createButton}
+                        onClick={handleCreateClick} 
+                    >
+                        <img src={createIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
+                        Создать
+                    </button>
+                </div>
+            )}
+
 
             <ConfirmModal
                 isOpen={showConfirmModal}
