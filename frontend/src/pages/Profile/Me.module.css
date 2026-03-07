@@ -22,37 +22,11 @@
     border-radius: 50%;
 }
 
-.nickname {
-    color: var(--text-color);
-    font-weight: 600;
-}
-
-.contentWrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    z-index: 1;
-    margin-top: 50px;
-}
-
-.headBg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--input-bg-color);
-    border-radius: 30px;
-    z-index: -1;
-}
-
-.contentWrapper {
-    padding-block: 75px 10px;
-}
-
 .edit {
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    right: 25px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -82,6 +56,40 @@
 
 .edit:hover {
     transform: translateY(1px);
+}
+
+.nameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-color);
+    margin-top: -5px;
+}
+
+.displayName {
+    font-weight: 600;
+}
+
+.contentWrapper {
+    position: relative;
+    display: flex;
+    padding-block: 60px 10px;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    z-index: 1;
+    margin-top: 50px;
+}
+
+.headBg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--input-bg-color);
+    border-radius: 30px;
+    z-index: -1;
 }
 
 .headSFooter {
@@ -153,7 +161,7 @@
 .bio {
     display: inline-block;
     text-align: center;
-    max-width: 200px;
+    max-width: 300px;
     background-color: #dbefff;
     padding: 10px 20px;
     border-radius: 30px;

@@ -267,19 +267,22 @@ export default function Me() {
                             e.target.src = PFP;
                         }}
                     />
-                    <div className={styles.nameContainer}>
-                        <span className={styles.displayName}>@{displayNameToShow}</span>
-                        <span className={styles.nickname}>({currentUser.username || 'user'})</span>
-                    </div>
                 </div>
+
+                <Link to="/edit" className={styles.edit}>
+                    <img src={editIcon} alt="Редактировать профиль" />
+                    <span>Редактировать</span>
+                </Link>
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.headBg}></div>
 
-                    <Link to="/edit" className={styles.edit}>
-                        <img src={editIcon} alt="Редактировать профиль" />
-                        <span>Редактировать</span>
-                    </Link>
+                    <div className={styles.nameContainer}>
+                        <span className={styles.displayName}>{displayNameToShow}</span>
+                        <span className={styles.nickname}>@{currentUser.username || 'user'}</span>
+                    </div>
+
+                    
 
                     <div className={styles.headSFooter}>
                         <div className={styles.stats}>
