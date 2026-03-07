@@ -13,8 +13,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitializing, setIsInitializing] = useState(true);
     const [isAuthChecked, setIsAuthChecked] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         const loadUser = () => {
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }) => {
                 console.error('❌ Error loading user:', error);
                 setUser(null);
             } finally {
-                setIsLoading(false);
+                setIsInitializing(false);
                 setIsAuthChecked(true);
                 console.log('🏁 AuthProvider: initialization complete');
             }
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
-            setIsLoading(true);
+            setIsProcessing(true);
             const response = await authApi.login(credentials);
             
             // Получаем пользователя после успешного логина
@@ -83,18 +84,19 @@ export const AuthProvider = ({ children }) => {
             console.error('❌ Login error:', error);
             return { success: false, error: error.message };
         } finally {
-            setIsLoading(false);
+            setIsProcessing(false);
         }
     };
 
     const logout = async () => {
         try {
+            setIsProcessing(true);
             await authApi.logout();
         } catch (error) {
             console.error('❌ Logout error:', error);
         } finally {
             setUser(null);
-            setIsLoading(false);
+            setIsProcessing(false);
             console.log('✅ User logged out');
         }
     };
@@ -130,7 +132,8 @@ export const AuthProvider = ({ children }) => {
     // Добавьте refreshUser в value:
     const value = {
         user,
-        isLoading,
+        isLoading: isInitializing,
+        isProcessing,
         isAuthChecked,
         isAuthenticated: !!user && isAuthenticated(),
         login,
@@ -143,7 +146,7 @@ export const AuthProvider = ({ children }) => {
     console.log('AuthContext value:', {
         user: user?.username,
         isAuthenticated: value.isAuthenticated,
-        isLoading
+        // isLoading
     });
 
     return (

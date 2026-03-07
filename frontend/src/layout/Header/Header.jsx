@@ -4,7 +4,7 @@ import styles from './Header.module.css';
 import { userApi } from '../../api/userApi';
 
 function Header() {
-    const { user, isAuthenticated, logout, isLoading, isAuthChecked } = useAuth();
+    const { user, isAuthenticated, logout, isLoading, isProcessing, isAuthChecked } = useAuth();
     const location = useLocation();
 
     // Функция для получения URL аватарки
@@ -49,8 +49,12 @@ function Header() {
                 ) : (
                     <>
                         {location.pathname === '/me' ? (
-                            <button onClick={handleLogout} className={styles.cover}>
-                                Выйти
+                            <button 
+                                onClick={handleLogout} 
+                                className={styles.cover}
+                                disabled={isProcessing}  // ✅ Блокируем кнопку во время logout
+                            >
+                                {isProcessing ? 'Выход...' : 'Выйти'}
                             </button>
                         ) : (
                             <Link to="/me" className={styles.avatarLink}>
