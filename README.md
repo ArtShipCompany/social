@@ -12,7 +12,10 @@ npm install
 npm run dev
 ```
 
-# Requirements
+## Setup Docker
+```bash
+docker-compose up -d
+```
 
 ### Backend
 - Java 17

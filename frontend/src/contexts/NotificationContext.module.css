@@ -1,0 +1,105 @@
+.notificationsContainer {
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    width: calc(100% - 40px);
+    pointer-events: none;
+}
+
+.notification {
+    padding: 14px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+    pointer-events: all;
+    backdrop-filter: blur(10px);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification.error {
+    background: rgba(248, 125, 124, 0.95);
+    color: #fff;
+    border-left: 4px solid #dc3545;
+}
+
+.notification.success {
+    background: rgba(76, 175, 80, 0.95);
+    color: #fff;
+    border-left: 4px solid #4caf50;
+}
+
+.notification.warning {
+    background: rgba(255, 193, 7, 0.95);
+    color: #000;
+    border-left: 4px solid #ffc107;
+}
+
+.notification.info {
+    background: rgba(33, 150, 243, 0.95);
+    color: #fff;
+    border-left: 4px solid #2196f3;
+}
+
+.message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.closeBtn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: inherit;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.2s;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 768px) {
+    .notificationsContainer {
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: none;
+    }
+    
+    .notification {
+        border-left: none;
+        border-top: 4px solid;
+    }
+}

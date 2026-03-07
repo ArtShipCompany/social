@@ -5,11 +5,13 @@ import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import Input from '../../components/Input/Input';
 import PasswordInput from '../../components/InputPassword/InputPassword';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
 
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
+    const notification = useNotification();
     
     const message = location.state?.message || '';
     
@@ -105,7 +107,6 @@ export default function Login() {
                 password: formData.password
             });
             
-            // Используем метод login из AuthContext
             const result = await login({
                 identifier: formData.identifier,
                 password: formData.password
@@ -119,7 +120,6 @@ export default function Login() {
             
             console.log('Успешный вход, пользователь установлен в AuthContext');
             
-            // Перенаправляем на главную страницу или профиль
             const from = location.state?.from?.pathname || '/me';
             navigate(from, { replace: true });
             
@@ -127,15 +127,20 @@ export default function Login() {
             console.error('Ошибка входа:', error);
             
             let errorMessage = 'Ошибка при входе';
+
+            const cleanMessage = error.message
+                .replace(/Authentication failed:\s*/i, '')
+                .replace(/Error:\s*/i, '')
+                .trim();
             
             if (error.message.includes('401') || 
-                error.message.toLowerCase().includes('invalid credentials') ||
-                error.message.toLowerCase().includes('неверный') ||
-                error.message.toLowerCase().includes('неправильный')) {
+                cleanMessage.toLowerCase().includes('invalid credentials') ||
+                cleanMessage.toLowerCase().includes('неверный') ||
+                cleanMessage.toLowerCase().includes('неправильный')) {
                 errorMessage = 'Неверный логин или пароль';
             } else if (error.message.includes('404') || 
-                       error.message.toLowerCase().includes('not found') ||
-                       error.message.toLowerCase().includes('не найден')) {
+                       cleanMessage.toLowerCase().includes('not found') ||
+                       cleanMessage.toLowerCase().includes('не найден')) {
                 errorMessage = 'Пользователь не найден';
             } else if (error.message.includes('400')) {
                 errorMessage = 'Некорректные данные';
@@ -143,14 +148,14 @@ export default function Login() {
                        error.message.includes('Failed to fetch')) {
                 errorMessage = 'Не удалось подключиться к серверу. Проверьте соединение';
             } else if (error.message.includes('403') || 
-                       error.message.toLowerCase().includes('locked') ||
-                       error.message.toLowerCase().includes('заблокирован')) {
+                       cleanMessage.toLowerCase().includes('locked') ||
+                       cleanMessage.toLowerCase().includes('заблокирован')) {
                 errorMessage = 'Аккаунт заблокирован';
             } else {
-                errorMessage = error.message || 'Неизвестная ошибка';
+                errorMessage = cleanMessage || 'Неизвестная ошибка';
             }
-            
-            setErrors(prev => ({ ...prev, form: errorMessage }));
+            notification.error(errorMessage, 3000);
+            // setErrors(prev => ({ ...prev, form: errorMessage }));
             
         } finally {
             setIsSubmitting(false);
@@ -168,11 +173,11 @@ export default function Login() {
                     </div>
                 )}
 
-                {errors.form && (
+                {/* {errors.form && (
                     <div className={styles.formError}>
                         {errors.form}
                     </div>
-                )}
+                )} */}
 
                 <form onSubmit={handleSubmit} className={styles.inputGroup}>
                     <Input
