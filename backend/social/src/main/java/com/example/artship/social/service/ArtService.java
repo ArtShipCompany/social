@@ -16,6 +16,7 @@ import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
+import com.example.artship.social.repository.LikeRepository;
 import com.example.artship.social.repository.UserRepository;
 
 @Service
@@ -23,20 +24,26 @@ import com.example.artship.social.repository.UserRepository;
 public class ArtService {
     private final ArtRepository artRepository;
     private final UserRepository userRepository;
-    private final TagManagementService tagManagementService; // Вместо ArtTagService
+    private final TagManagementService tagManagementService; 
     private final TagService tagService;
-    private final FileStorageService fileStorageService;
+    private final LocalFileStorageService fileStorageService;
+    private final LikeRepository likeRepository;
 
     public ArtService(ArtRepository artRepository, 
                      UserRepository userRepository,
-                     TagManagementService tagManagementService, // Изменено
+                     TagManagementService tagManagementService, 
                      TagService tagService,
-                     FileStorageService fileStorageService) {
+                     LocalFileStorageService fileStorageService, LikeRepository likeRepository) {
         this.artRepository = artRepository;
         this.userRepository = userRepository;
-        this.tagManagementService = tagManagementService; // Изменено
+        this.tagManagementService = tagManagementService; 
         this.tagService = tagService;
         this.fileStorageService = fileStorageService;
+        this.likeRepository = likeRepository;
+    }
+
+    public Art save(Art art) {
+        return artRepository.save(art);
     }
 
     public ArtDto createArt(Art art, Long userId) { 
@@ -70,14 +77,17 @@ public class ArtService {
         Art art = artRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
         
-        // Удаляем файл изображения перед удалением арта
+        
         String imageUrl = art.getImageUrl();
         if (imageUrl != null && imageUrl.startsWith("/api/files/images/")) {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        // Используем TagManagementService вместо artTagService
+        
+        likeRepository.deleteByArtId(id);
+        
         tagManagementService.removeAllTagsFromArt(id);
+        
         artRepository.delete(art);
     }
 
@@ -169,7 +179,7 @@ public class ArtService {
                 .map(this::convertToDto);
     }
 
-    // Методы для работы с тегами (используют TagManagementService)
+    // Методы для работы с тегами 
     public ArtDto addTagsToArt(Long artId, List<String> tagNames) {
         tagManagementService.addTagsToArt(artId, tagNames);
         return getArtDtoById(artId)
@@ -196,7 +206,7 @@ public class ArtService {
                 .collect(Collectors.toList());
     }
 
-    // Конвертация Art в ArtDto с тегами
+    
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
         if (art == null) return null;
@@ -211,7 +221,7 @@ public class ArtService {
         artDto.setCreatedAt(art.getCreatedAt());
         artDto.setUpdatedAt(art.getUpdatedAt());
         
-        // Автор
+
         if (art.getAuthor() != null) {
             UserDto authorDto = new UserDto();
             authorDto.setId(art.getAuthor().getId());
@@ -221,7 +231,7 @@ public class ArtService {
             artDto.setAuthor(authorDto);
         }
         
-        // Теги (получаем через TagManagementService)
+  
         List<TagDto> tags = tagManagementService.getTagsByArtId(art.getId());
         artDto.setTags(tags);
         

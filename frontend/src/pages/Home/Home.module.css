@@ -75,3 +75,42 @@
   color: var(--text-color);
   padding: 40px 0;
 }
+
+.loading, .noResults {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+    grid-column: 1 / -1;
+}
+
+.loadingMore {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.searchInputWrapper {
+    position: relative;
+}
+
+.clearButton {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clearButton:hover {
+    color: #333;
+}

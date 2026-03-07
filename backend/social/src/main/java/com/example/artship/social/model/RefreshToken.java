@@ -49,7 +49,7 @@ public class RefreshToken {
         return !revoked && LocalDateTime.now().isBefore(expiryDate);
     }
     
-    // Getters and Setters
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTokenHash() { return tokenHash; }

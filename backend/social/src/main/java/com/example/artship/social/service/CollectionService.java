@@ -41,8 +41,7 @@ public class CollectionService {
         
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        
-        // Проверяем уникальность названия для пользователя
+
         if (collectionRepository.existsByUserIdAndTitle(userId, title)) {
             throw new RuntimeException("Collection with title '" + title + "' already exists for this user");
         }
@@ -78,10 +77,8 @@ public class CollectionService {
         
         return collectionRepository.findById(id)
                 .map(collection -> {
-                    // Получаем арты для этой коллекции
                     List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
-                    
-                    // Создаем DTO с артами
+
                     CollectionDto dto = new CollectionDto();
                     dto.setId(collection.getId());
                     dto.setTitle(collection.getTitle());
@@ -108,7 +105,6 @@ public class CollectionService {
                 .orElseThrow(() -> new RuntimeException("Collection not found with id: " + id));
         
         if (title != null && !title.equals(collection.getTitle())) {
-            // Проверяем уникальность нового названия
             if (collectionRepository.existsByUserIdAndTitle(collection.getUser().getId(), title)) {
                 throw new RuntimeException("Collection with title '" + title + "' already exists for this user");
             }
@@ -140,7 +136,6 @@ public class CollectionService {
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Collection not found with id: " + id));
         
-        // Удаляем все связи с артами
         collectionArtService.removeAllArtsFromCollection(id);
         collectionRepository.delete(collection);
         
@@ -219,7 +214,6 @@ public class CollectionService {
                 .orElse(false);
     }
     
-    // Конвертация в DTO БЕЗ артов (для списков)
     private CollectionDto convertToDtoWithoutArts(Collection collection) {
         CollectionDto dto = new CollectionDto();
         dto.setId(collection.getId());
@@ -242,11 +236,9 @@ public class CollectionService {
     // Конвертация в DTO С артами
     private CollectionDto convertToDtoWithArts(Collection collection) {
         log.debug("Converting collection {} to DTO with arts", collection.getId());
-        
-        // Получаем арты для этой коллекции
+
         List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
-        
-        // Создаем DTO с артами
+ 
         CollectionDto dto = new CollectionDto();
         dto.setId(collection.getId());
         dto.setTitle(collection.getTitle());

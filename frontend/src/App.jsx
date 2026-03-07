@@ -9,17 +9,15 @@ import Register from './pages/Register/Register'
 
 import ArtView from './pages/ArtView/ArtView'
 import EditArt from './pages/ArtView/EditArt'
-import CreateArt from './pages/ArtView/CreateArt';
+import CreateArt from './pages/ArtView/CreateArt'
 
 import Profile from './pages/Profile/Profile'
 import Me from './pages/Profile/Me'
 import Edit from './pages/Profile/Edit'
 
-import './App.css'
 
-// ПОДСКАЗКА как на данный момент попасть на стр. Me или Edit с нее:
-// иди на Register -> нажми внизу на "Есть аккаунт?" >Войти<
-// потом просто поменяешь на странице там есть коммент
+
+import './App.css'
 
 function App() {
   return (
@@ -40,7 +38,7 @@ function App() {
             <Route path="/art/:id" element={<ArtView />} />
             {/* EditArt - редактирование поста(лучше при рефакторинге переименовать PostView и EditPost) */}
             <Route path="/art/:id/edit" element={<EditArt />} />
-            <Route path='/create' element={<CreateArt />}/>
+            <Route path="/create" element={<CreateArt />} />
           </Routes>
         </div>
         <Footer />

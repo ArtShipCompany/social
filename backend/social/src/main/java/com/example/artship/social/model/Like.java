@@ -33,12 +33,11 @@ public class Like {
         createdAt = LocalDateTime.now();
     }
     
-    // Геттеры
+    
     public User getUser() { return user; }
     public Art getArt() { return art; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     
-    // Сеттеры
     public void setUser(User user) { this.user = user; }
     public void setArt(Art art) { this.art = art; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

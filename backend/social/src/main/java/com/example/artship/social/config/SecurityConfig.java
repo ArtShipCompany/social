@@ -1,18 +1,11 @@
 package com.example.artship.social.config;
 
-import com.example.artship.social.security.JwtAuthenticationFilter;
+import java.util.Arrays;
+import java.util.List;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.servers.Server;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -28,19 +21,25 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.example.artship.social.security.JwtAuthenticationFilter;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
     
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     
-    @Value("${cors.allowed-origins}")
-    private String[] allowedOrigins;
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
     
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -92,7 +91,9 @@ public class SecurityConfig {
             )
             
             .authorizeHttpRequests(auth -> auth
-                // Swagger UI и OpenAPI документация
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
+                // Swagger UI и документация
                 .requestMatchers(
                     "/",
                     "/index.html",
@@ -106,21 +107,46 @@ public class SecurityConfig {
                     "/configuration/ui",
                     "/configuration/security",
                     "/favicon.ico",
-                    "/error"
+                    "/error",
+                    "/uploads/**",
+                    "/uploads",
+                    "/api/files/images/**",
+                    "/static/**",
+                    "/api/arts/public",
+                    "/api/arts/{id}",
+                    "/api/arts/public/**",
+                    "/api/arts/tag/**",
+                    "/api/likes/art/**",
+                    "/api/art-tags/**",
+                    "/api/arts/authors/**"
                 ).permitAll()
+                
                 // Публичные API
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/api/users/register",
-                    "/api/users/public/**",
-                    "/api/test/**",
-                    "/api/arts/public/**",
-                    "/api/tags/public/**"
+                    "/api/auth/**",           // Аутентификация
+                    "/api/users/register",    // Регистрация
+                    "/api/users/public/**",   // Публичные данные пользователей
+                    "/api/test/**",           // Тестовые endpoints
+                    "/api/arts/public/**",    // Публичные арты
+                    "/api/arts/{id}/access",  // Проверка доступа к арту
+                    "/api/tags/public/**",    // Публичные теги
+                    "/api/files/images/**"    // Изображения 
                 ).permitAll()
-                // Все остальные запросы требуют аутентификации
+                
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write(
+                        "{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}"
+                    );
+                })
+            );
         
         return http.build();
     }
@@ -129,15 +155,32 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",     
-            "http://localhost:8081",     
-            "http://localhost:8080"       
+            "http://localhost:5173",     // React/Vue dev server
+            "http://localhost:8081",     // Spring Boot
+            "http://localhost:8080",     // Другой порт
+            "http://127.0.0.1:3000",     // Альтернативный localhost
+            "http://127.0.0.1:8081"      // Альтернативный localhost
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+        ));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "Cache-Control"
+        ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Disposition",
+            "Content-Type"
+        ));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -14,11 +14,11 @@ public class UserDto {
     private Boolean isPublic;
     private LocalDateTime createdAt;
     
-    // Конструктор по умолчанию (БЕЗ параметров)
+
     public UserDto() {
     }
     
-    // Конструктор из User entity
+
     public UserDto(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
@@ -30,7 +30,7 @@ public class UserDto {
         this.createdAt = user.getCreatedAt();
     }
     
-    // Конструктор копирования
+
     public UserDto(UserDto other) {
         this.id = other.id;
         this.username = other.username;
@@ -42,7 +42,7 @@ public class UserDto {
         this.createdAt = other.createdAt;
     }
 
-    // Геттеры
+
     public Long getId() { return id; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }

@@ -6,7 +6,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "follows")
-@IdClass(Follow.FollowId.class)  // Указываем класс для составного ключа
+@IdClass(Follow.FollowId.class)  
 public class Follow {
     
     @Id
@@ -69,10 +69,10 @@ public class Follow {
                '}';
     }
 
-    // ВАЖНО: Класс должен быть static и public
+
     public static class FollowId implements java.io.Serializable {
-        private Long follower;  // Должен совпадать с именем поля в Follow
-        private Long following; // Должен совпадать с именем поля в Follow
+        private Long follower;  
+        private Long following; 
         
         public FollowId() {}
         

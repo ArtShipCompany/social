@@ -21,7 +21,6 @@ public class ArtDto {
 
     public ArtDto() {}
 
-    // Конструктор из Entity (для внутреннего использования)
     public ArtDto(Art art) {
         this.id = art.getId();
         this.title = art.getTitle();
@@ -31,8 +30,7 @@ public class ArtDto {
         this.isPublic = art.getIsPublic() != null ? art.getIsPublic() : true;
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
-        
-        // Автор
+
         if (art.getAuthor() != null) {
             this.author = new UserDto();
             this.author.setId(art.getAuthor().getId());
@@ -41,10 +39,10 @@ public class ArtDto {
             this.author.setAvatarUrl(art.getAuthor().getAvatarUrl());
         }
         
-        this.tags = null; // Теги загружаются отдельно
+        this.tags = null; 
     }
 
-    // Конструктор из Entity с тегами
+
     public ArtDto(Art art, List<TagDto> tags) {
         this.id = art.getId();
         this.title = art.getTitle();
@@ -55,7 +53,6 @@ public class ArtDto {
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
         
-        // Автор
         if (art.getAuthor() != null) {
             this.author = new UserDto();
             this.author.setId(art.getAuthor().getId());
@@ -64,10 +61,9 @@ public class ArtDto {
             this.author.setAvatarUrl(art.getAuthor().getAvatarUrl());
         }
         
-        this.tags = tags; // Устанавливаем переданные теги
-    }
+        this.tags = tags;
+        }
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     

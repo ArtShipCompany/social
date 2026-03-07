@@ -6,7 +6,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "collection_arts")
-@IdClass(CollectionArt.CollectionArtId.class)  // Указываем класс составного ключа
+@IdClass(CollectionArt.CollectionArtId.class)  
 public class CollectionArt {
     
     @Id
@@ -22,7 +22,7 @@ public class CollectionArt {
     @Column(name = "saved_at")
     private LocalDateTime savedAt;
     
-    // Конструкторы
+    
     public CollectionArt() {}
     
     public CollectionArt(Collection collection, Art art) {
@@ -70,20 +70,19 @@ public class CollectionArt {
                '}';
     }
 
-    // ВАЖНО: Класс должен быть static и public
+
     public static class CollectionArtId implements java.io.Serializable {
-        private Long collection;  // Должен совпадать с именем поля в CollectionArt
-        private Long art;         // Должен совпадать с именем поля в CollectionArt
+        private Long collection;  
+        private Long art;         
         
-        // Конструкторы
+
         public CollectionArtId() {}
         
         public CollectionArtId(Long collection, Long art) {
             this.collection = collection;
             this.art = art;
         }
-        
-        // Геттеры и сеттеры
+
         public Long getCollection() { return collection; }
         public void setCollection(Long collection) { this.collection = collection; }
         

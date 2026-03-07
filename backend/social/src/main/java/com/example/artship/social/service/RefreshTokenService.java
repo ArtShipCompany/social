@@ -21,19 +21,16 @@ public class RefreshTokenService {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
     
-    // Убрали PasswordEncoder для BCrypt
     
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
-    
-    // Генерация случайного refresh token (безопасный)
+
     public String generateSecureRandomToken() {
-        byte[] randomBytes = new byte[64]; // 512 бит
+        byte[] randomBytes = new byte[64]; 
         secureRandom.nextBytes(randomBytes);
         return base64Encoder.encodeToString(randomBytes);
     }
-    
-    // Хеширование с помощью SHA-256 (без ограничения длины)
+
     public String hashWithSHA256(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -44,7 +41,7 @@ public class RefreshTokenService {
         }
     }
     
-    // Конвертация байтов в hex строку
+
     private String bytesToHex(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {
@@ -57,20 +54,15 @@ public class RefreshTokenService {
         return hexString.toString();
     }
     
-    // Создание нового refresh token
     public RefreshToken createRefreshToken(User user, String deviceInfo, String ipAddress, String userAgent) {
-        // Генерация случайного токена
         String rawToken = generateSecureRandomToken();
-        
-        // Хеширование токена с помощью SHA-256
         String tokenHash = hashWithSHA256(rawToken);
         
-        // Проверяем, нет ли такого хеша уже в базе (крайне маловероятно, но на всякий случай)
         if (refreshTokenRepository.existsByTokenHash(tokenHash)) {
             throw new RuntimeException("Token hash collision detected");
         }
         
-        // Создание объекта RefreshToken
+ 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setTokenHash(tokenHash);
         refreshToken.setUser(user);
@@ -84,11 +76,10 @@ public class RefreshTokenService {
         
         refreshTokenRepository.save(refreshToken);
         
-        // Временно сохраняем raw token для возврата клиенту
-        // ВАЖНО: raw token НЕ должен сохраняться в БД
+
         RefreshToken result = new RefreshToken();
         result.setId(refreshToken.getId());
-        result.setTokenHash(rawToken); // Возвращаем raw token клиенту
+        result.setTokenHash(rawToken); 
         result.setUser(refreshToken.getUser());
         result.setExpiryDate(refreshToken.getExpiryDate());
         result.setIssuedAt(refreshToken.getIssuedAt());
@@ -147,8 +138,7 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteExpiredTokens(LocalDateTime.now());
         logger.info("Expired refresh tokens cleaned up");
     }
-    
-    // Получение всех активных токенов пользователя
+
     public java.util.List<RefreshToken> getUserActiveTokens(Long userId) {
         return refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
     }
@@ -192,33 +182,16 @@ public class RefreshTokenService {
                 });
     }
     
-    // Получение информации о токене (для админки)
     public Optional<RefreshToken> getTokenInfo(String token) {
         String tokenHash = hashWithSHA256(token);
         return refreshTokenRepository.findByTokenHash(tokenHash);
     }
     
-    // Метод для тестирования хеширования
-    public void testHashing(String testInput) {
-        System.out.println("Testing SHA-256 hashing:");
-        System.out.println("Input: " + testInput);
-        System.out.println("Input length: " + testInput.length() + " characters");
-        System.out.println("Input bytes (UTF-8): " + testInput.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
-        
-        String hash = hashWithSHA256(testInput);
-        System.out.println("SHA-256 Hash: " + hash);
-        System.out.println("Hash length: " + hash.length() + " characters");
-        System.out.println("Hash (first 20 chars): " + hash.substring(0, Math.min(20, hash.length())));
-        
-        // Проверка совпадения
-        String hash2 = hashWithSHA256(testInput);
-        System.out.println("Hashes match: " + hash.equals(hash2));
-    }
     
-    // Логгер для отладки
+
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RefreshTokenService.class);
     
-    // Метод для логирования информации о токене
+
     public void logTokenInfo(String token) {
         String tokenHash = hashWithSHA256(token);
         logger.debug("Token info - Raw length: {}, Hash: {}...", 
