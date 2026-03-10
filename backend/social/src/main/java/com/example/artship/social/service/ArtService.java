@@ -196,7 +196,6 @@ public class ArtService {
     public List<TagDto> getArtTags(Long artId) {
         List<TagDto> tags = tagManagementService.getTagsByArtId(artId);
         
-        // Добавляем количество артов для каждого тега
         return tags.stream()
                 .map(tag -> {
                     Long artCount = tagService.getArtCountByTagId(tag.getId());

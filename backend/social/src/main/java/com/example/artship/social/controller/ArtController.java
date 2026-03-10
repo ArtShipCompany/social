@@ -6,28 +6,16 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.*;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.dto.CreateArtRequest;
 import com.example.artship.social.dto.UpdateArtRequest;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
+import com.example.artship.social.requests.PrivacyUpdateRequest;
 import com.example.artship.social.service.ArtService;
 import com.example.artship.social.service.LocalFileStorageService;
 import com.example.artship.social.service.UserService;
@@ -36,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -96,13 +85,11 @@ public class ArtController {
                    request.getImageFile() != null ? request.getImageFile().getOriginalFilename() : "null");
         
         try {
-            // Валидация обязательных полей
             if (userDetails == null) {
                 logger.error("ОШИБКА: userDetails == null. Возвращаем 401");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             
-            // Находим пользователя в базе
             Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
             if (userOpt.isEmpty()) {
                 logger.error("ОШИБКА: Пользователь не найден в базе: {}", userDetails.getUsername());
@@ -123,7 +110,6 @@ public class ArtController {
                 return ResponseEntity.badRequest().body(null);
             }
             
-            // Валидация формата изображения
             String contentType = request.getImageFile().getContentType();
             logger.info("Content-Type файла: {}", contentType);
             
@@ -132,7 +118,6 @@ public class ArtController {
                 return ResponseEntity.badRequest().body(null);
             }
             
-            // Валидация размера файла (максимум 10MB)
             long fileSize = request.getImageFile().getSize();
             logger.info("Размер файла: {} байт", fileSize);
             
@@ -141,7 +126,6 @@ public class ArtController {
                 return ResponseEntity.badRequest().body(null);
             }
             
-            // Загружаем изображение
             String imageUrl;
             try {
                 logger.info("Начинаю загрузку файла...");
@@ -152,12 +136,11 @@ public class ArtController {
                 return ResponseEntity.badRequest().body(null);
             }
             
-            // Создаем объект Art
             Art art = new Art();
             art.setTitle(request.getTitle().trim());
             art.setDescription(request.getDescription() != null ? 
                              request.getDescription().trim() : null);
-            art.setImageUrl(imageUrl); // Используем полученный URL
+            art.setImageUrl(imageUrl);
             art.setProjectDataUrl(request.getProjectDataUrl() != null ? 
                                 request.getProjectDataUrl().trim() : null);
             art.setIsPublic(request.getIsPublic() != null ? request.getIsPublic() : true);
@@ -176,7 +159,6 @@ public class ArtController {
         }
     }
 
-    // Обновление арта с возможностью загрузки нового изображения
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ArtDto> updateArt(
@@ -251,7 +233,6 @@ public class ArtController {
                 logger.info("Обновлена публичность: {}", existingArt.getIsPublic());
             }
             
-            // Обновление изображения, если загружено новое
             if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
                 logger.info("Загружено новое изображение: {}", 
                         request.getImageFile().getOriginalFilename());
@@ -293,8 +274,38 @@ public class ArtController {
         }
     }
 
+
+    @Operation(summary = "Изменение приватности арта")
+@ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Приватность арта успешно изменена",
+                content = @Content(schema = @Schema(implementation = ArtDto.class))),
+    @ApiResponse(responseCode = "404", description = "Арт не найден"),
+    @ApiResponse(responseCode = "403", description = "Нет прав на изменение этого арта")
+})
+@PatchMapping("/{id}/privacy")
+public ResponseEntity<ArtDto> updateArtPrivacy(
+        @PathVariable Long id,
+        @RequestBody PrivacyUpdateRequest privacyRequest,
+        @RequestParam Long userId) {
     
-    // Получение арта по ID
+    if (!artService.isUserAuthorOfArt(id, userId)) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+    
+
+    Art art = artService.getArtById(id)
+            .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
+    
+
+    art.setIsPublic(privacyRequest.isPublic());
+    art.setUpdatedAt(LocalDateTime.now());
+
+    Art updatedArt = artService.save(art);
+ 
+    return ResponseEntity.ok(artService.convertToDto(updatedArt));
+}
+
+    
     @Operation(summary = "Получить арт по ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Арт найден",
@@ -317,7 +328,6 @@ public class ArtController {
         }
     }
 
-    // Удаление арта
     @Operation(summary = "Удалить арт")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Арт успешно удален"),
@@ -391,7 +401,6 @@ public class ArtController {
         return ResponseEntity.ok(arts);
     }
 
-    // Лента пользователя (арты тех, на кого подписан)
     @Operation(summary = "Получить ленту пользователя")
     @GetMapping("/feed")
     public ResponseEntity<Page<ArtDto>> getUserFeed(
