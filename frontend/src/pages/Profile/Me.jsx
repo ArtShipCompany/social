@@ -40,22 +40,20 @@ export default function Me() {
     // Загрузка данных пользователя
     const loadUserData = useCallback(async () => {
         if (!isAuthenticated || !currentUser) {
-            return; // Не загружаем данные, если пользователь не авторизован
+            return;
         }
 
         try {
             setLoading(true);
             setError(null);
             
-            // Загружаем арты текущего пользователя
+            // GET ARTS BY AUTHOR
             try {
-                const artsData = await artApi.getArtsByAuthor(currentUser.id);
+                const artsData = await artApi.getMyArts();
                 
                 let formattedArts = [];
                 
-                if (artsData && artsData.content && Array.isArray(artsData.content)) {
-                    formattedArts = artsData.content;
-                } else if (artsData && Array.isArray(artsData)) {
+                if (Array.isArray(artsData)) {
                     formattedArts = artsData;
                 }
                 
@@ -66,7 +64,6 @@ export default function Me() {
                 setUserArts([]);
             }
             
-            // Загружаем статистику подписок
             try {
                 const [followers, following] = await Promise.all([
                     followApi.getFollowerCount(currentUser.id).catch(() => 0),
@@ -85,12 +82,10 @@ export default function Me() {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, isAuthenticated]); // Убрали navigate из зависимостей
+    }, [currentUser, isAuthenticated]);
 
     useEffect(() => {
-        // Проверяем аутентификацию перед загрузкой данных
         if (!isAuthenticated || !currentUser) {
-            // Используем setTimeout для предотвращения конфликта с AuthContext
             const timer = setTimeout(() => {
                 console.log('Перенаправление на /login из Me');
                 navigate('/login');
@@ -98,7 +93,6 @@ export default function Me() {
             return () => clearTimeout(timer);
         }
         
-        // Если пользователь авторизован, загружаем данные
         loadUserData();
     }, [isAuthenticated, currentUser, navigate, loadUserData]);
 
@@ -126,7 +120,6 @@ export default function Me() {
         setShowPrivacyIcons(false);
     }, []);
 
-    // Функция для создания арта
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
         navigate('/create');
@@ -143,26 +136,23 @@ export default function Me() {
         try {
             setDeletingArtId(modalArtId);
             
-            // Удаляем арт из базы данных
             await artApi.deleteArt(modalArtId);
             
-            // Обновляем состояние локально
             setUserArts(prevArts => prevArts.filter(art => art.id !== modalArtId));
             
-            // Закрываем модальное окно
             setShowConfirmModal(false);
             setModalArtId(null);
-            
-            // Показываем уведомление об успешном удалении
+
+            // needed to fix
             alert(`Арт успешно удалён!`);
             
-            // Если остался только один арт и он удаляется, сбрасываем режим удаления
             if (userArts.length <= 1) {
                 setShowDeleteIcons(false);
             }
             
         } catch (error) {
             console.error('Ошибка удаления арта:', error);
+            // needed to fix
             alert(`Ошибка удаления арта: ${error.message}`);
         } finally {
             setDeletingArtId(null);
@@ -174,52 +164,33 @@ export default function Me() {
         setModalArtId(null);
     }, []);
 
-    const handleLogout = useCallback(async () => {
-        try {
-            await logout();
-            // navigate не нужен здесь, так как AuthContext уже перенаправит
-        } catch (error) {
-            console.error('Ошибка выхода:', error);
-        }
-    }, [logout]);
-
     // Функция для изменения приватности арта
     const toggleArtPrivacy = useCallback(async (artId) => {
         try {
-            // Находим арт в массиве
             const artToUpdate = userArts.find(art => art.id === artId);
             if (!artToUpdate) return;
             
-            // Определяем новое значение приватности
-            const newIsPublic = !(artToUpdate.isPublic === true);
+            const newIsPublic = !(artToUpdate.isPublicFlag === true);
             
-            // Подготавливаем данные для обновления
-            const updateData = {
-                isPublic: newIsPublic
-            };
+            await artApi.updateArtPrivacy(artId, newIsPublic, currentUser.id);
             
-            // Обновляем арт в базе данных
-            const updatedArt = await artApi.updateArt(artId, updateData);
-            
-            // Обновляем состояние локально
             setUserArts(prevArts => 
                 prevArts.map(art => 
                     art.id === artId 
-                        ? { ...art, ...updatedArt }
+                        ? { ...art, isPublicFlag: newIsPublic }
                         : art
                 )
             );
-            
-            // Показываем уведомление
-            alert(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`);
+            // needed to fix
+            alert(`Арт теперь ${newIsPublic ? 'приватный' : 'публичный'}`);
             
         } catch (error) {
             console.error('Ошибка изменения приватности:', error);
+            // needed to fix
             alert(`Ошибка изменения приватности: ${error.message}`);
         }
     }, [userArts]);
 
-    // Если проверка аутентификации еще в процессе, показываем загрузку
     if (!isAuthenticated) {
         return (
             <div className={styles.loading}>
@@ -327,7 +298,7 @@ export default function Me() {
                                     showPrivacyIcon={showPrivacyIcons}
                                     onOpenConfirmModal={openConfirmModal}
                                     onTogglePrivacy={() => toggleArtPrivacy(art.id)}
-                                    initialIsPrivate={art.isPublic === false}
+                                    initialIsPrivate={art.isPublicFlag === false}
                                     likesCount={art.likesCount || 0}
                                     isDeleting={deletingArtId === art.id}
                                 />

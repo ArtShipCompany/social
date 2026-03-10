@@ -179,7 +179,8 @@ export default function Home() {
     };
 
     const isValidArt = (art) => {
-        return art && art.id && art.image && art.image !== 'string';
+        const imageValue = art.image || art.imageUrl;
+        return art && art.id && imageValue && imageValue !== 'string';
     };
 
     const renderContent = () => {
@@ -218,7 +219,7 @@ export default function Home() {
                             image={imageUrl}
                             typeShow="showLikes"
                             likesCount={art.likesCount || 0}
-                            initialIsPrivate={art.isPublic === false}
+                            initialIsPrivate={art.isPublicFlag === false}
                             title={art.title || 'Без названия'}
                             author={art.author || art.username || 'Автор'}
                         />

@@ -377,6 +377,50 @@ export const artApi = {
   },
 
 
+  // GET MY ARTS
+  async getMyArts() {
+    try {
+      const token = getToken();
+      
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      console.log('[API] Fetching my arts');
+      
+      
+      const response = await fetch(`${API_URL}/arts/my-arts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('[API] My arts response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Необходима авторизация');
+        }
+        const rawText = await response.text();
+        console.log('[API] RAW JSON from /my-arts:');
+        console.log(rawText);
+        const errorText = await response.text();
+        console.error('[API] Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[API] My arts data received:', data);
+      
+      
+      return Array.isArray(data) ? formatArtsArray(data) : [];
+    } catch (error) {
+      console.error('[API] Error fetching my arts:', error);
+      throw error;
+    }
+  },
+
   // SEARCH BY TAGS
   async searchByTag(tagName, page = 0, size = 30) {
     try {

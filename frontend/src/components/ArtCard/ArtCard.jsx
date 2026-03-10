@@ -15,6 +15,7 @@ const ArtCard = memo(function ArtCard({
     showPrivacyIcon = false,
     initialIsPrivate = false,
     onOpenConfirmModal, 
+    onTogglePrivacy, 
     likesCount = 0,
     title = 'Без названия',
 }) {
@@ -22,6 +23,10 @@ const ArtCard = memo(function ArtCard({
     const [isLoading, setIsLoading] = useState(false);
     const [imgSrc, setImgSrc] = useState(null);
     const [imgError, setImgError] = useState(false);
+
+    useEffect(() => {
+        setIsPrivate(initialIsPrivate);
+    }, [initialIsPrivate]);
 
     // Инициализация изображения
     useEffect(() => {
@@ -42,13 +47,17 @@ const ArtCard = memo(function ArtCard({
     const handlePrivacyClick = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
+        
+        if (onTogglePrivacy) {
+            onTogglePrivacy(id);
+        }
+
         setIsPrivate(prev => !prev);
-    }, []);
+    }, [id, onTogglePrivacy]);
 
     const handleImageError = useCallback((e) => {
         console.error(`Failed to load image for art ${id}:`, image);
         setImgError(true);
-        // Пробуем альтернативные пути
         if (image.includes('//api/files/')) {
             const alternativePath = image.replace('//api/files/', '/api/files/');
             e.target.src = alternativePath;
