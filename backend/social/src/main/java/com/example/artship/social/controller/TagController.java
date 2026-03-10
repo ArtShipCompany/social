@@ -1,8 +1,8 @@
 package com.example.artship.social.controller;
 
-import com.example.artship.social.dto.TagCreateRequest;
 import com.example.artship.social.dto.TagDto;
 import com.example.artship.social.model.Tag;
+import com.example.artship.social.requests.TagCreateRequest;
 import com.example.artship.social.service.TagService;
 
 import io.swagger.v3.oas.annotations.Operation;

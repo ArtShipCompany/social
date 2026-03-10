@@ -66,7 +66,7 @@ public class ArtService {
         art.setDescription(artDetails.getDescription());
         art.setImageUrl(artDetails.getImageUrl());
         art.setProjectDataUrl(artDetails.getProjectDataUrl());
-        art.setIsPublic(artDetails.getIsPublic());
+        art.setIsPublicFlag(artDetails.getIsPublicFlag());
         art.setUpdatedAt(LocalDateTime.now());
         
         Art updatedArt = artRepository.save(art);
@@ -104,23 +104,23 @@ public class ArtService {
 
     @Transactional(readOnly = true)
     public Page<Art> getPublicArts(Pageable pageable) {
-        return artRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable);
+        return artRepository.findByIsPublicFlagTrueOrderByCreatedAtDesc(pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<ArtDto> getPublicArtsDtos(Pageable pageable) {
-        return artRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable)
+        return artRepository.findByIsPublicFlagTrueOrderByCreatedAtDesc(pageable)
                 .map(this::convertToDto);
     }
 
     @Transactional(readOnly = true)
     public List<Art> getPublicArtsByAuthor(User author) {
-        return artRepository.findByAuthorAndIsPublicTrueOrderByCreatedAtDesc(author);
+        return artRepository.findByAuthorAndIsPublicFlagTrueOrderByCreatedAtDesc(author);
     }
 
     @Transactional(readOnly = true)
     public List<ArtDto> getPublicArtDtosByAuthor(User author) {
-        return artRepository.findByAuthorAndIsPublicTrueOrderByCreatedAtDesc(author)
+        return artRepository.findByAuthorAndIsPublicFlagTrueOrderByCreatedAtDesc(author)
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -159,23 +159,23 @@ public class ArtService {
 
     @Transactional(readOnly = true)
     public Page<Art> searchPublicArtsByTitle(String title, Pageable pageable) {
-        return artRepository.findByTitleContainingIgnoreCaseAndIsPublicTrue(title, pageable);
+        return artRepository.findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(title, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<ArtDto> searchPublicArtDtosByTitle(String title, Pageable pageable) {
-        return artRepository.findByTitleContainingIgnoreCaseAndIsPublicTrue(title, pageable)
+        return artRepository.findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(title, pageable)
                 .map(this::convertToDto);
     }
 
     @Transactional(readOnly = true)
     public Page<Art> findByTagName(String tagName, Pageable pageable) {
-        return artRepository.findByTagNameAndIsPublicTrue(tagName, pageable);
+        return artRepository.findByTagNameAndIsPublicFlagTrue(tagName, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<ArtDto> findDtosByTagName(String tagName, Pageable pageable) {
-        return artRepository.findByTagNameAndIsPublicTrue(tagName, pageable)
+        return artRepository.findByTagNameAndIsPublicFlagTrue(tagName, pageable)
                 .map(this::convertToDto);
     }
 
@@ -209,31 +209,24 @@ public class ArtService {
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
         if (art == null) return null;
-        
+    
         ArtDto artDto = new ArtDto();
         artDto.setId(art.getId());
         artDto.setTitle(art.getTitle());
         artDto.setDescription(art.getDescription());
         artDto.setImage(art.getImageUrl());
         artDto.setProjectDataUrl(art.getProjectDataUrl());
-        artDto.setPublic(art.getIsPublic() != null ? art.getIsPublic() : true);
+        artDto.setPublicFlag(art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true);
         artDto.setCreatedAt(art.getCreatedAt());
         artDto.setUpdatedAt(art.getUpdatedAt());
-        
-
+    
         if (art.getAuthor() != null) {
-            UserDto authorDto = new UserDto();
-            authorDto.setId(art.getAuthor().getId());
-            authorDto.setUsername(art.getAuthor().getUsername());
-            authorDto.setEmail(art.getAuthor().getEmail());
-            authorDto.setAvatarUrl(art.getAuthor().getAvatarUrl());
-            artDto.setAuthor(authorDto);
+            artDto.setAuthor(new UserDto(art.getAuthor()));
         }
-        
-  
+    
         List<TagDto> tags = tagManagementService.getTagsByArtId(art.getId());
         artDto.setTags(tags);
-        
+    
         return artDto;
     }
 }

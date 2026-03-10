@@ -37,8 +37,8 @@ public class Art {
      @Column(name = "project_data_url", length = 500)
     private String projectDataUrl;
     
-    @Column(name = "is_public")
-    private Boolean isPublic = true;
+    @Column(name = "is_public_flag")
+    private Boolean isPublicFlag;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -94,8 +94,8 @@ public class Art {
     public String getProjectDataUrl() { return projectDataUrl; }
     public void setProjectDataUrl(String projectDataUrl) { this.projectDataUrl = projectDataUrl; }
     
-    public Boolean getIsPublic() { return isPublic; }
-    public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
+    public Boolean getIsPublicFlag() { return isPublicFlag; }
+    public void setIsPublicFlag(Boolean isPublicFlag) { this.isPublicFlag = isPublicFlag; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

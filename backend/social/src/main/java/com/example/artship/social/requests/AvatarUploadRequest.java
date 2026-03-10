@@ -1,4 +1,4 @@
-package com.example.artship.social.dto;
+package com.example.artship.social.requests;
 
 
 public class AvatarUploadRequest {

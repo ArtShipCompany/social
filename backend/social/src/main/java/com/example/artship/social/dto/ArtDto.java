@@ -2,10 +2,10 @@ package com.example.artship.social.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.example.artship.social.model.Art;
-import com.example.artship.social.model.User;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ArtDto {
     private Long id;
@@ -13,7 +13,9 @@ public class ArtDto {
     private String description;
     private String image;
     private String projectDataUrl;
-    private boolean isPublic;
+    
+    private boolean publicFlag;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt; 
     private UserDto author;
@@ -27,21 +29,16 @@ public class ArtDto {
         this.description = art.getDescription();
         this.image = art.getImageUrl();
         this.projectDataUrl = art.getProjectDataUrl();
-        this.isPublic = art.getIsPublic() != null ? art.getIsPublic() : true;
+        this.publicFlag = art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true;
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
 
         if (art.getAuthor() != null) {
-            this.author = new UserDto();
-            this.author.setId(art.getAuthor().getId());
-            this.author.setUsername(art.getAuthor().getUsername());
-            this.author.setEmail(art.getAuthor().getEmail());
-            this.author.setAvatarUrl(art.getAuthor().getAvatarUrl());
+            this.author = new UserDto(art.getAuthor());
         }
         
         this.tags = null; 
     }
-
 
     public ArtDto(Art art, List<TagDto> tags) {
         this.id = art.getId();
@@ -49,21 +46,18 @@ public class ArtDto {
         this.description = art.getDescription();
         this.image = art.getImageUrl();
         this.projectDataUrl = art.getProjectDataUrl();
-        this.isPublic = art.getIsPublic() != null ? art.getIsPublic() : true;
+        this.publicFlag = art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true;
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
         
         if (art.getAuthor() != null) {
-            this.author = new UserDto();
-            this.author.setId(art.getAuthor().getId());
-            this.author.setUsername(art.getAuthor().getUsername());
-            this.author.setEmail(art.getAuthor().getEmail());
-            this.author.setAvatarUrl(art.getAuthor().getAvatarUrl());
+            this.author = new UserDto(art.getAuthor());
         }
         
         this.tags = tags;
-        }
+    }
 
+    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
@@ -79,9 +73,17 @@ public class ArtDto {
     public String getProjectDataUrl() { return projectDataUrl; }
     public void setProjectDataUrl(String projectDataUrl) { this.projectDataUrl = projectDataUrl; }
     
-    public boolean isPublic() { return isPublic; }
-    public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+    @JsonProperty("isPublicFlag")
+    public boolean isPublicFlag() {
+        return publicFlag;
+    }
     
+    @JsonProperty("isPublicFlag")
+    public void setPublicFlag(boolean publicFlag) {
+        this.publicFlag = publicFlag;
+    }
+    
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
