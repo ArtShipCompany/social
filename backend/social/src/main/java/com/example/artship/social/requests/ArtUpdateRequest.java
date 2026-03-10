@@ -6,7 +6,6 @@ public class ArtUpdateRequest {
     private String title;
     private String description;
     private String projectDataUrl;
-    private Boolean isPublic;
     
     
     public ArtUpdateRequest() {}
@@ -36,21 +35,12 @@ public class ArtUpdateRequest {
         this.projectDataUrl = projectDataUrl;
     }
     
-    public Boolean getIsPublic() {
-        return isPublic;
-    }
-    
-    public void setIsPublic(Boolean isPublic) {
-        this.isPublic = isPublic;
-    }
-    
     @Override
     public String toString() {
         return "ArtUpdateRequest{" +
                "title='" + title + '\'' +
                ", description='" + description + '\'' +
-               ", projectDataUrl='" + projectDataUrl + '\'' +
-               ", isPublic=" + isPublic +
+               ", projectDataUrl='" + projectDataUrl +
                '}';
     }
 }

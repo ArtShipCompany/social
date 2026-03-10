@@ -160,7 +160,7 @@ public class TagManagementService {
         dto.setDescription(art.getDescription());
         dto.setImage(art.getImageUrl());
         dto.setProjectDataUrl(art.getProjectDataUrl());
-        dto.setPublic(art.getIsPublic() != null ? art.getIsPublic() : true);
+        dto.setPublicFlag(art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true);
         dto.setCreatedAt(art.getCreatedAt());
         dto.setUpdatedAt(art.getUpdatedAt());
         

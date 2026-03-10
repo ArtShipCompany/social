@@ -52,7 +52,7 @@ public class UserDto {
     public Boolean getIsPublic() { return isPublic; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     
-    // Сеттеры (нужны для установки значений по отдельности)
+    // Сеттеры
     public void setId(Long id) { this.id = id; }
     public void setUsername(String username) { this.username = username; }
     public void setEmail(String email) { this.email = email; }

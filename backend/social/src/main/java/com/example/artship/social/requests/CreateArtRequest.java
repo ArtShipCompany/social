@@ -1,4 +1,4 @@
-package com.example.artship.social.dto;
+package com.example.artship.social.requests;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -6,7 +6,7 @@ public class CreateArtRequest {
         private String title;
         private String description;
         private String projectDataUrl;
-        private Boolean isPublic = true;
+        private Boolean isPublicFlag = true;
         private MultipartFile imageFile;
    
         public String getTitle() {
@@ -33,12 +33,12 @@ public class CreateArtRequest {
             this.projectDataUrl = projectDataUrl;
         }
         
-        public Boolean getIsPublic() {
-            return isPublic;
+        public Boolean getIsPublicFlag() {
+            return isPublicFlag;
         }
         
-        public void setIsPublic(Boolean isPublic) {
-            this.isPublic = isPublic;
+        public void setIsPublicFlag(Boolean isPublicFlag) {
+            this.isPublicFlag = isPublicFlag;
         }
         
         public MultipartFile getImageFile() {

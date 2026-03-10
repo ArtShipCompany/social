@@ -11,11 +11,11 @@ import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.example.artship.social.dto.ArtDto;
-import com.example.artship.social.dto.CreateArtRequest;
-import com.example.artship.social.dto.UpdateArtRequest;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
+import com.example.artship.social.requests.CreateArtRequest;
 import com.example.artship.social.requests.PrivacyUpdateRequest;
+import com.example.artship.social.requests.UpdateArtRequest;
 import com.example.artship.social.service.ArtService;
 import com.example.artship.social.service.LocalFileStorageService;
 import com.example.artship.social.service.UserService;
@@ -143,7 +143,7 @@ public class ArtController {
             art.setImageUrl(imageUrl);
             art.setProjectDataUrl(request.getProjectDataUrl() != null ? 
                                 request.getProjectDataUrl().trim() : null);
-            art.setIsPublic(request.getIsPublic() != null ? request.getIsPublic() : true);
+            art.setIsPublicFlag(request.getIsPublicFlag() != null ? request.getIsPublicFlag() : true);
             
             logger.info("Создаю арт. Автор ID: {}, Заголовок: {}, Изображение: {}", 
                        currentUser.getId(), art.getTitle(), art.getImageUrl());
@@ -228,10 +228,6 @@ public class ArtController {
                 logger.info("Обновлен URL проекта: {}", existingArt.getProjectDataUrl());
             }
             
-            if (request.getIsPublic() != null) {
-                existingArt.setIsPublic(request.getIsPublic());
-                logger.info("Обновлена публичность: {}", existingArt.getIsPublic());
-            }
             
             if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
                 logger.info("Загружено новое изображение: {}", 
@@ -275,35 +271,59 @@ public class ArtController {
     }
 
 
-    @Operation(summary = "Изменение приватности арта")
-@ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Приватность арта успешно изменена",
+    @Operation(summary = "Изменение приватности арта (multipart/form-data)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Приватность арта успешно изменена",
                 content = @Content(schema = @Schema(implementation = ArtDto.class))),
-    @ApiResponse(responseCode = "404", description = "Арт не найден"),
-    @ApiResponse(responseCode = "403", description = "Нет прав на изменение этого арта")
-})
-@PatchMapping("/{id}/privacy")
-public ResponseEntity<ArtDto> updateArtPrivacy(
-        @PathVariable Long id,
-        @RequestBody PrivacyUpdateRequest privacyRequest,
-        @RequestParam Long userId) {
-    
-    if (!artService.isUserAuthorOfArt(id, userId)) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        @ApiResponse(responseCode = "404", description = "Арт не найден"),
+        @ApiResponse(responseCode = "403", description = "Нет прав на изменение этого арта"),
+        @ApiResponse(responseCode = "400", description = "Неверные данные запроса")
+    })
+    @PatchMapping(value = "/{id}/privacy", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+                produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ArtDto> updateArtPrivacy(
+            @Parameter(description = "ID арта", required = true) 
+            @PathVariable Long id,
+            
+            @Parameter(
+                description = "Данные для изменения приватности",
+                required = true,
+                content = @Content(
+                    mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                    schema = @Schema(implementation = PrivacyUpdateRequest.class)
+                )
+            )
+            @ModelAttribute PrivacyUpdateRequest privacyRequest,
+            
+            @Parameter(description = "ID пользователя", required = true)
+            @RequestParam Long userId) {
+  
+        if (privacyRequest.getIsPublicFlag() == null) {
+            logger.error("ОШИБКА: isPublicFlag не может быть null");
+            return ResponseEntity.badRequest().build();
+        }
+        
+        if (!artService.isUserAuthorOfArt(id, userId)) {
+            logger.warn("Пользователь {} не является автором арта {}", userId, id);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Art art = artService.getArtById(id)
+                .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
+        
+
+        art.setIsPublicFlag(privacyRequest.getIsPublicFlag());
+        art.setUpdatedAt(LocalDateTime.now());
+        
+
+        Art updatedArt = artService.save(art);
+        
+        
+        ArtDto result = artService.convertToDto(updatedArt);
+        logger.info("Возвращаем DTO с isPublicFlag: {}", result.isPublicFlag());
+        
+        return ResponseEntity.ok(result);
     }
-    
-
-    Art art = artService.getArtById(id)
-            .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
-    
-
-    art.setIsPublic(privacyRequest.isPublic());
-    art.setUpdatedAt(LocalDateTime.now());
-
-    Art updatedArt = artService.save(art);
- 
-    return ResponseEntity.ok(artService.convertToDto(updatedArt));
-}
 
     
     @Operation(summary = "Получить арт по ID")
@@ -552,7 +572,7 @@ public ResponseEntity<ArtDto> updateArtPrivacy(
         User currentUser = userOpt.get();
         
         Art artEntity = art.get();
-        boolean hasAccess = artEntity.getIsPublic() || 
+        boolean hasAccess = artEntity.getIsPublicFlag() || 
                            artEntity.getAuthor().getId().equals(currentUser.getId());
         
         logger.info("Доступ к арту {}: {}", id, hasAccess);

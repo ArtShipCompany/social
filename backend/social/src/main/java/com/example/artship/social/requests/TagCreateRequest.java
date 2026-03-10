@@ -1,4 +1,4 @@
-package com.example.artship.social.dto;
+package com.example.artship.social.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

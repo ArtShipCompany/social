@@ -54,8 +54,7 @@ public class CollectionArtService {
                     return new RuntimeException("Art not found with id: " + artId);
                 });
         
-        // Проверяем, что арт публичный или пользователь является автором
-        if (!art.getIsPublic() && !art.getAuthor().getId().equals(collection.getUser().getId())) {
+        if (!art.getIsPublicFlag() && !art.getAuthor().getId().equals(collection.getUser().getId())) {
             String error = "Cannot add private art to collection. Art author: " + 
                           art.getAuthor().getId() + ", Collection owner: " + collection.getUser().getId();
             log.error(error);
