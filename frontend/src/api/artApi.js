@@ -214,10 +214,6 @@ const preloadImage = (imageUrl) => {
 // Функция для форматирования арта
 const formatArt = (art) => {
   if (!art) return null;
-
-  console.log('🔍 formatArt - received art:', art);
-  console.log('🔍 formatArt - author:', art.author);
-  console.log('🔍 formatArt - author.avatarUrl:', art.author?.avatarUrl);
   
   return {
     ...art,

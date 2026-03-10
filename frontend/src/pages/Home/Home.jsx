@@ -69,16 +69,8 @@ export default function Home() {
                 return;
             }
             
-
             const token = localStorage.getItem('accessToken');
             const isUserAuthenticated = token && isAuthenticated;
-            
-            console.log('Loading arts with auth state:', {
-                isAuthenticated,
-                tokenExists: !!token,
-                isAuthChecked,
-                isUserAuthenticated
-            });
             
             if (isSearchMode && searchQuery.trim()) {
                 data = await artApi.searchByTag(searchQuery, pageNum, 30);
@@ -97,7 +89,6 @@ export default function Home() {
                     }
                 }
             } else {
-                console.log('Loading public arts (recommendations)...');
                 data = await artApi.getPublicArts(pageNum, 30);
             }
             
@@ -142,23 +133,12 @@ export default function Home() {
 
     useEffect(() => {
         if (!isAuthChecked || authLoading) {
-            console.log('Auth not checked yet, waiting...');
             return;
         }
         
         const isSearchMode = searchQuery.trim() !== '';
         loadArts(0, isSearchMode, true);
     }, [isAuthenticated, searchQuery, loadArts, isAuthChecked, authLoading]);
-
-
-    useEffect(() => {
-        console.log('Home auth state changed:', {
-            isAuthenticated,
-            authLoading,
-            isAuthChecked,
-            token: localStorage.getItem('accessToken')?.substring(0, 20) + '...'
-        });
-    }, [isAuthenticated, authLoading, isAuthChecked]);
 
     useEffect(() => {
         if (isAuthChecked && !authLoading && !searchQuery.trim()) {

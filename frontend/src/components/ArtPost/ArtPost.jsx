@@ -228,11 +228,8 @@ export default function ArtPost({
         description: artDescription.trim(),
         isPublic: true // по умолчанию публичный
       };
-
-      console.log('Создание арта:', artData);
       
       const createdArt = await artApi.createArt(artData, uploadedImage);
-      console.log('Арт создан:', createdArt);
       
       // Обрабатываем теги если есть
       if (artTags && artTags.trim()) {
@@ -276,8 +273,6 @@ export default function ArtPost({
         description: artDescription.trim(),
         isPublic: artDetails?.isPublic !== false
       };
-
-      console.log('Обновление арта:', artId, artData);
       
       // Обновляем арт с изображением если есть новое
       const updatedArt = await artApi.updateArt(
@@ -285,8 +280,6 @@ export default function ArtPost({
         artData, 
         uploadedImage || null
       );
-      
-      console.log('Арт обновлен:', updatedArt);
       
       // Обрабатываем теги
       try {

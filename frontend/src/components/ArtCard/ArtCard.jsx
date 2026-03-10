@@ -20,7 +20,7 @@ const ArtCard = memo(function ArtCard({
 }) {
     const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
     const [isLoading, setIsLoading] = useState(false);
-    const [imgSrc, setImgSrc] = useState('');
+    const [imgSrc, setImgSrc] = useState(null);
     const [imgError, setImgError] = useState(false);
 
     // Инициализация изображения
@@ -68,7 +68,7 @@ const ArtCard = memo(function ArtCard({
                     <div className={styles.imagePlaceholder}>
                         <span>Изображение не загружено</span>
                     </div>
-                ) : (
+                ) : imgSrc ?(
                     <img 
                         src={imgSrc} 
                         alt={title} 
@@ -77,6 +77,10 @@ const ArtCard = memo(function ArtCard({
                         onLoad={handleImageLoad}
                         loading="lazy"
                     />
+                ) : (
+                    <div className={styles.imagePlaceholder}>
+                        <span>Загрузка...</span>
+                    </div>
                 )}
                 
                 
