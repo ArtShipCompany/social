@@ -7,6 +7,7 @@ import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
 import CreateIcon from '../../assets/create.svg';
 import editIcon from '../../assets/edit-profile-icon.svg';
+import PFP from '../../assets/WA.jpg';
 import { artApi } from '../../api/artApi';
 import { tagApi } from '../../api/tagApi';
 
@@ -506,11 +507,11 @@ export default function ArtPost({
                 >
                   <div className={styles.authorInfo}>
                     <img 
-                      src={owner?.pfp || artDetails?.author?.pfp || '/default-avatar.png'} 
+                      src={owner?.pfp || artDetails?.author?.pfp} 
                       alt="Автор"
-                      className={styles.authorAvatar}
+                      className={styles.pfp}
                       onError={(e) => {
-                        e.target.src = '/default-avatar.png';
+                        e.target.src = PFP;
                       }}
                     />
                     <div className={styles.authorDetails}>

@@ -5,6 +5,7 @@ import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
 import SearchIcon from '../../assets/search-icon.svg';
+import PFP from '../../assets/WA.jpg'
 import { TEXTS } from '../../assets/texts';
 import artApi from '../../api/artApi';
 
@@ -24,7 +25,7 @@ export default function Home() {
     const isLoadingRef = useRef(false);
 
     const getImageUrl = (imagePath) => {
-        if (!imagePath) return '/default-art.jpg';
+        if (!imagePath) return PFP;
         
         if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
             return imagePath;

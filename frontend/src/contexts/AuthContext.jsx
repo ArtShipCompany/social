@@ -19,33 +19,33 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const loadUser = () => {
-            console.log('🔄 AuthProvider: loading user...');
+            // console.log('🔄 AuthProvider: loading user...');
             try {
                 const token = getAuthToken();
-                console.log('🔑 Token from localStorage:', token ? 'Exists' : 'None');
+                // console.log('🔑 Token from localStorage:', token ? 'Exists' : 'None');
                 
                 if (token && isAuthenticated()) {
                     const userData = getCurrentUser();
-                    console.log('👤 User data from localStorage:', userData);
+                    // console.log('👤 User data from localStorage:', userData);
                     
                     if (userData && userData.id) {
                         setUser(userData);
-                        console.log('✅ User loaded:', userData.username);
+                        // console.log('✅ User loaded:', userData.username);
                     } else {
-                        console.log('⚠️ User data invalid or missing');
+                        // console.log('⚠️ User data invalid or missing');
                         setUser(null);
                     }
                 } else {
-                    console.log('⚠️ No valid token or not authenticated');
+                    // console.log('⚠️ No valid token or not authenticated');
                     setUser(null);
                 }
             } catch (error) {
-                console.error('❌ Error loading user:', error);
+                // console.error('❌ Error loading user:', error);
                 setUser(null);
             } finally {
                 setIsInitializing(false);
                 setIsAuthChecked(true);
-                console.log('🏁 AuthProvider: initialization complete');
+                // console.log('🏁 AuthProvider: initialization complete');
             }
         };
 
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
         // Слушаем изменения localStorage
         const handleStorageChange = (e) => {
             if (e.key === 'accessToken' || e.key === 'user') {
-                console.log('📦 LocalStorage changed:', e.key);
+                // console.log('📦 LocalStorage changed:', e.key);
                 loadUser();
             }
         };
@@ -76,12 +76,12 @@ export const AuthProvider = ({ children }) => {
             
             if (userData) {
                 setUser(userData);
-                console.log('✅ User set after login:', userData.username);
+                // console.log('✅ User set after login:', userData.username);
             }
             
             return { success: true, data: response, user: userData };
         } catch (error) {
-            console.error('❌ Login error:', error);
+            console.error('Login error:', error);
             return { success: false, error: error.message };
         } finally {
             setIsProcessing(false);
@@ -93,11 +93,11 @@ export const AuthProvider = ({ children }) => {
             setIsProcessing(true);
             await authApi.logout();
         } catch (error) {
-            console.error('❌ Logout error:', error);
+            console.error('Logout error:', error);
         } finally {
             setUser(null);
             setIsProcessing(false);
-            console.log('✅ User logged out');
+            // console.log('✅ User logged out');
         }
     };
 
@@ -118,13 +118,13 @@ export const AuthProvider = ({ children }) => {
             
             if (token && isAuthenticated() && userData && userData.id) {
                 setUser(userData);
-                console.log('✅ User refreshed:', userData.username);
+                // console.log('✅ User refreshed:', userData.username);
             } else {
                 setUser(null);
-                console.log('⚠️ User refresh failed - invalid data');
+                // console.log('⚠️ User refresh failed - invalid data');
             }
         } catch (error) {
-            console.error('❌ Error refreshing user:', error);
+            console.error('Error refreshing user:', error);
             setUser(null);
         }
     };
@@ -143,11 +143,11 @@ export const AuthProvider = ({ children }) => {
         refreshUser 
     };
 
-    console.log('AuthContext value:', {
-        user: user?.username,
-        isAuthenticated: value.isAuthenticated,
-        // isLoading
-    });
+    // console.log('AuthContext value:', {
+    //     user: user?.username,
+    //     isAuthenticated: value.isAuthenticated,
+    //     // isLoading
+    // });
 
     return (
         <AuthContext.Provider value={value}>

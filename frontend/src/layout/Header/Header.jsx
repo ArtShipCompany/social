@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Header.module.css';
 import { userApi } from '../../api/userApi';
+import PFP from '../../assets/WA.jpg';
 
 function Header() {
     const { user, isAuthenticated, logout, isLoading, isProcessing, isAuthChecked } = useAuth();
@@ -9,7 +10,7 @@ function Header() {
 
     // Функция для получения URL аватарки
     const getAvatarUrl = () => {
-        if (!user || !user.avatarUrl) return '/default-pfp.jpg';
+        if (!user || !user.avatarUrl) return PFP;
         return userApi.getFullUrl(user.avatarUrl);
     };
 
@@ -63,7 +64,7 @@ function Header() {
                                     src={getAvatarUrl()}
                                     alt="Аватарка" 
                                     onError={(e) => {
-                                        e.target.src = '/default-pfp.jpg';
+                                        e.target.src = PFP;
                                     }}
                                 />
                             </Link>

@@ -24,7 +24,6 @@ export const setAuthToken = (token) => {
 
 export const getAuthToken = () => {
   const token = localStorage.getItem('accessToken');
-  console.log('🔑 getAuthToken called, token exists:', !!token);
   return token;
 };
 
@@ -94,8 +93,6 @@ export const authApi = {
                 password: userData.password
             }),
         });
-        
-        console.log('✅ Registration response:', response);
         
         // Некоторые бэкенды возвращают пользователя сразу после регистрации
         if (response.user) {
@@ -207,17 +204,13 @@ export const isAuthenticated = () => {
   const tokenExpiry = localStorage.getItem('tokenExpiry');
   
   if (!token) {
-    console.log('🔐 isAuthenticated: no token');
     return false;
   }
   
   // Проверяем не истек ли токен
   if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {
-    console.log('🔐 isAuthenticated: token expired');
     return false;
   }
-  
-  console.log('🔐 isAuthenticated: user is authenticated');
   return true;
 };
 
@@ -226,12 +219,10 @@ export const getCurrentUser = () => {
   try {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
-      console.log('👤 getCurrentUser: no user in localStorage');
       return null;
     }
     
     const user = JSON.parse(userStr);
-    console.log('👤 getCurrentUser: user found', user.username);
     return user;
   } catch (error) {
     console.error('👤 getCurrentUser error:', error);

@@ -31,20 +31,19 @@ const formatAuthor = (authorData, fallbackId, fallbackName) => {
   // Убираем возможное дублирование
   const cleanName = (nameStr) => {
     if (typeof nameStr !== 'string') return 'Неизвестный автор';
-    
-    // Если строка состоит из двух одинаковых половинок
     const half = Math.floor(nameStr.length / 2);
     if (nameStr.substring(0, half) === nameStr.substring(half)) {
       return nameStr.substring(0, half);
     }
-    
     return nameStr;
   };
   
+  const avatarUrl = authorData.pfp || authorData.avatar || authorData.profilePicture || authorData.avatarUrl;
+  
   return {
     id: authorData.id || authorData.userId || fallbackId || 'unknown',
-    displayName: cleanName(name), // Очищаем от дублирования
-    pfp: authorData.pfp || authorData.avatar || authorData.profilePicture || '/default-avatar.png'
+    displayName: cleanName(name),
+    pfp: getFullUrl(avatarUrl)
   };
 };
 
@@ -107,6 +106,32 @@ const getImageUrl = (imageUrl) => {
   }
   
   return '/default-art.jpg';
+};
+
+const getFullUrl = (path) => {
+  if (!path) return '/default-avatar.png';
+  
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  let finalPath = path;
+  
+  if (path.startsWith('/api/files/images/')) {
+    const filename = path.split('/').pop();
+    finalPath = `/uploads/images/${filename}`;
+  }
+  else if (path.startsWith('/uploads/')) {
+    finalPath = path;
+  }
+  else if (path.startsWith('uploads/')) {
+    finalPath = `/${path}`;
+  }
+  else if (!path.includes('/')) {
+    finalPath = `/uploads/images/${path}`;
+  }
+  
+  return `http://localhost:8081${finalPath}`;
 };
 
 // Функция для получения альтернативного URL изображения
@@ -189,6 +214,10 @@ const preloadImage = (imageUrl) => {
 // Функция для форматирования арта
 const formatArt = (art) => {
   if (!art) return null;
+
+  console.log('🔍 formatArt - received art:', art);
+  console.log('🔍 formatArt - author:', art.author);
+  console.log('🔍 formatArt - author.avatarUrl:', art.author?.avatarUrl);
   
   return {
     ...art,
@@ -634,6 +663,7 @@ export const artApi = {
     formatArtsArray,
     formatAuthor,
     formatTags,
+    getFullUrl,
 
     createFormData: (artData, imageFile) => {
     const formData = new FormData();
