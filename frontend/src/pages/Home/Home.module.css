@@ -1,10 +1,10 @@
 .boards {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-block: 20px;
-    gap: 10px;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 10px;
+  width: 100%;
 }
 
 .cardsContainer {
@@ -14,20 +14,72 @@
 }
 
 .text {
-    color: var(--text-color);
-    font-size: 16px;
-    white-space: pre-line;
-    text-align: center;
-    max-width: 250px;
-    cursor: default;
+  color: var(--text-color);
+  font-size: 16px;
+  white-space: pre-line;
+  text-align: center;
+  max-width: 250px;
+  cursor: default;
 }
 
 .search {
   display: flex;
-  justify-content: center;
-  padding: 20px 0;
-  
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 20px;
   width: 100%;
+}
+
+.switcher {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  padding-block: 10px;
+  color: var(--text-color);
+}
+
+.switcherSpacer {
+  height: 20px;
+}
+
+.switcherTab {
+  background: transparent;
+  border: none;
+  position: relative;
+  font-size: 16px;
+  color: var(--text-color);
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.switcherTab:hover {
+  color: #104978c8;
+  transform: translateY(1px);
+}
+
+.switcherTab.active {
+  color: var(--text-color);
+
+}
+
+.switcherTab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 3px;
+  background: var(--text-color);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 2px 8px rgba(16, 74, 120, 0.3);
+}
+
+.switcherTab::before {
+  transition: all 0.3s ease;
 }
 
 .searchInputWrapper {
@@ -91,26 +143,26 @@
 }
 
 .searchInputWrapper {
-    position: relative;
+  position: relative;
 }
 
 .clearButton {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #999;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .clearButton:hover {
-    color: #333;
+  color: #333;
 }

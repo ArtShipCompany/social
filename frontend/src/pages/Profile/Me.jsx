@@ -283,8 +283,6 @@ export default function Me() {
                         <span className={styles.nickname}>@{currentUser.username || 'user'}</span>
                     </div>
 
-                    
-
                     <div className={styles.headSFooter}>
                         <div className={styles.stats}>
                             <div className={styles.arts}>
@@ -313,42 +311,41 @@ export default function Me() {
                     </div>
                 </div>
             </div>
-
-            {validArts.length > 0 ? (
-                validArts.map(art => {
-                    const imagePath = art.image || art.imageUrl;
-                    const imageUrl = getImageUrl(imagePath);
-                    
-                    return (
-                        <div className={styles.feed}>
-                            <ArtCard 
-                                key={art.id} 
-                                id={art.id} 
-                                image={imageUrl}
-                                typeShow="amount"
-                                showDeleteIcon={showDeleteIcons}
-                                showPrivacyIcon={showPrivacyIcons}
-                                onOpenConfirmModal={openConfirmModal}
-                                onTogglePrivacy={() => toggleArtPrivacy(art.id)}
-                                initialIsPrivate={art.isPublic === false}
-                                likesCount={art.likesCount || 0}
-                                isDeleting={deletingArtId === art.id}
-                            />
-                        </div>
-                    );
-                })
-            ) : (
-                <div className={styles.emptyState}>
-                    <span>У вас пока нет артов. Создайте первый!</span>
-                    <button
-                        className={styles.createButton}
-                        onClick={handleCreateClick} 
-                    >
-                        <img src={createIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
-                        Создать
-                    </button>
-                </div>
-            )}
+            
+            <div className={styles.feed}>
+                {validArts.length > 0 ? (
+                        validArts.map(art => {
+                            const imagePath = art.image || art.imageUrl;
+                            const imageUrl = getImageUrl(imagePath);
+                            return (
+                                <ArtCard 
+                                    key={art.id} 
+                                    id={art.id} 
+                                    image={imageUrl}
+                                    typeShow="amount"
+                                    showDeleteIcon={showDeleteIcons}
+                                    showPrivacyIcon={showPrivacyIcons}
+                                    onOpenConfirmModal={openConfirmModal}
+                                    onTogglePrivacy={() => toggleArtPrivacy(art.id)}
+                                    initialIsPrivate={art.isPublic === false}
+                                    likesCount={art.likesCount || 0}
+                                    isDeleting={deletingArtId === art.id}
+                                />
+                            );
+                        })
+                ) : (
+                    <div className={styles.emptyState}>
+                        <span>У вас пока нет артов. Создайте первый!</span>
+                        <button
+                            className={styles.createButton}
+                            onClick={handleCreateClick} 
+                        >
+                            <img src={createIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
+                            Создать
+                        </button>
+                    </div>
+                )}
+            </div>
 
 
             <ConfirmModal

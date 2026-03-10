@@ -18,6 +18,8 @@ export default function Home() {
     const [initialLoading, setInitialLoading] = useState(true);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState(null);
+
+    const [activeTab, setActiveTab] = useState('recommendations');
     
     const isLoadingRef = useRef(false);
 
@@ -79,23 +81,22 @@ export default function Home() {
             
             if (isSearchMode && searchQuery.trim()) {
                 data = await artApi.searchByTag(searchQuery, pageNum, 30);
-            } else if (isUserAuthenticated) {
-                console.log('User is authenticated, loading feed...');
+            } else if (isUserAuthenticated && activeTab === 'subscriptions') {
+                console.log('Loading feed (subscriptions)...');
                 try {
                     data = await artApi.getFeedArts(pageNum, 30);
                 } catch (feedError) {
                     console.error('Feed load error:', feedError);
-                    // Если ошибка 401, токен невалиден - используем публичные арты
                     if (feedError.message.includes('401') || feedError.message.includes('Unauthorized')) {
                         console.log('Token invalid, falling back to public arts');
+                        setActiveTab('recommendations');
                         data = await artApi.getPublicArts(pageNum, 30);
                     } else {
                         throw feedError;
                     }
                 }
             } else {
-
-                console.log('User not authenticated, loading public arts');
+                console.log('Loading public arts (recommendations)...');
                 data = await artApi.getPublicArts(pageNum, 30);
             }
             
@@ -136,7 +137,7 @@ export default function Home() {
             }
             isLoadingRef.current = false;
         }
-    }, [isAuthenticated, searchQuery, authLoading, isAuthChecked]);
+    }, [isAuthenticated, searchQuery, authLoading, isAuthChecked, activeTab]);
 
     useEffect(() => {
         if (!isAuthChecked || authLoading) {
@@ -157,6 +158,18 @@ export default function Home() {
             token: localStorage.getItem('accessToken')?.substring(0, 20) + '...'
         });
     }, [isAuthenticated, authLoading, isAuthChecked]);
+
+    useEffect(() => {
+        if (isAuthChecked && !authLoading && !searchQuery.trim()) {
+            loadArts(0, false, true);
+        }
+    }, [activeTab]);
+
+    const handleTabChange = (tab) => {
+        if (activeTab !== tab) {
+            setActiveTab(tab);
+        }
+    };
 
     const handleInputChange = (e) => {
         setSearchInput(e.target.value);
@@ -205,7 +218,7 @@ export default function Home() {
                     {searchQuery 
                         ? `Ничего не найдено по тегу ${searchQuery}`
                         : isAuthenticated
-                            ? 'Ваша лента пуста. Подпишитесь на авторов или начните публиковать арты!'
+                            ? 'Ваша лента подписок пуста. Подпишитесь на авторов!'
                             : 'Нет публичных артов для отображения'
                     }
                 </div>
@@ -213,7 +226,7 @@ export default function Home() {
         }
         
         return (
-            <>
+            <div className={styles.feed}>
                 {validArts.map(art => {
                     const imageUrl = getImageUrl(art.image);
                     
@@ -234,7 +247,7 @@ export default function Home() {
                 {loading && page > 0 && (
                     <div className={styles.loadingMore}>Загрузка...</div>
                 )}
-            </>
+            </div>
         );
     };
 
@@ -246,23 +259,40 @@ export default function Home() {
     return (
         <>
              
-                <div className={styles.boards}>
-                    <span className={styles.text}>
-                        {TEXTS.boards.private}
-                    </span>
+            <div className={styles.boards}>
+                <span className={styles.text}>
+                    {TEXTS.boards.private}
+                </span>
 
-                    <div className={styles.cardsContainer}>
-                        <BoardCard isPrivate={true} />
-                        <BoardCard isPrivate={false} />
-                    </div>
-
-                    <span className={styles.text}>
-                        {TEXTS.boards.public}
-                    </span>
+                <div className={styles.cardsContainer}>
+                    <BoardCard isPrivate={true} />
+                    <BoardCard isPrivate={false} />
                 </div>
-            
+
+                <span className={styles.text}>
+                    {TEXTS.boards.public}
+                </span>
+            </div>
             
             <div className={styles.search}>
+                {isAuthenticated ? (
+                    <div className={styles.switcher}>
+                        <button
+                            className={`${styles.switcherTab} ${activeTab === 'recommendations' ? styles.active : ''}`}
+                            onClick={() => handleTabChange('recommendations')}
+                        >
+                            Рекомендации
+                        </button>
+                        <button
+                            className={`${styles.switcherTab} ${activeTab === 'subscriptions' ? styles.active : ''}`}
+                            onClick={() => handleTabChange('subscriptions')}
+                        >
+                            Подписки
+                        </button>
+                    </div>
+                ) : (
+                    <div className={styles.switcherSpacer}></div>
+                )}
                 <div className={styles.searchInputWrapper}>
                     <img src={SearchIcon} alt="Поиск" className={styles.icon} />
                     <input
@@ -285,9 +315,9 @@ export default function Home() {
                 </div>
             </div>
 
-            <div className={styles.feed}>
+            
                 {renderContent()}
-            </div>
+            
             
             {hasMore && arts.length > 0 && !loading && (
                 <DefaultBtn text={'Показать ещё'} onClick={handleLoadMore} />
