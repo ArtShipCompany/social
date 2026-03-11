@@ -203,6 +203,7 @@ export default function Profile() {
     }
 
     const validArts = userArts.filter(isValidArt);
+    const displayNameToShow = user.displayName || user.username;
 
     return (
         <>
@@ -216,28 +217,15 @@ export default function Profile() {
                             e.target.src = PFP;
                         }}
                     />
-                    <span className={styles.nickname}>@{user.username}</span>
                 </div>
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.headBg}></div>
 
-                    <div className={styles.buttonsCover}>
-                        <DefaultBtn
-                            text={isSubscribed ? 'Подписка' : 'Подписаться'}
-                            onClick={handleSubscribe}
-                            className={`${styles.subscribe} ${isSubscribed ? styles.subscribed : ''}`}
-                            disabled={!isAuthenticated}
-                        />
-                        <button 
-                            className={styles.message}
-                            onClick={handleMessage}
-                            disabled={!isAuthenticated}
-                            title={!isAuthenticated ? 'Войдите для отправки сообщений' : 'Написать сообщение'}
-                        >
-                            <img src={sms} alt="sms" className={styles.icon} />
-                        </button>
-                    </div> 
+                    <div className={styles.nameContainer}>
+                        <span className={styles.displayName}>{displayNameToShow}</span>
+                        <span className={styles.nickname}>@{user.username || 'user'}</span>
+                    </div>
 
                     <div className={styles.headSFooter}>
                         <div className={styles.stats}>
@@ -254,6 +242,24 @@ export default function Profile() {
                                 <span>{user.bio}</span>
                             </div>
                         )}
+
+                        <div className={styles.buttonsCover}>
+                            <button 
+                                className={styles.message}
+                                onClick={handleMessage}
+                                disabled={!isAuthenticated}
+                                title={!isAuthenticated ? 'Войдите для отправки сообщений' : 'Написать сообщение'}
+                            >
+                                <img src={sms} alt="sms" className={styles.icon} />
+                            </button>
+                            <DefaultBtn
+                                text={isSubscribed ? 'Подписка' : 'Подписаться'}
+                                onClick={handleSubscribe}
+                                className={`${styles.subscribe} ${isSubscribed ? styles.subscribed : ''}`}
+                                disabled={!isAuthenticated}
+                            />
+
+                        </div> 
 
                     </div>
                 </div>
