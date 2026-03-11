@@ -96,6 +96,7 @@ export default function ArtPost({
     } else if (user && owner) {
       setIsOwner(owner.id === user.id);
     }
+    console.log("владелец",{owner})
   }, [user, artDetails, owner]);
 
   // Загрузка деталей арта
@@ -492,29 +493,30 @@ export default function ArtPost({
       {mode === 'view' && (
         <>
           <div className={styles.content}>
+
             <div className={styles.textAndLike}>
-              <div className={styles.authorSection}>
-                <Link 
-                  to={isOwner ? "/me" : `/profile/${owner?.id || artDetails?.author?.id || 'unknown'}`} 
-                  className={styles.ownerLink}
-                >
-                  <div className={styles.authorInfo}>
-                    <img 
-                      src={owner?.pfp || artDetails?.author?.pfp} 
-                      alt="Автор"
-                      className={styles.pfp}
-                      onError={(e) => {
-                        e.target.src = PFP;
-                      }}
-                    />
-                    <div className={styles.authorDetails}>
-                      <span className={styles.authorName}>
-                        {owner?.displayName || artDetails?.author?.displayName || 'Неизвестный автор'}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
+              <Link 
+                to={isOwner ? "/me" : `/profile/${owner?.id || artDetails?.author?.id || 'unknown'}`} 
+                className={styles.ownerLink}
+              >
+                <img 
+                  src={owner?.pfp || artDetails?.author?.pfp} 
+                  alt="Автор"
+                  className={styles.pfp}
+                  onError={(e) => {
+                    e.target.src = PFP;
+                  }}
+                />
+                <div className={styles.names}>
+                  <span className={styles.authorName}>
+                    @
+                    {owner?.username || 'Неизвестный автор'}
+                  </span>
+                  <span className={styles.displayName}>
+                    {owner?.displayName}
+                  </span>
+                </div>
+              </Link>
               
               <LikeBtn 
                 className={styles.like} 
@@ -523,8 +525,10 @@ export default function ArtPost({
               />
             </div>
             
+            <div className={styles.hr}></div>
+            
             <div className={styles.textContent}>
-              <h1 className={styles.artTitle}>{artTitle}</h1>
+              <span className={styles.artTitle}>{artTitle}</span>
               <div className={styles.tags}>
                 <span>{artTags || '#no-tags'}</span>
               </div>

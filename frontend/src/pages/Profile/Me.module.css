@@ -36,6 +36,7 @@
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     text-decoration: none;
+    gap: 2px;
 }
 
 .edit span {
@@ -50,7 +51,6 @@
 }
 
 .edit img {
-    margin-right: 5px;
     width: 20px;
     height: 20px;
 }

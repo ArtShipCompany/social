@@ -1,10 +1,12 @@
 .artWrapp {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: fit-content;
     background-color: #dbefff;
     border-radius: 20px;
-    padding: 20px;
+    padding-top: 30px;
+    padding: 30px 20px 20px 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -30,29 +32,34 @@
 .content {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    margin-top: 10px;
-}
-
-.owner {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    align-items: flex-start;
-}
-
-.nickname {
-    color: var(--text-color);
-    font-weight: 600;
 }
 
 .ownerLink {
+    display: flex;
+    flex-direction: row;
     text-decoration: none;
+    color: var(--text-color);
+    font-weight: 600;
+    gap: 5px;
 }
 
-.link:hover {
-    text-decoration: underline;
+.names {
+    display: flex;
+    flex-direction: column;
+}
+
+.authorName {
+    font-size: 18px;
+    transition:  all 0.2s ease-in-out;
+}
+
+.authorName:hover {
     cursor: pointer;
+    transform: translateY(1px); 
+}
+
+.displayName {
+    font-weight: 400;
 }
 
 .pfp {
@@ -69,6 +76,7 @@
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
+    margin-block: 10px 5px;
 }
 
 .textContent {
@@ -76,20 +84,29 @@
     flex-direction: column;
 }
 
-.textContent span {
+.textContent {
     color: var(--text-color);
     font-size: 14px;
     word-wrap: break-word;
 }
 
+.artTitle {
+    font-size: 20px;
+}
+
 .tags {
     font-weight: 600;
+    font-size: 14px;
 }
 
 .like {
     position: relative;
     bottom: 0px;
     right: 0px;
+}
+
+.hr {
+    border-top: 1px solid #10497824;
 }
 
 .editContent {
@@ -235,6 +252,9 @@
 }
 
 .edit {
+    position: absolute;
+    top: 0px;
+    right: 30px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -242,11 +262,14 @@
     padding-block: 5px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    text-decoration: none;
+    gap: 3px;
 }
 
 .edit span {
     font-size: 14px;
     cursor: pointer;
+    text-decoration: none;
 }
 
 .edit span:hover {
@@ -256,7 +279,6 @@
 }
 
 .edit img {
-    margin-right: 5px;
     width: 20px;
     height: 20px;
 }

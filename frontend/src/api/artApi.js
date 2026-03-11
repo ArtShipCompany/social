@@ -4,45 +4,22 @@ const getToken = () => {
   return localStorage.getItem('accessToken');
 };
 
-const formatAuthor = (authorData, fallbackId, fallbackName) => {
+const formatAuthor = (authorData, fallbackId, fallbackNickname, fallbackName) => {
   if (!authorData || typeof authorData !== 'object') {
     return {
       id: fallbackId || 'unknown',
+      username: fallbackNickname || 'Неизвестный автор',
       displayName: fallbackName || 'Неизвестный автор',
       pfp: '/default-avatar.png'
     };
   }
   
-  // Получаем имя один раз
-  let name = 'Неизвестный автор';
-  
-  if (authorData.displayName && authorData.displayName !== 'Неизвестный автор') {
-    name = authorData.displayName;
-  } else if (authorData.nickname) {
-    name = authorData.nickname;
-  } else if (authorData.name) {
-    name = authorData.name;
-  } else if (authorData.username) {
-    name = authorData.username;
-  } else if (fallbackName && fallbackName !== 'Неизвестный автор') {
-    name = fallbackName;
-  }
-  
-  // Убираем возможное дублирование
-  const cleanName = (nameStr) => {
-    if (typeof nameStr !== 'string') return 'Неизвестный автор';
-    const half = Math.floor(nameStr.length / 2);
-    if (nameStr.substring(0, half) === nameStr.substring(half)) {
-      return nameStr.substring(0, half);
-    }
-    return nameStr;
-  };
-  
   const avatarUrl = authorData.pfp || authorData.avatar || authorData.profilePicture || authorData.avatarUrl;
   
   return {
     id: authorData.id || authorData.userId || fallbackId || 'unknown',
-    displayName: cleanName(name),
+    username: authorData.username,
+    displayName: authorData.displayName,
     pfp: getFullUrl(avatarUrl)
   };
 };
