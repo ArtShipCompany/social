@@ -127,7 +127,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Добавьте refreshUser в value:
     const value = {
         user,
         isLoading,

@@ -10,7 +10,7 @@ import blankPfp from '../../assets/blank-pfp.svg';
 export default function Edit() {
     const MAX_LENGTH = 100;
     const navigate = useNavigate();
-    const { user: currentUser, isAuthenticated } = useAuth();
+    const { user: currentUser, isAuthenticated, setUser } = useAuth();
     
     const [bio, setBio] = useState('');
     const [displayName, setDisplayName] = useState('');
@@ -89,7 +89,6 @@ export default function Edit() {
 
             const updateData = {};
             
-            // Добавляем поля только если они изменились
             if (displayName !== currentUser.displayName) {
                 updateData.displayName = displayName;
             }
@@ -98,42 +97,55 @@ export default function Edit() {
                 updateData.bio = bio;
             }
 
+            let updatedUserData = null;
+
             if (avatarFile) {
-                // Если есть новый аватар, используем FormData
                 const formData = userApi.createProfileFormData({
                     ...updateData,
                     avatarFile: avatarFile
                 });
                 
-                await userApi.updateProfileWithAvatar(formData);
+                const response = await userApi.updateProfileWithAvatar(formData);
+                updatedUserData = response.user || response;
             } else if (Object.keys(updateData).length > 0) {
                 // Если изменены только текстовые поля
-                await userApi.updateProfile(updateData);
+                const response = await userApi.updateProfile(updateData);
+                updatedUserData = response.user || response;
             } else {
-                // Ничего не изменилось
                 navigate('/me');
                 return;
             }
 
-            // Вместо updateUser просто обновляем localStorage и перенаправляем
-            if (updateData.displayName || updateData.bio || avatarFile) {
-                // Обновляем данные в localStorage
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    const parsedUser = JSON.parse(storedUser);
-                    localStorage.setItem('user', JSON.stringify({
-                        ...parsedUser,
-                        ...updateData
-                    }));
+            if (updatedUserData) {
+                const currentUserData = { ...currentUser };
+                
+                const newUserData = {
+                    ...currentUserData,
+                    ...updatedUserData,
+                    ...updateData
+                };
+                
+                if (avatarFile && updatedUserData.avatarUrl) {
+                    newUserData.avatarUrl = updatedUserData.avatarUrl;
                 }
+                
+                setUser(newUserData);
+                
+                localStorage.setItem('user', JSON.stringify(newUserData));
+            } else {
+               
+                const updatedLocalUser = {
+                    ...currentUser,
+                    ...updateData
+                };
+                setUser(updatedLocalUser);
+                localStorage.setItem('user', JSON.stringify(updatedLocalUser));
             }
 
             setSuccess(true);
-            
-            // Перенаправляем через 2 секунды
+
             setTimeout(() => {
-                // Принудительно обновляем страницу, чтобы получить свежие данные
-                window.location.href = '/me';
+                navigate('/me');
             }, 2000);
 
         } catch (err) {
@@ -227,7 +239,6 @@ export default function Edit() {
                     </div>
                 </div>
 
-                {/* Сообщения об ошибках и успехе */}
                 {error && (
                     <div className={styles.errorMessage}>
                         {error}
