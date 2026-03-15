@@ -8,6 +8,9 @@ import com.example.artship.social.repository.CollectionRepository;
 import com.example.artship.social.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,12 +145,93 @@ public class CollectionService {
         log.info("Collection {} deleted successfully", id);
     }
     
-    // Коллекции пользователя (БЕЗ артов для списка)
+    // НОВЫЕ МЕТОДЫ С ПАГИНАЦИЕЙ
+    
+    // Коллекции пользователя (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionDto> getCollectionsByUserId(Long userId, Pageable pageable) {
+        log.debug("Getting collections for user {} with pagination: page={}, size={}", 
+                 userId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<Collection> collectionsPage = collectionRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        
+        List<CollectionDto> dtos = collectionsPage.getContent().stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionsPage.getTotalElements());
+    }
+    
+    // Публичные коллекции пользователя (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionDto> getPublicCollectionsByUserId(Long userId, Pageable pageable) {
+        log.debug("Getting public collections for user {} with pagination: page={}, size={}", 
+                 userId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<Collection> collectionsPage = collectionRepository.findByUserIdAndIsPublicTrueOrderByCreatedAtDesc(userId, pageable);
+        
+        List<CollectionDto> dtos = collectionsPage.getContent().stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionsPage.getTotalElements());
+    }
+    
+    // Все публичные коллекции (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionDto> getPublicCollections(Pageable pageable) {
+        log.debug("Getting all public collections with pagination: page={}, size={}", 
+                 pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<Collection> collectionsPage = collectionRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable);
+        
+        List<CollectionDto> dtos = collectionsPage.getContent().stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionsPage.getTotalElements());
+    }
+    
+    // Поиск публичных коллекций (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionDto> searchPublicCollections(String query, Pageable pageable) {
+        log.debug("Searching public collections with query: '{}', pagination: page={}, size={}", 
+                 query, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<Collection> collectionsPage = collectionRepository.searchPublicCollections(query, pageable);
+        
+        List<CollectionDto> dtos = collectionsPage.getContent().stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionsPage.getTotalElements());
+    }
+    
+    // СТАРЫЕ МЕТОДЫ (ОСТАВЛЯЕМ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ)
     @Transactional(readOnly = true)
     public List<CollectionDto> getCollectionsByUserId(Long userId) {
-        log.debug("Getting collections for user {}", userId);
-        
         return collectionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<CollectionDto> getPublicCollectionsByUserId(Long userId) {
+        return collectionRepository.findByUserIdAndIsPublicTrueOrderByCreatedAtDesc(userId).stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<CollectionDto> getPublicCollections() {
+        return collectionRepository.findByIsPublicTrueOrderByCreatedAtDesc().stream()
+                .map(this::convertToDtoWithoutArts)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<CollectionDto> searchPublicCollections(String query) {
+        return collectionRepository.searchPublicCollections(query).stream()
                 .map(this::convertToDtoWithoutArts)
                 .collect(Collectors.toList());
     }
@@ -161,10 +245,8 @@ public class CollectionService {
         
         return collections.stream()
                 .map(collection -> {
-                    // Получаем арты для каждой коллекции
                     List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
                     
-                    // Создаем DTO с артами
                     CollectionDto dto = new CollectionDto();
                     dto.setId(collection.getId());
                     dto.setTitle(collection.getTitle());
@@ -179,30 +261,6 @@ public class CollectionService {
                     
                     return dto;
                 })
-                .collect(Collectors.toList());
-    }
-    
-    // Публичные коллекции пользователя
-    @Transactional(readOnly = true)
-    public List<CollectionDto> getPublicCollectionsByUserId(Long userId) {
-        return collectionRepository.findByUserIdAndIsPublicTrueOrderByCreatedAtDesc(userId).stream()
-                .map(this::convertToDtoWithoutArts)
-                .collect(Collectors.toList());
-    }
-    
-    // Все публичные коллекции
-    @Transactional(readOnly = true)
-    public List<CollectionDto> getPublicCollections() {
-        return collectionRepository.findByIsPublicTrueOrderByCreatedAtDesc().stream()
-                .map(this::convertToDtoWithoutArts)
-                .collect(Collectors.toList());
-    }
-    
-    // Поиск публичных коллекций
-    @Transactional(readOnly = true)
-    public List<CollectionDto> searchPublicCollections(String query) {
-        return collectionRepository.searchPublicCollections(query).stream()
-                .map(this::convertToDtoWithoutArts)
                 .collect(Collectors.toList());
     }
     
@@ -225,15 +283,13 @@ public class CollectionService {
         dto.setUserId(collection.getUser() != null ? collection.getUser().getId() : null);
         dto.setUsername(collection.getUser() != null ? collection.getUser().getUsername() : null);
         
-        // Устанавливаем количество артов без загрузки самих артов
         Long artCount = collectionArtService.getArtCountByCollectionId(collection.getId());
         dto.setArtCount(artCount != null ? artCount.intValue() : 0);
-        dto.setArts(Collections.emptyList()); // Пустой список для списков
+        dto.setArts(Collections.emptyList());
         
         return dto;
     }
     
-    // Конвертация в DTO С артами
     private CollectionDto convertToDtoWithArts(Collection collection) {
         log.debug("Converting collection {} to DTO with arts", collection.getId());
 

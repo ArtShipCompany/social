@@ -113,18 +113,11 @@ public class ArtService {
                 .map(this::convertToDto);
     }
 
-    @Transactional(readOnly = true)
-    public List<Art> getPublicArtsByAuthor(User author) {
-        return artRepository.findByAuthorAndIsPublicFlagTrueOrderByCreatedAtDesc(author);
+    public Page<ArtDto> getPublicArtDtosByAuthor1(User author, Pageable pageable) {
+        Page<Art> artsPage = artRepository.findByAuthorAndIsPublicFlagTrue(author, pageable);
+        return artsPage.map(this::convertToDto);
     }
-
-    @Transactional(readOnly = true)
-    public List<ArtDto> getPublicArtDtosByAuthor(User author) {
-        return artRepository.findByAuthorAndIsPublicFlagTrueOrderByCreatedAtDesc(author)
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
+  
 
     @Transactional(readOnly = true)
     public Page<Art> getUserFeed(Long userId, Pageable pageable) {
@@ -144,19 +137,15 @@ public class ArtService {
                 .orElse(false);
     }
 
-    @Transactional(readOnly = true)
-    public List<Art> getAllArtsByAuthor(User author) {
-        return artRepository.findByAuthorOrderByCreatedAtDesc(author);
+    public Page<ArtDto> getPublicArtDtosByAuthor(User author, Pageable pageable) {
+        Page<Art> artsPage = artRepository.findByAuthorAndIsPublicFlagTrue(author, pageable);
+        return artsPage.map(this::convertToDto);
     }
 
-    @Transactional(readOnly = true)
-    public List<ArtDto> getAllArtDtosByAuthor(User author) {
-        return artRepository.findByAuthorOrderByCreatedAtDesc(author)
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
+    public Page<ArtDto> getAllArtDtosByAuthor(User author, Pageable pageable) {
+        Page<Art> artsPage = artRepository.findByAuthor(author, pageable);
+        return artsPage.map(this::convertToDto);
+}
     @Transactional(readOnly = true)
     public Page<Art> searchPublicArtsByTitle(String title, Pageable pageable) {
         return artRepository.findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(title, pageable);

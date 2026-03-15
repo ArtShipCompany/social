@@ -8,6 +8,9 @@ import com.example.artship.social.service.TagManagementService;
 import com.example.artship.social.service.TagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/art-tags")
@@ -101,31 +105,39 @@ public class ArtTagController {
     
     // Получение артов по тегу
     @GetMapping("/tag/{tagId}/arts")
-    public ResponseEntity<List<ArtDto>> getArtsByTag(@PathVariable Long tagId) {
+    public ResponseEntity<Page<ArtDto>> getArtsByTag(
+        @PathVariable Long tagId,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
         log.debug("Getting arts for tag {}", tagId);
-
-        List<ArtDto> arts = tagManagementService.getArtsByTagId(tagId);
+        
+        Page<ArtDto> arts = tagManagementService.getArtsByTagId(tagId, pageable);
         return ResponseEntity.ok(arts);
     }
     
     //Получение всех ArtTagDto для арта
     @GetMapping("/art/{artId}/art-tags")
-    public ResponseEntity<List<ArtTagDto>> getArtTagsByArt(@PathVariable Long artId) {
+    public ResponseEntity<Page<ArtTagDto>> getArtTagsByArt(
+        @PathVariable Long artId,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
         log.debug("Getting art-tag relations for art {}", artId);
         
-        List<ArtTagDto> artTags = artTagService.getArtTagDtosByArtId(artId);
+        Page<ArtTagDto> artTags = artTagService.getArtTagDtosByArtId(artId, pageable);
         return ResponseEntity.ok(artTags);
     }
     
     // Получение всех ArtTagDto для тега
     @GetMapping("/tag/{tagId}/art-tags")
-    public ResponseEntity<List<ArtTagDto>> getArtTagsByTag(@PathVariable Long tagId) {
+    public ResponseEntity<Page<ArtTagDto>> getArtTagsByTag(
+        @PathVariable Long tagId,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
         log.debug("Getting art-tag relations for tag {}", tagId);
         
-        List<ArtTagDto> artTags = artTagService.getArtTagDtosByTagId(tagId);
+        Page<ArtTagDto> artTags = artTagService.getArtTagDtosByTagId(tagId, pageable);
         return ResponseEntity.ok(artTags);
     }
-    
 
     
     // Количество артов по тегу
@@ -196,19 +208,11 @@ public class ArtTagController {
         log.debug("Getting art-tag relation: artId={}, tagId={}", artId, tagId);
         
         try {
-            boolean exists = artTagService.existsByArtIdAndTagId(artId, tagId);
-            if (!exists) {
-                return ResponseEntity.notFound().build();
-            }
-            List<ArtTagDto> relations = artTagService.getArtTagDtosByArtId(artId).stream()
-                    .filter(artTag -> artTag.getTagId().equals(tagId))
-                    .collect(java.util.stream.Collectors.toList());
+            Optional<ArtTagDto> artTagDto = artTagService.getArtTagDtoByArtIdAndTagId(artId, tagId);
             
-            if (relations.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(relations.get(0));
+            return artTagDto
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
             
         } catch (RuntimeException e) {
             log.error("Error getting art-tag relation: {}", e.getMessage(), e);

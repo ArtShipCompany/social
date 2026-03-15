@@ -2,6 +2,8 @@ package com.example.artship.social.repository;
 
 import com.example.artship.social.model.Follow;
 import com.example.artship.social.model.Follow.FollowId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,11 +26,18 @@ public interface FollowRepository extends JpaRepository<Follow, FollowId> {
     boolean existsByFollowerIdAndFollowingId(@Param("followerId") Long followerId, 
                                              @Param("followingId") Long followingId);
     
-    // Подписчики пользователя (кто подписан на него)
+    // Подписчики пользователя (кто подписан на него) - с пагинацией
+    @Query("SELECT f FROM Follow f WHERE f.following.id = :userId")
+    Page<Follow> findByFollowingId(@Param("userId") Long userId, Pageable pageable);
+    
+    // Подписки пользователя (на кого он подписан) - с пагинацией
+    @Query("SELECT f FROM Follow f WHERE f.follower.id = :userId")
+    Page<Follow> findByFollowerId(@Param("userId") Long userId, Pageable pageable);
+    
+    // Методы без пагинации (для обратной совместимости, если нужны)
     @Query("SELECT f FROM Follow f WHERE f.following.id = :userId")
     List<Follow> findByFollowingId(@Param("userId") Long userId);
     
-    // Подписки пользователя (на кого он подписан)
     @Query("SELECT f FROM Follow f WHERE f.follower.id = :userId")
     List<Follow> findByFollowerId(@Param("userId") Long userId);
     

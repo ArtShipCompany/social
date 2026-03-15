@@ -9,11 +9,13 @@ import com.example.artship.social.repository.ArtTagRepository;
 import com.example.artship.social.repository.TagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
+
 
 @Service
 @Transactional
@@ -56,6 +58,13 @@ public class ArtTagService {
         log.info("Art-tag relation created successfully");
         return new ArtTagDto(savedArtTag);
     }
+
+    public Optional<ArtTagDto> getArtTagDtoByArtIdAndTagId(Long artId, Long tagId) {
+        log.debug("Getting art-tag relation by artId={} and tagId={}", artId, tagId);
+        
+        return artTagRepository.findByArtIdAndTagId(artId, tagId)
+                .map(this::convertToDto);
+    }
     
     // Удаление связи
     public void removeTagFromArt(Long artId, Long tagId) {
@@ -68,19 +77,17 @@ public class ArtTagService {
     }
     
     // Получение всех ArtTagDto для арта
-    public List<ArtTagDto> getArtTagDtosByArtId(Long artId) {
-        return artTagRepository.findByArtId(artId).stream()
-                .map(ArtTagDto::new)
-                .collect(Collectors.toList());
+    public Page<ArtTagDto> getArtTagDtosByArtId(Long artId, Pageable pageable) {
+        Page<ArtTag> artTagsPage = artTagRepository.findByArtId(artId, pageable);
+        return artTagsPage.map(this::convertToDto);
     }
     
     // Получение всех ArtTagDto для тега
-    public List<ArtTagDto> getArtTagDtosByTagId(Long tagId) {
-        return artTagRepository.findByTagId(tagId).stream()
-                .map(ArtTagDto::new)
-                .collect(Collectors.toList());
+    public Page<ArtTagDto> getArtTagDtosByTagId(Long tagId, Pageable pageable) {
+        Page<ArtTag> artTagsPage = artTagRepository.findByTagId(tagId, pageable);
+        return artTagsPage.map(this::convertToDto);
     }
-    
+        
     // Количество артов по тегу
     public Long getArtCountByTagId(Long tagId) {
         return tagManagementService.getArtCountByTagId(tagId);
@@ -94,5 +101,9 @@ public class ArtTagService {
     // Удаление всех тегов из арта
     public void removeAllTagsFromArt(Long artId) {
         tagManagementService.removeAllTagsFromArt(artId);
+    }
+
+    private ArtTagDto convertToDto(ArtTag artTag) {
+        return new ArtTagDto(artTag);
     }
 }

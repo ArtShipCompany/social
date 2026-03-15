@@ -14,6 +14,7 @@ public class CommentDto {
     private String userAvatarUrl;
     private Long parentCommentId;
     private List<CommentDto> replies;
+    private Long totalReplies; 
 
     public CommentDto() {}
 
@@ -32,8 +33,10 @@ public class CommentDto {
             : parentCommentIdFromRequest;
         
         this.replies = null;
+        this.totalReplies = 0L; 
     }
 
+    // Геттеры и сеттеры для всех полей
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -60,4 +63,7 @@ public class CommentDto {
 
     public List<CommentDto> getReplies() { return replies; }
     public void setReplies(List<CommentDto> replies) { this.replies = replies; }
+
+    public Long getTotalReplies() { return totalReplies; }
+    public void setTotalReplies(Long totalReplies) { this.totalReplies = totalReplies; }
 }

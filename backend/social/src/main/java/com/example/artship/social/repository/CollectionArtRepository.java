@@ -1,59 +1,24 @@
 package com.example.artship.social.repository;
 
 import com.example.artship.social.model.CollectionArt;
-import com.example.artship.social.model.CollectionArt.CollectionArtId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface CollectionArtRepository extends JpaRepository<CollectionArt, CollectionArtId> {
+public interface CollectionArtRepository extends JpaRepository<CollectionArt, Long> {
+    // Методы с пагинацией
+    Page<CollectionArt> findByCollectionId(Long collectionId, Pageable pageable);
+    Page<CollectionArt> findByArtId(Long artId, Pageable pageable);
     
-    // Найти связь по collectionId и artId
-    @Query("SELECT ca FROM CollectionArt ca WHERE ca.collection.id = :collectionId AND ca.art.id = :artId")
-    Optional<CollectionArt> findByCollectionIdAndArtId(@Param("collectionId") Long collectionId, 
-                                                      @Param("artId") Long artId);
+    // Методы без пагинации (для обратной совместимости)
+    List<CollectionArt> findByCollectionId(Long collectionId);
+    List<CollectionArt> findByArtId(Long artId);
     
-    // Проверить существование связи
-    @Query("SELECT CASE WHEN COUNT(ca) > 0 THEN true ELSE false END " +
-           "FROM CollectionArt ca WHERE ca.collection.id = :collectionId AND ca.art.id = :artId")
-    boolean existsByCollectionIdAndArtId(@Param("collectionId") Long collectionId, 
-                                        @Param("artId") Long artId);
-    
-    // Найти все арты в коллекции
-    @Query("SELECT ca FROM CollectionArt ca WHERE ca.collection.id = :collectionId")
-    List<CollectionArt> findByCollectionId(@Param("collectionId") Long collectionId);
-    
-    // Найти все коллекции, содержащие арт
-    @Query("SELECT ca FROM CollectionArt ca WHERE ca.art.id = :artId")
-    List<CollectionArt> findByArtId(@Param("artId") Long artId);
-    
-    // Количество артов в коллекции
-    @Query("SELECT COUNT(ca) FROM CollectionArt ca WHERE ca.collection.id = :collectionId")
-    Long countByCollectionId(@Param("collectionId") Long collectionId);
-    
-    // Количество коллекций, содержащих арт
-    @Query("SELECT COUNT(ca) FROM CollectionArt ca WHERE ca.art.id = :artId")
-    Long countByArtId(@Param("artId") Long artId);
-    
-    // Удалить связь по collectionId и artId
-    @Modifying
-    @Query("DELETE FROM CollectionArt ca WHERE ca.collection.id = :collectionId AND ca.art.id = :artId")
-    void deleteByCollectionIdAndArtId(@Param("collectionId") Long collectionId, 
-                                      @Param("artId") Long artId);
-    
-    // Удалить все связи по collectionId
-    @Modifying
-    @Query("DELETE FROM CollectionArt ca WHERE ca.collection.id = :collectionId")
-    void deleteByCollectionId(@Param("collectionId") Long collectionId);
-    
-    // Удалить все связи по artId
-    @Modifying
-    @Query("DELETE FROM CollectionArt ca WHERE ca.art.id = :artId")
-    void deleteByArtId(@Param("artId") Long artId);
+    Optional<CollectionArt> findByCollectionIdAndArtId(Long collectionId, Long artId);
+    boolean existsByCollectionIdAndArtId(Long collectionId, Long artId);
+    void deleteByCollectionIdAndArtId(Long collectionId, Long artId);
+    void deleteByCollectionId(Long collectionId);
+    Long countByCollectionId(Long collectionId);
 }

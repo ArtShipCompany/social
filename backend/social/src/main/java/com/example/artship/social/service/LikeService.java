@@ -7,6 +7,9 @@ import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.LikeRepository;
 import com.example.artship.social.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +57,31 @@ public class LikeService {
         return likeRepository.existsByUserIdAndArtId(userId, artId);
     }
     
-    // Получение лайков арта
+    // Получение лайков арта (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<LikeDto> getLikesByArtId(Long artId, Pageable pageable) {
+        Page<Like> likesPage = likeRepository.findByArtId(artId, pageable);
+        
+        List<LikeDto> dtos = likesPage.getContent().stream()
+                .map(LikeDto::new)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, likesPage.getTotalElements());
+    }
+    
+    // Получение лайков пользователя (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<LikeDto> getLikesByUserId(Long userId, Pageable pageable) {
+        Page<Like> likesPage = likeRepository.findByUserId(userId, pageable);
+        
+        List<LikeDto> dtos = likesPage.getContent().stream()
+                .map(LikeDto::new)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, likesPage.getTotalElements());
+    }
+    
+    // Методы без пагинации (для обратной совместимости)
     @Transactional(readOnly = true)
     public List<LikeDto> getLikesByArtId(Long artId) {
         return likeRepository.findByArtId(artId).stream()
@@ -62,7 +89,6 @@ public class LikeService {
                 .collect(Collectors.toList());
     }
     
-    // Получение лайков пользователя
     @Transactional(readOnly = true)
     public List<LikeDto> getLikesByUserId(Long userId) {
         return likeRepository.findByUserId(userId).stream()

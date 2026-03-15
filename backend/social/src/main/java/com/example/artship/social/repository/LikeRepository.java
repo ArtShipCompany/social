@@ -1,6 +1,8 @@
 package com.example.artship.social.repository;
 
 import com.example.artship.social.model.Like;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,14 @@ import java.util.Optional;
 @Repository
 public interface LikeRepository extends JpaRepository<Like, Like.LikeId> {
     
+    // Методы с пагинацией
+    @Query("SELECT l FROM Like l WHERE l.art.id = :artId")
+    Page<Like> findByArtId(@Param("artId") Long artId, Pageable pageable);
+    
+    @Query("SELECT l FROM Like l WHERE l.user.id = :userId")
+    Page<Like> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    
+    // Методы без пагинации (для обратной совместимости)
     @Query("SELECT l FROM Like l WHERE l.art.id = :artId")
     List<Like> findByArtId(@Param("artId") Long artId);
     
