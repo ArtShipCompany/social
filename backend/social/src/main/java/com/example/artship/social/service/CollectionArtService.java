@@ -10,6 +10,9 @@ import com.example.artship.social.repository.CollectionArtRepository;
 import com.example.artship.social.repository.CollectionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,10 +100,65 @@ public class CollectionArtService {
         log.info("Removed {} arts from collection {}", count, collectionId);
     }
     
-    // Получение артов коллекции
+    // Получение артов коллекции (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<ArtDto> getArtsByCollectionId(Long collectionId, Pageable pageable) {
+        log.debug("Getting arts for collection {} with pagination: page={}, size={}", 
+                 collectionId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByCollectionId(collectionId, pageable);
+        
+        List<ArtDto> artDtos = collectionArtsPage.getContent().stream()
+                .map(CollectionArt::getArt)
+                .filter(art -> art != null)
+                .map(art -> {
+                    try {
+                        return artService.getArtDtoById(art.getId()).orElse(null);
+                    } catch (Exception e) {
+                        log.warn("Error loading art {}: {}", art.getId(), e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(artDto -> artDto != null)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(artDtos, pageable, collectionArtsPage.getTotalElements());
+    }
+    
+    // Получение коллекций арта (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionArtDto> getCollectionsByArtId(Long artId, Pageable pageable) {
+        log.debug("Getting collections for art {} with pagination: page={}, size={}", 
+                 artId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByArtId(artId, pageable);
+        
+        List<CollectionArtDto> dtos = collectionArtsPage.getContent().stream()
+                .map(CollectionArtDto::new)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionArtsPage.getTotalElements());
+    }
+    
+    // Получение CollectionArtDto для коллекции (с пагинацией)
+    @Transactional(readOnly = true)
+    public Page<CollectionArtDto> getCollectionArtDtosByCollectionId(Long collectionId, Pageable pageable) {
+        log.debug("Getting CollectionArtDto for collection {} with pagination: page={}, size={}", 
+                 collectionId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByCollectionId(collectionId, pageable);
+        
+        List<CollectionArtDto> dtos = collectionArtsPage.getContent().stream()
+                .map(CollectionArtDto::new)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, collectionArtsPage.getTotalElements());
+    }
+    
+    // ОСТАВЛЯЕМ СТАРЫЕ МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ (опционально)
     @Transactional(readOnly = true)
     public List<ArtDto> getArtsByCollectionId(Long collectionId) {
-        log.debug("Getting arts for collection {}", collectionId);
+        log.debug("Getting all arts for collection {} (without pagination)", collectionId);
         
         List<CollectionArt> collectionArts = collectionArtRepository.findByCollectionId(collectionId);
         
@@ -127,10 +185,9 @@ public class CollectionArtService {
         return arts;
     }
     
-    // Получение коллекций арта
     @Transactional(readOnly = true)
     public List<CollectionArtDto> getCollectionsByArtId(Long artId) {
-        log.debug("Getting collections for art {}", artId);
+        log.debug("Getting all collections for art {} (without pagination)", artId);
         
         List<CollectionArt> collectionArts = collectionArtRepository.findByArtId(artId);
         List<CollectionArtDto> result = collectionArts.stream()
@@ -141,10 +198,9 @@ public class CollectionArtService {
         return result;
     }
     
-    // Получение CollectionArtDto для коллекции
     @Transactional(readOnly = true)
     public List<CollectionArtDto> getCollectionArtDtosByCollectionId(Long collectionId) {
-        log.debug("Getting CollectionArtDto for collection {}", collectionId);
+        log.debug("Getting all CollectionArtDto for collection {} (without pagination)", collectionId);
         
         List<CollectionArt> collectionArts = collectionArtRepository.findByCollectionId(collectionId);
         List<CollectionArtDto> result = collectionArts.stream()

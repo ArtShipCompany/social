@@ -9,6 +9,10 @@ import com.example.artship.social.repository.CommentRepository;
 import com.example.artship.social.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,62 +126,58 @@ public class CommentService {
         log.info("Comment {} deleted successfully", id);
     }
     
-    // Получение комментариев арта
+    // Получение корневых комментариев арта с ответами (с пагинацией)
     @Transactional(readOnly = true)
-    public List<CommentDto> getCommentsByArtId(Long artId) {
-        log.debug("Getting comments for art ID: {}", artId);
+    public Page<CommentDto> getRootCommentsWithReplies(Long artId, Pageable pageable) {
+        log.debug("Getting root comments with replies for art ID: {} with pagination: page={}, size={}", 
+                 artId, pageable.getPageNumber(), pageable.getPageSize());
         
-        return commentRepository.findByArtIdOrderByCreatedAtAsc(artId).stream()
-                .map(comment -> {
-                    Long parentId = comment.getParentComment() != null 
-                            ? comment.getParentComment().getId() 
-                            : null;
-                    return new CommentDto(comment, parentId);
-                })
-                .collect(Collectors.toList());
-    }
-    
-    // Получение корневых комментариев арта с ответами
-    @Transactional(readOnly = true)
-    public List<CommentDto> getRootCommentsWithReplies(Long artId) {
-        log.debug("Getting root comments with replies for art ID: {}", artId);
+        Page<Comment> rootCommentsPage = commentRepository.findRootCommentsByArtId(artId, pageable);
         
-        List<Comment> rootComments = commentRepository.findRootCommentsByArtId(artId);
-        
-        return rootComments.stream()
+        List<CommentDto> dtos = rootCommentsPage.getContent().stream()
                 .map(rootComment -> {
                     Long parentId = rootComment.getParentComment() != null 
                             ? rootComment.getParentComment().getId() 
                             : null;
                     CommentDto dto = new CommentDto(rootComment, parentId);
                     
-                    // Получаем ответы для этого корневого комментария
-                    List<CommentDto> replies = getRepliesByCommentId(rootComment.getId());
-                    dto.setReplies(replies);
+                    // Получаем ТОЛЬКО ПЕРВЫЕ НЕСКОЛЬКО ответов для предпросмотра
+                    Pageable repliesPageable = PageRequest.of(0, 3); // Показываем только первые 3 ответа
+                    Page<CommentDto> replies = getRepliesByCommentId(rootComment.getId(), repliesPageable);
+                    dto.setReplies(replies.getContent());
+                    dto.setTotalReplies(commentRepository.countByParentCommentId(rootComment.getId()));
                     
                     return dto;
                 })
                 .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, rootCommentsPage.getTotalElements());
     }
     
-    // Получение ответов на комментарий
+    // Получение ответов на комментарий (с пагинацией)
     @Transactional(readOnly = true)
-    public List<CommentDto> getRepliesByCommentId(Long commentId) {
-        log.debug("Getting replies for comment ID: {}", commentId);
+    public Page<CommentDto> getRepliesByCommentId(Long commentId, Pageable pageable) {
+        log.debug("Getting replies for comment ID: {} with pagination: page={}, size={}", 
+                 commentId, pageable.getPageNumber(), pageable.getPageSize());
         
-        return commentRepository.findRepliesByParentCommentId(commentId).stream()
-                .map(reply -> {
-                    return new CommentDto(reply, commentId);
-                })
+        Page<Comment> repliesPage = commentRepository.findRepliesByParentCommentId(commentId, pageable);
+        
+        List<CommentDto> dtos = repliesPage.getContent().stream()
+                .map(reply -> new CommentDto(reply, commentId))
                 .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, repliesPage.getTotalElements());
     }
     
-    // Получение комментариев пользователя
+    // Получение комментариев пользователя (с пагинацией)
     @Transactional(readOnly = true)
-    public List<CommentDto> getCommentsByUserId(Long userId) {
-        log.debug("Getting comments for user ID: {}", userId);
+    public Page<CommentDto> getCommentsByUserId(Long userId, Pageable pageable) {
+        log.debug("Getting comments for user ID: {} with pagination: page={}, size={}", 
+                 userId, pageable.getPageNumber(), pageable.getPageSize());
         
-        return commentRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        Page<Comment> commentsPage = commentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        
+        List<CommentDto> dtos = commentsPage.getContent().stream()
                 .map(comment -> {
                     Long parentId = comment.getParentComment() != null 
                             ? comment.getParentComment().getId() 
@@ -185,6 +185,8 @@ public class CommentService {
                     return new CommentDto(comment, parentId);
                 })
                 .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, commentsPage.getTotalElements());
     }
     
     // Количество комментариев арта
@@ -199,5 +201,11 @@ public class CommentService {
     public Long getCommentCountByUserId(Long userId) {
         log.debug("Getting comment count for user ID: {}", userId);
         return commentRepository.countByUserId(userId);
+    }
+    
+    // Дополнительный метод для подсчета ответов
+    @Transactional(readOnly = true)
+    public Long getReplyCountByCommentId(Long commentId) {
+        return commentRepository.countByParentCommentId(commentId);
     }
 }

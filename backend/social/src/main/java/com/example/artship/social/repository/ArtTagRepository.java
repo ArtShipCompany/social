@@ -1,6 +1,9 @@
 package com.example.artship.social.repository;
 
 import com.example.artship.social.model.ArtTag;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -82,4 +85,10 @@ public interface ArtTagRepository extends JpaRepository<ArtTag, ArtTag.ArtTagId>
     @Query("SELECT at.art.id, COUNT(at.tag.id) as tagCount " +
            "FROM ArtTag at GROUP BY at.art.id ORDER BY tagCount DESC")
     List<Object[]> findArtsWithMostTags(@Param("limit") int limit);
+
+    Page<ArtTag> findByArtId(Long artId, Pageable pageable);
+
+    Page<ArtTag> findByTagId(Long tagId, Pageable pageable);
+
+
 }

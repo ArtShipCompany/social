@@ -11,6 +11,8 @@ import com.example.artship.social.repository.ArtTagRepository;
 import com.example.artship.social.repository.TagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,20 +118,26 @@ public class TagManagementService {
                 .collect(Collectors.toList());
     }
     
-    // Получение артов по тегу
-    @Transactional(readOnly = true)
-    public List<ArtDto> getArtsByTagId(Long tagId) {
-        log.debug("Getting arts for tag {}", tagId);
+    // ИСПРАВЛЕННЫЙ МЕТОД: получение артов по тегу с пагинацией
+    public Page<ArtDto> getArtsByTagId(Long tagId, Pageable pageable) {
+        log.debug("Getting arts for tag {} with pagination: page={}, size={}", 
+                 tagId, pageable.getPageNumber(), pageable.getPageSize());
         
-        List<ArtTag> artTags = artTagRepository.findByTagId(tagId);
-        if (artTags.isEmpty()) {
-            return Collections.emptyList();
-        }
+        Page<Art> artsPage = artRepository.findByTagsId(tagId, pageable);
+        return artsPage.map(this::convertToDto);
+    }
+    
+    // НОВЫЙ МЕТОД: полная конвертация Art в ArtDto с тегами
+    private ArtDto convertToDto(Art art) {
+        if (art == null) return null;
         
-        return artTags.stream()
-                .map(ArtTag::getArt)
-                .map(this::convertToArtDto)
-                .collect(Collectors.toList());
+        ArtDto dto = convertToArtDto(art);
+        
+        // Добавляем теги к арту
+        List<TagDto> tags = getTagsByArtId(art.getId());
+        dto.setTags(tags);
+        
+        return dto;
     }
     
     // Проверка существования связи

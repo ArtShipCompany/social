@@ -4,12 +4,14 @@ import com.example.artship.social.dto.FollowDto;
 import com.example.artship.social.service.FollowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -35,7 +37,6 @@ public class FollowController {
             FollowDto follow = followService.followUser(followerId, followingId);
             log.info("User {} successfully followed user {}", followerId, followingId);
             
-            // Возвращаем 201 Created с Location header
             URI location = URI.create("/api/follows/follower/" + followerId + "/following/" + followingId);
             return ResponseEntity.created(location).body(follow);
             
@@ -78,21 +79,27 @@ public class FollowController {
         return ResponseEntity.ok(isFollowing);
     }
     
-    // Подписчики пользователя
+    // Подписчики пользователя (с пагинацией)
     @GetMapping("/user/{userId}/followers")
-    public ResponseEntity<List<FollowDto>> getFollowers(@PathVariable Long userId) {
-        log.debug("Getting followers for user {}", userId);
+    public ResponseEntity<Page<FollowDto>> getFollowers(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        log.debug("Getting followers for user {} with pagination: page={}, size={}", 
+                 userId, pageable.getPageNumber(), pageable.getPageSize());
         
-        List<FollowDto> followers = followService.getFollowers(userId);
+        Page<FollowDto> followers = followService.getFollowers(userId, pageable);
         return ResponseEntity.ok(followers);
     }
     
-    // Подписки пользователя
+    // Подписки пользователя (с пагинацией)
     @GetMapping("/user/{userId}/following")
-    public ResponseEntity<List<FollowDto>> getFollowing(@PathVariable Long userId) {
-        log.debug("Getting following for user {}", userId);
+    public ResponseEntity<Page<FollowDto>> getFollowing(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        log.debug("Getting following for user {} with pagination: page={}, size={}", 
+                 userId, pageable.getPageNumber(), pageable.getPageSize());
         
-        List<FollowDto> following = followService.getFollowing(userId);
+        Page<FollowDto> following = followService.getFollowing(userId, pageable);
         return ResponseEntity.ok(following);
     }
     

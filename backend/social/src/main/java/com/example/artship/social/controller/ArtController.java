@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -359,9 +360,7 @@ public class ArtController {
         @Parameter(description = "ID арта", required = true) @PathVariable Long id,
         @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
     ) {
-        logger.info("=== УДАЛЕНИЕ АРТА ID: {} ===", id);
-        logger.info("Пользователь: {}", userDetails != null ? userDetails.getUsername() : "null");
-        
+               
         if (userDetails == null) {
             logger.error("ОШИБКА: userDetails == null. Возвращаем 401");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -453,11 +452,12 @@ public class ArtController {
         return ResponseEntity.ok(feed);
     }
 
-    // Получение публичных артов конкретного пользователя
+
     @Operation(summary = "Получить публичные арты пользователя")
     @GetMapping("/author/{userId}")
-    public ResponseEntity<List<ArtDto>> getPublicArtsByAuthor(
-        @Parameter(description = "ID пользователя", required = true) @PathVariable Long userId
+    public ResponseEntity<Page<ArtDto>> getPublicArtsByAuthor(
+        @Parameter(description = "ID пользователя", required = true) @PathVariable Long userId,
+        @PageableDefault(size = 20) Pageable pageable
     ) {
         logger.info("Получение публичных артов пользователя ID: {}", userId);
         
@@ -467,9 +467,9 @@ public class ArtController {
             return ResponseEntity.notFound().build();
         }
         
-        List<ArtDto> arts = artService.getPublicArtDtosByAuthor(author.get());
+        Page<ArtDto> arts = artService.getPublicArtDtosByAuthor(author.get(), pageable);
         logger.info("Найдено {} публичных артов пользователя {}", 
-                   arts.size(), author.get().getUsername());
+                arts.getTotalElements(), author.get().getUsername());
         
         return ResponseEntity.ok(arts);
     }
@@ -477,8 +477,9 @@ public class ArtController {
     // Получение всех артов текущего пользователя (включая приватные)
     @Operation(summary = "Получить все арты текущего пользователя")
     @GetMapping("/my-arts")
-    public ResponseEntity<List<ArtDto>> getMyArts(
-        @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails
+    public ResponseEntity<Page<ArtDto>> getMyArts(
+        @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails,
+        @PageableDefault(size = 20) Pageable pageable
     ) {
         logger.info("Получение всех артов текущего пользователя");
         
@@ -487,7 +488,6 @@ public class ArtController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // Находим пользователя в базе
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
             logger.error("ОШИБКА: Пользователь не найден в базе: {}", userDetails.getUsername());
@@ -496,9 +496,9 @@ public class ArtController {
         
         User currentUser = userOpt.get();
         
-        List<ArtDto> arts = artService.getAllArtDtosByAuthor(currentUser);
+        Page<ArtDto> arts = artService.getAllArtDtosByAuthor(currentUser, pageable);
         logger.info("Найдено {} артов пользователя {}", 
-                   arts.size(), currentUser.getUsername());
+                arts.getTotalElements(), currentUser.getUsername());
         
         return ResponseEntity.ok(arts);
     }

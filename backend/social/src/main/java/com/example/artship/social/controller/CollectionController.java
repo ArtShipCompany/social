@@ -1,12 +1,16 @@
 package com.example.artship.social.controller;
 
 import com.example.artship.social.dto.CollectionDto;
+import com.example.artship.social.requests.CollectionRequest;
+import com.example.artship.social.requests.CollectionUpdateRequest;
 import com.example.artship.social.service.CollectionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -74,31 +78,38 @@ public class CollectionController {
         }
     }
     
-    // Коллекции пользователя
+    // Коллекции пользователя (с пагинацией)
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<CollectionDto>> getUserCollections(@PathVariable Long userId) {
-        List<CollectionDto> collections = collectionService.getCollectionsByUserId(userId);
+    public ResponseEntity<Page<CollectionDto>> getUserCollections(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<CollectionDto> collections = collectionService.getCollectionsByUserId(userId, pageable);
         return ResponseEntity.ok(collections);
     }
     
-    // Публичные коллекции пользователя
+    // Публичные коллекции пользователя (с пагинацией)
     @GetMapping("/user/{userId}/public")
-    public ResponseEntity<List<CollectionDto>> getUserPublicCollections(@PathVariable Long userId) {
-        List<CollectionDto> collections = collectionService.getPublicCollectionsByUserId(userId);
+    public ResponseEntity<Page<CollectionDto>> getUserPublicCollections(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<CollectionDto> collections = collectionService.getPublicCollectionsByUserId(userId, pageable);
         return ResponseEntity.ok(collections);
     }
     
-    // Все публичные коллекции
+    // Все публичные коллекции (с пагинацией)
     @GetMapping("/public")
-    public ResponseEntity<List<CollectionDto>> getPublicCollections() {
-        List<CollectionDto> collections = collectionService.getPublicCollections();
+    public ResponseEntity<Page<CollectionDto>> getPublicCollections(
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<CollectionDto> collections = collectionService.getPublicCollections(pageable);
         return ResponseEntity.ok(collections);
     }
     
-    // Поиск публичных коллекций
+    // Поиск публичных коллекций (с пагинацией)
     @GetMapping("/search")
-    public ResponseEntity<List<CollectionDto>> searchCollections(@RequestParam String q) {
-        List<CollectionDto> collections = collectionService.searchPublicCollections(q);
+    public ResponseEntity<Page<CollectionDto>> searchCollections(
+            @RequestParam String q,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<CollectionDto> collections = collectionService.searchPublicCollections(q, pageable);
         return ResponseEntity.ok(collections);
     }
     
@@ -109,49 +120,5 @@ public class CollectionController {
             @PathVariable Long userId) {
         boolean hasAccess = collectionService.isUserOwnerOfCollection(id, userId);
         return ResponseEntity.ok(hasAccess);
-    }
-    
-    // DTO для создания коллекции
-    public static class CollectionRequest {
-        private String title;
-        private String description;
-        private Boolean isPublic;
-        private String coverImageUrl;
-        private Long userId;
-        
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        
-        public Boolean getIsPublic() { return isPublic; }
-        public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
-        
-        public String getCoverImageUrl() { return coverImageUrl; }
-        public void setCoverImageUrl(String coverImageUrl) { this.coverImageUrl = coverImageUrl; }
-        
-        public Long getUserId() { return userId; }
-        public void setUserId(Long userId) { this.userId = userId; }
-    }
-    
-
-    public static class CollectionUpdateRequest {
-        private String title;
-        private String description;
-        private Boolean isPublic;
-        private String coverImageUrl;
-        
-        public String getTitle() { return title; }
-        public void setTitle(String title) { this.title = title; }
-        
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        
-        public Boolean getIsPublic() { return isPublic; }
-        public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
-        
-        public String getCoverImageUrl() { return coverImageUrl; }
-        public void setCoverImageUrl(String coverImageUrl) { this.coverImageUrl = coverImageUrl; }
     }
 }
