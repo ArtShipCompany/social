@@ -53,9 +53,9 @@ export default function Me() {
                 
                 let formattedArts = [];
                 
-                if (Array.isArray(artsData)) {
-                    formattedArts = artsData;
-                }
+                if (artsData && artsData.content && Array.isArray(artsData.content)) {
+                    formattedArts = artsData.content;
+                } 
                 
                 setUserArts(formattedArts || []);
                 
@@ -182,7 +182,7 @@ export default function Me() {
                 )
             );
             // needed to fix
-            alert(`Арт теперь ${newIsPublic ? 'приватный' : 'публичный'}`);
+            alert(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`);
             
         } catch (error) {
             console.error('Ошибка изменения приватности:', error);
@@ -225,6 +225,7 @@ export default function Me() {
     }
 
     const validArts = userArts.filter(isValidArt);
+    console.log(validArts)
     const displayNameToShow = currentUser.displayName || currentUser.username;
 
     return (

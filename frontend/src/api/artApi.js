@@ -346,7 +346,12 @@ export const artApi = {
       }
         
       const data = await response.json();
-      return Array.isArray(data) ? formatArtsArray(data) : [];
+
+      if (data.content && Array.isArray(data.content)) {
+        data.content = formatArtsArray(data.content);
+      }
+
+      return data;
     } catch (error) {
       console.error('[API] Error fetching arts by author:', error);
       throw error;
@@ -355,7 +360,7 @@ export const artApi = {
 
 
   // GET MY ARTS
-  async getMyArts() {
+  async getMyArts(page = 0, size = 20) {
     try {
       const token = getToken();
       
@@ -389,9 +394,11 @@ export const artApi = {
       
       const data = await response.json();
       console.log('[API] My arts data received:', data);
+      if (data.content && Array.isArray(data.content)) {
+        data.content = formatArtsArray(data.content);
+      }
       
-      
-      return Array.isArray(data) ? formatArtsArray(data) : [];
+      return data;
     } catch (error) {
       console.error('[API] Error fetching my arts:', error);
       throw error;
