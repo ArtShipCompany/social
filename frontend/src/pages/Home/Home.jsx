@@ -256,25 +256,26 @@ export default function Home() {
                 </span>
             </div>
             
+            {isAuthenticated ? (
+                <div className={styles.switcher}>
+                    <button
+                        className={`${styles.switcherTab} ${activeTab === 'recommendations' ? styles.active : ''}`}
+                        onClick={() => handleTabChange('recommendations')}
+                    >
+                        Рекомендации
+                    </button>
+                    <button
+                        className={`${styles.switcherTab} ${activeTab === 'subscriptions' ? styles.active : ''}`}
+                        onClick={() => handleTabChange('subscriptions')}
+                    >
+                        Подписки
+                    </button>
+                </div>
+            ) : (
+                <div className={styles.switcherSpacer}></div>
+            )}
+
             <div className={styles.search}>
-                {isAuthenticated ? (
-                    <div className={styles.switcher}>
-                        <button
-                            className={`${styles.switcherTab} ${activeTab === 'recommendations' ? styles.active : ''}`}
-                            onClick={() => handleTabChange('recommendations')}
-                        >
-                            Рекомендации
-                        </button>
-                        <button
-                            className={`${styles.switcherTab} ${activeTab === 'subscriptions' ? styles.active : ''}`}
-                            onClick={() => handleTabChange('subscriptions')}
-                        >
-                            Подписки
-                        </button>
-                    </div>
-                ) : (
-                    <div className={styles.switcherSpacer}></div>
-                )}
                 <div className={styles.searchInputWrapper}>
                     <img src={SearchIcon} alt="Поиск" className={styles.icon} />
                     <input
