@@ -219,7 +219,12 @@ export default function ArtPost({
 
   // СОЗДАНИЕ НОВОГО АРТА
   const handleCreateArt = async () => {
-    if (saving || !uploadedImage) return;
+    if (saving) return;
+
+    if (!uploadedImage) {
+      notification.warning('Пожалуйста, загрузите изображение арта', 3000);
+      return;
+    }
     
     if (!artTitle.trim()) {
       notification.warning('Пожалуйста, введите заголовок арта', 3000);
