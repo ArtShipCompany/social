@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.artship.social.dto.UserDto;
-import com.example.artship.social.requests.UserUpdateRequest;
+import com.example.artship.social.response.UserUpdateResponse;
 import com.example.artship.social.model.User;
+import com.example.artship.social.security.JwtTokenUtil;
 import com.example.artship.social.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 
 import com.example.artship.social.service.LocalFileStorageService;
 
@@ -47,6 +47,9 @@ public class UserController {
     
     @Autowired
     private LocalFileStorageService fileStorageService;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
     
     @GetMapping("/public/{id}")
     @Operation(summary = "Get public user by ID", description = "Returns user profile if it's public")
@@ -89,25 +92,32 @@ public class UserController {
             Updates the authenticated user's profile information.
             - Each field is sent as separate form-data parameter
             - Avatar file upload is optional
+            - If username is changed, a new JWT token is returned
             """
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Profile updated successfully",
-                    content = @Content(schema = @Schema(implementation = UserDto.class))),
+                     content = @Content(schema = @Schema(implementation = UserUpdateResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request data or file type"),
         @ApiResponse(responseCode = "401", description = "Not authenticated"),
         @ApiResponse(responseCode = "404", description = "User not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<UserDto> updateCurrentUser(
+    public ResponseEntity<UserUpdateResponse> updateCurrentUser(
             @Parameter(description = "New username (optional)")
-            @RequestParam(value = "username", required = false) String username,
+            @RequestParam(value = "username", required = false) 
+            @Size(max = 50, message = "Username cannot exceed 50 characters")
+            String username,
             
             @Parameter(description = "Display name (optional)")
-            @RequestParam(value = "displayName", required = false) String displayName,
+            @RequestParam(value = "displayName", required = false) 
+            @Size(max = 100, message = "Display name cannot exceed 100 characters")
+            String displayName,
             
             @Parameter(description = "User bio (optional)")
-            @RequestParam(value = "bio", required = false) String bio,
+            @RequestParam(value = "bio", required = false) 
+            @Size(max = 500, message = "Bio cannot exceed 500 characters")
+            String bio,
             
             @Parameter(description = "Profile visibility (optional)")
             @RequestParam(value = "isPublic", required = false) Boolean isPublic,
@@ -116,10 +126,9 @@ public class UserController {
             @RequestParam(value = "avatarUrl", required = false) String avatarUrl,
             
             @Parameter(description = "Avatar image file (JPEG, PNG, GIF). Optional.", 
-                    content = @Content(mediaType = "multipart/form-data",
-                                    schema = @Schema(type = "string", format = "binary")))
+                      content = @Content(mediaType = "multipart/form-data",
+                                       schema = @Schema(type = "string", format = "binary")))
             @RequestParam(value = "avatarFile", required = false) MultipartFile avatarFile) {
-        
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
@@ -130,37 +139,11 @@ public class UserController {
         }
         
         User existingUser = userOptional.get();
+        boolean usernameChanged = false;
+        String oldUsername = existingUser.getUsername();
         
-        try {
-            if (avatarFile != null && !avatarFile.isEmpty()) {
-                String contentType = avatarFile.getContentType();
-                if (contentType == null || !contentType.startsWith("image/")) {
-                    System.err.println("Invalid file type: " + contentType);
-                    return ResponseEntity.badRequest().build();
-                }
-                
-                String newAvatarUrl = fileStorageService.uploadFile(avatarFile);
-                System.out.println("Avatar uploaded: " + newAvatarUrl);
-                
-                deleteOldAvatar(existingUser.getAvatarUrl());
-                existingUser.setAvatarUrl(newAvatarUrl);
-                
-            } else if (avatarUrl != null) {
-                if (avatarUrl.isEmpty()) {
-                    deleteOldAvatar(existingUser.getAvatarUrl());
-                    existingUser.setAvatarUrl(null);
-                    System.out.println("Avatar removed");
-                } else {
-                    deleteOldAvatar(existingUser.getAvatarUrl());
-                    existingUser.setAvatarUrl(avatarUrl);
-                    System.out.println("Avatar URL updated to: " + avatarUrl);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error handling avatar: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        System.out.println("=== Updating user profile ===");
+        System.out.println("Current username: " + currentUsername);
         
         if (username != null && !username.equals(existingUser.getUsername())) {
             Optional<User> userWithNewUsername = userService.findByUsername(username);
@@ -168,31 +151,106 @@ public class UserController {
                 System.err.println("Username already taken: " + username);
                 return ResponseEntity.badRequest().build();
             }
+            
             existingUser.setUsername(username);
-            System.out.println("Username updated to: " + username);
+            usernameChanged = true;
+            System.out.println("Username changed from '" + oldUsername + "' to '" + username + "'");
         }
         
+        // 2. Обновляем displayName
         if (displayName != null) {
             existingUser.setDisplayName(displayName);
             System.out.println("DisplayName updated to: " + displayName);
         }
         
+        // 3. Обновляем bio
         if (bio != null) {
             existingUser.setBio(bio);
             System.out.println("Bio updated");
         }
         
+        // 4. Обновляем настройки приватности
         if (isPublic != null) {
             existingUser.setIsPublic(isPublic);
             System.out.println("IsPublic updated to: " + isPublic);
         }
         
-        User updatedUser = userService.save(existingUser);
-        System.out.println("User updated successfully: " + updatedUser.getUsername());
+        // 5. Обновляем аватар (приоритет: файл > URL)
+        try {
+            handleAvatarUpdate(existingUser, avatarFile, avatarUrl);
+        } catch (Exception e) {
+            System.err.println("Error handling avatar: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
         
-        return ResponseEntity.ok(new UserDto(updatedUser));
+        // Сохраняем обновленного пользователя
+        User updatedUser = userService.save(existingUser);
+        System.out.println("User saved successfully");
+        
+        // Создаем DTO для ответа
+        UserDto userDto = new UserDto(updatedUser);
+        
+        // Если username был изменен, генерируем новый токен
+        if (usernameChanged) {
+            String newToken = jwtTokenUtil.generateAccessToken(updatedUser);
+            System.out.println("New JWT token generated for user: " + updatedUser.getUsername());
+            
+            // Обновляем SecurityContext с новым username для текущего запроса
+            updateSecurityContext(newToken);
+            
+            return ResponseEntity.ok(new UserUpdateResponse(userDto, newToken));
+        }
+        
+        // Если username не менялся, возвращаем только обновленные данные
+        return ResponseEntity.ok(new UserUpdateResponse(userDto));
     }
     
+
+    private void handleAvatarUpdate(User user, MultipartFile avatarFile, String avatarUrl) throws Exception {
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            // Загружаем новый файл аватара
+            String contentType = avatarFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("File must be an image");
+            }
+            
+            String newAvatarUrl = fileStorageService.uploadFile(avatarFile);
+            System.out.println("Avatar file uploaded: " + newAvatarUrl);
+            
+            deleteOldAvatar(user.getAvatarUrl());
+            user.setAvatarUrl(newAvatarUrl);
+            
+        } else if (avatarUrl != null) {
+            if (avatarUrl.isEmpty()) {
+
+                deleteOldAvatar(user.getAvatarUrl());
+                user.setAvatarUrl(null);
+                System.out.println("Avatar removed");
+            } else {
+                deleteOldAvatar(user.getAvatarUrl());
+                user.setAvatarUrl(avatarUrl);
+                System.out.println("Avatar URL updated to: " + avatarUrl);
+            }
+        }
+    }
+
+    private void updateSecurityContext(String newToken) {
+        // Получаем username из нового токена
+        String newUsername = jwtTokenUtil.getUsernameFromToken(newToken);
+        
+        // Создаем новую аутентификацию
+        org.springframework.security.core.Authentication newAuth = 
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                newUsername,
+                null,
+                new java.util.ArrayList<>()
+            );
+        
+
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+        System.out.println("SecurityContext updated with new username: " + newUsername);
+    }
+
     @DeleteMapping("/me/avatar")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete current user's avatar", description = "Removes avatar from authenticated user's profile")
