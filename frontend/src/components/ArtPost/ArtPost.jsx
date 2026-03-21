@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
 import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
@@ -23,6 +24,7 @@ export default function ArtPost({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const notification = useNotification();
   const MAX_LENGTH = 500;
   
   // Состояния для данных арта
@@ -140,13 +142,13 @@ export default function ArtPost({
 
     // Проверка типа файла
     if (!file.type.startsWith('image/')) {
-      alert('Пожалуйста, выберите файл изображения');
+      notification.warning('Пожалуйста, выберите файл изображения', 3000);
       return;
     }
 
     // Проверка размера (макс 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Размер файла не должен превышать 10MB');
+      notification.warning('Размер файла не должен превышать 10MB', 3000);
       return;
     }
 
@@ -220,7 +222,7 @@ export default function ArtPost({
     if (saving || !uploadedImage) return;
     
     if (!artTitle.trim()) {
-      alert('Пожалуйста, введите заголовок арта');
+      notification.warning('Пожалуйста, введите заголовок арта', 3000);
       return;
     }
 
@@ -259,7 +261,7 @@ export default function ArtPost({
       
     } catch (error) {
       console.error('Ошибка создания арта:', error);
-      alert(`Ошибка создания арта: ${error.message}`);
+      notification.error(`Ошибка создания арта: ${error.message}`, 3000);
     } finally {
       setSaving(false);
     }
@@ -306,7 +308,7 @@ export default function ArtPost({
         }
       } catch (tagError) {
         console.error('Ошибка обработки тегов:', tagError);
-        alert('Арт сохранен, но возникла проблема с тегами');
+        notification.warning('Арт сохранен, но возникла проблема с тегами', 3000);
       }
       
       // Даем время для обновления и перенаправляем
@@ -316,7 +318,7 @@ export default function ArtPost({
       
     } catch (error) {
       console.error('Ошибка обновления арта:', error);
-      alert(`Ошибка обновления: ${error.message}`);
+      notification.error(`Ошибка обновления: ${error.message}`, 3000);
     } finally {
       setSaving(false);
     }

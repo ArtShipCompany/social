@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../api/userApi';
 import { followApi } from '../../api/followApi';
 import { artApi } from '../../api/artApi';
+import { useNotification } from '../../contexts/NotificationContext';
 import styles from './Profile.module.css';
 import PFP from '../../assets/WA.jpg';
 import artsIcon from '../../assets/arts-icon.svg';
@@ -15,6 +16,7 @@ export default function Profile() {
     const { userId } = useParams();
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated } = useAuth();
+    const notification = useNotification();
     
     const [user, setUser] = useState(null);
     const [userArts, setUserArts] = useState([]);
@@ -151,7 +153,7 @@ export default function Profile() {
             }
         } catch (error) {
             console.error('Ошибка подписки/отписки:', error);
-            alert(`Ошибка: ${error.message}`);
+            notification.error(`Ошибка: ${error.message}`, 3000);
         }
     };
 
@@ -160,7 +162,7 @@ export default function Profile() {
             navigate('/login');
             return;
         }
-        alert('Функция сообщений в разработке');
+        notification.warning('Функция сообщений в разработке', 3000)
     };
 
     if (loading) {

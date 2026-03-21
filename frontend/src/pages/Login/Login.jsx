@@ -155,7 +155,6 @@ export default function Login() {
                 errorMessage = cleanMessage || 'Неизвестная ошибка';
             }
             notification.error(errorMessage, 3000);
-            // setErrors(prev => ({ ...prev, form: errorMessage }));
             
         } finally {
             setIsSubmitting(false);

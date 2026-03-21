@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../api/userApi';
 import { followApi } from '../../api/followApi';
 import { artApi } from '../../api/artApi';
+import { useNotification } from '../../contexts/NotificationContext';
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg';
@@ -16,6 +17,7 @@ import ArtCard from '../../components/ArtCard/ArtCard';
 export default function Me() {
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, logout } = useAuth();
+    const notification = useNotification();
     
     const [userArts, setUserArts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -143,8 +145,7 @@ export default function Me() {
             setShowConfirmModal(false);
             setModalArtId(null);
 
-            // needed to fix
-            alert(`Арт успешно удалён!`);
+            notification.success('Арт успешно удалён!', 3000);
             
             if (userArts.length <= 1) {
                 setShowDeleteIcons(false);
@@ -152,8 +153,7 @@ export default function Me() {
             
         } catch (error) {
             console.error('Ошибка удаления арта:', error);
-            // needed to fix
-            alert(`Ошибка удаления арта: ${error.message}`);
+            notification.error(error.message, 3000)
         } finally {
             setDeletingArtId(null);
         }
@@ -181,13 +181,12 @@ export default function Me() {
                         : art
                 )
             );
-            // needed to fix
-            alert(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`);
+
+            notification.info(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`, 3000);
             
         } catch (error) {
             console.error('Ошибка изменения приватности:', error);
-            // needed to fix
-            alert(`Ошибка изменения приватности: ${error.message}`);
+            notification.error(`Ошибка изменения приватности: ${error.message}`, 3000);
         }
     }, [userArts]);
 
