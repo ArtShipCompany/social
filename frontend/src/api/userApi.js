@@ -124,17 +124,51 @@ export const userApi = {
     }
   },
   
-  // Обновить профиль через JSON (с URL аватарки)
+  // Обновить профиль 
   async updateProfile(userData) {
     try {
-      const updatedData = await fetchWithErrorHandling(`${API_URL}/users/me`, {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const formData = new FormData();
+      
+      if (userData.username) formData.append('username', userData.username);
+      if (userData.displayName) formData.append('displayName', userData.displayName);
+      if (userData.bio) formData.append('bio', userData.bio);
+      if (userData.isPublic !== undefined) {
+        formData.append('isPublic', userData.isPublic.toString());
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+      
+      const response = await fetch(`${API_URL}/users/me`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData)
+        headers,
+        body: formData
       });
-      return this.formatUser(updatedData);
+      
+      if (response.status === 401) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const result = await response.json();
+      
+      if (result.newToken) {
+        localStorage.setItem('accessToken', result.newToken);
+        console.log('[User API] New token saved');
+      }
+      
+      return this.formatUser(result.user || result);
     } catch (error) {
       console.error('[User API] Error updating profile:', error);
       throw error;
@@ -169,9 +203,14 @@ export const userApi = {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      const result = await response.json();
+
+      if (result.newToken) {
+        localStorage.setItem('accessToken', result.newToken);
+        console.log('[User API] New token saved after avatar update');
+      }
       
-      const updatedData = await response.json();
-      return this.formatUser(updatedData);
+      return this.formatUser(result.user || result);
     } catch (error) {
       console.error('[User API] Error updating profile with avatar:', error);
       throw error;
@@ -261,6 +300,8 @@ export const userApi = {
       formData.append('avatarFile', data.avatarFile);
     }
     
+    if (data.username) formData.append('username', data.username);
+
     if (data.displayName !== undefined) {
       formData.append('displayName', data.displayName);
     }

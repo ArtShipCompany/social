@@ -13,6 +13,7 @@ export default function Edit() {
     const { user: currentUser, isAuthenticated, setUser } = useAuth();
     
     const [bio, setBio] = useState('');
+    const [username, setUsername] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState(blankPfp);
     const [avatarFile, setAvatarFile] = useState(null);
@@ -33,6 +34,7 @@ export default function Edit() {
                 const userData = await userApi.getCurrentUser();
                 
                 if (userData) {
+                    setUsername(userData.username || '');
                     setDisplayName(userData.displayName || userData.username || '');
                     setBio(userData.bio || '');
                     setAvatarUrl(userApi.getAvatarUrl(userData) || blankPfp);
@@ -88,7 +90,11 @@ export default function Edit() {
             setSuccess(false);
 
             const updateData = {};
-            
+
+            if (username !== currentUser.username && username.trim() !== '') {
+                updateData.username = username.trim();
+            }
+
             if (displayName !== currentUser.displayName) {
                 updateData.displayName = displayName;
             }
@@ -117,21 +123,14 @@ export default function Edit() {
             }
 
             if (updatedUserData) {
-                const currentUserData = { ...currentUser };
-                
-                const newUserData = {
-                    ...currentUserData,
-                    ...updatedUserData,
-                    ...updateData
-                };
-                
-                if (avatarFile && updatedUserData.avatarUrl) {
-                    newUserData.avatarUrl = updatedUserData.avatarUrl;
-                }
-                
-                setUser(newUserData);
-                
-                localStorage.setItem('user', JSON.stringify(newUserData));
+            const newUserData = {
+                ...currentUser,
+                ...updatedUserData,
+                username: updatedUserData.username || username
+            };
+            
+            setUser(newUserData);
+            localStorage.setItem('user', JSON.stringify(newUserData));
             } else {
                
                 const updatedLocalUser = {
@@ -198,24 +197,40 @@ export default function Edit() {
 
                 <div className={styles.inputGroup}>
                     <div className={styles.nameInput}>
-                        <label htmlFor="displayName">Имя</label>
+                        <label htmlFor="username">Никнейм</label>
                         <div className={styles.usernameWrapper}>
                             <span className={styles.prefix}>@</span>
                             <input
-                                id="displayName"
+                                id="username"
                                 type="text"
-                                value={displayName}
+                                value={username}
                                 onChange={(e) => {
-                                    let value = e.target.value;
-                                    if (value.length <= MAX_LENGTH) {
-                                        setDisplayName(value);
+                                    let value = e.target.value.toLowerCase();
+                                    if (value.length <= 20) {
+                                        setUsername(value);
                                     }
                                 }}
-                                placeholder="Ваше имя"
+                                placeholder="Ваш никнейм"
                                 className={styles.usernameInput}
                                 disabled={loading}
                             />
                         </div>
+                    </div>
+                    <div className={styles.nameInput}>
+                        <label htmlFor="displayName">Имя</label>
+                        <input
+                            id="displayName"
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => {
+                                let value = e.target.value;
+                                if (value.length <= MAX_LENGTH) {
+                                    setDisplayName(value);
+                                }
+                            }}
+                            placeholder="Ваше имя"
+                            disabled={loading}
+                        />
                     </div>
                     
                     <div className={styles.textareaWrapper}>
