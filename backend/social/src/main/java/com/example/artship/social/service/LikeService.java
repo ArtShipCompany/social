@@ -69,7 +69,7 @@ public class LikeService {
         return new PageImpl<>(dtos, pageable, likesPage.getTotalElements());
     }
     
-    // Получение лайков пользователя (с пагинацией)
+
     @Transactional(readOnly = true)
     public Page<LikeDto> getLikesByUserId(Long userId, Pageable pageable) {
         Page<Like> likesPage = likeRepository.findByUserId(userId, pageable);
