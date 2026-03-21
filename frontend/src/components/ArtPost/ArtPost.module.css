@@ -224,7 +224,6 @@
     }
 }
 
-.form span,
 .form label {
     color: var(--text-color);
     font-size: 14px;
@@ -240,6 +239,13 @@
     flex-direction: column;
 }
 
+.inputWrapper {
+    display: flex;
+    flex-direction: column;
+    margin-block: 4px;
+    gap: 4px;
+}
+
 .description {
     overflow: hidden;
     resize: none;
@@ -249,6 +255,23 @@
 .btnArea {
     display: flex;
     justify-content: flex-end
+}
+
+.privateBadge {
+    position: absolute;
+    top: 0px;
+    left: 20px;
+    padding-block: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.privateBadge img {
+    width: 20px;
+    height: 20px;
 }
 
 .edit {
@@ -285,4 +308,60 @@
 
 .edit:hover {
     transform: translateY(1px);
+}
+
+.privacy {
+    margin-block: 4px;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--input-bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+  border-radius: 15px;
+  padding-left: 12px;
+}
+
+.toggleSwitch {
+  display: flex;
+  background: var(--btn-bg-color, #e0e0e0);
+  border-radius: 15px;
+  padding: 5px;
+  gap: 3px;
+}
+
+.toggleOption {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggleOption:hover {
+  background: rgba(16, 74, 120, 0.1);
+}
+
+.toggleOption.active {
+  background: var(--text-color, #104a78);
+  color: #fff;
+  font-weight: 500;
+}
+
+.toggleOption:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toggleHint {
+  color: var(--text-color);
+  opacity: 70%;
+  margin-left: 4px;
 }

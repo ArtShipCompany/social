@@ -7,6 +7,7 @@ import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
 import CreateIcon from '../../assets/create.svg';
 import editIcon from '../../assets/edit-profile-icon.svg';
+import lockIcon from '../../assets/private-icon.svg'
 import PFP from '../../assets/WA.jpg';
 import { artApi } from '../../api/artApi';
 import { tagApi } from '../../api/tagApi';
@@ -29,6 +30,7 @@ export default function ArtPost({
   const [artDescription, setArtDescription] = useState(description);
   const [artTags, setArtTags] = useState(tags);
   const [artImage, setArtImage] = useState(image);
+  const [isPublic, setIsPublic] = useState(true);
   
   // Состояния для загрузки и отображения
   const [loading, setLoading] = useState(false);
@@ -112,6 +114,7 @@ export default function ArtPost({
       setArtTitle(data.title || '');
       setArtDescription(data.description || '');
       setArtImage(data.imageUrl || '');
+      setIsPublic(data.isPublicFlag !== false);
       
       // Загружаем теги
       try {
@@ -227,7 +230,7 @@ export default function ArtPost({
       const artData = {
         title: artTitle.trim(),
         description: artDescription.trim(),
-        isPublic: true // по умолчанию публичный
+        isPublicFlag: isPublic,
       };
       
       const createdArt = await artApi.createArt(artData, uploadedImage);
@@ -418,9 +421,42 @@ export default function ArtPost({
       {(mode === 'create' || mode === 'edit') && (
         <div className={styles.editContent}>
           <div className={styles.form}>
+            {mode === 'create' && (
+              <>
+                <label htmlFor="privacy" className={styles.privacy}>Приватность:</label>
+                <div className={styles.toggleLabel}>
+                  <span className={styles.toggleHint}>
+                    {isPublic 
+                      ? 'Арт будет виден всем в ленте и поиске' 
+                      : 'Арт будет виден только вам'}
+                  </span>
+                    <div className={styles.toggleSwitch}>
+                      <button
+                        type="button"
+                        className={`${styles.toggleOption} ${isPublic ? styles.active : ''}`}
+                        onClick={() => setIsPublic(true)}
+                        disabled={saving}
+                        title="Публичный арт"
+                      >
+                        Публичный
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.toggleOption} ${!isPublic ? styles.active : ''}`}
+                        onClick={() => setIsPublic(false)}
+                        disabled={saving}
+                        title="Приватный арт"
+                      >
+                        Приватный
+                      </button>
+                    </div>
+                </div>
+              </>
+            )}
+
             {/* Заголовок */}
-            <label htmlFor="artTitle">Заголовок:</label>
             <div className={styles.inputWrapper}>
+            <label htmlFor="artTitle">Заголовок:</label>
               <input 
                 type="text" 
                 id="artTitle"
@@ -540,10 +576,18 @@ export default function ArtPost({
 
           {/* Кнопка редактирования для владельца */}
           {isOwner && (
-            <Link to={`/art/${artId}/edit`} className={styles.edit}>
-              <img src={editIcon} alt="Редактировать" />
-              <span>Редактировать</span>
-            </Link>
+            <>
+              <Link to={`/art/${artId}/edit`} className={styles.edit}>
+                <img src={editIcon} alt="Редактировать" />
+                <span>Редактировать</span>
+              </Link>
+              {artDetails?.isPublicFlag === false && (
+                <span className={styles.privateBadge}>
+                  <img src={lockIcon} alt="Приватный" />
+                  Приватный
+                </span>
+              )}
+            </>
           )}
         </>
       )}
