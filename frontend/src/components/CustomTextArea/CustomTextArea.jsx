@@ -14,6 +14,13 @@ export default function CustomTextArea({
         e.target.style.height = e.target.scrollHeight + 'px';
     };
 
+    const handleChange = (e) => {
+        console.log('📝 CustomTextArea onChange:', e.target.value);
+        if (onChange) {
+            onChange(e);
+        }
+    };
+
     return (
         <div className={styles.textareaWrapper}>
             {label && <label htmlFor={id}>{label}</label>}
@@ -21,7 +28,7 @@ export default function CustomTextArea({
                 <textarea
                     id={id}
                     value={value}
-                    onChange={onChange}
+                    onChange={handleChange}
                     onInput={handleInput}
                     maxLength={maxLength}
                     placeholder={placeholder}

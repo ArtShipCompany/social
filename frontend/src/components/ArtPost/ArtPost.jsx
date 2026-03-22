@@ -168,10 +168,10 @@ export default function ArtPost({
   };
 
   const handleTagsChange = (e) => {
-    const value = e.target.value;
-    if (value.length <= MAX_LENGTH) {
-      setArtTags(value);
-    }
+      const value = typeof e === 'string' ? e : e.target.value;
+      if (value.length <= MAX_LENGTH) {
+          setArtTags(value);
+      }
   };
 
   const handleDescriptionChange = (e) => {
@@ -489,7 +489,7 @@ export default function ArtPost({
             {/* Автодополнение тегов */}
             {tagSuggestions.length > 0 && (
               <div className={styles.tagSuggestions}>
-                <span className={styles.suggestionsLabel}>Предложения:</span>
+                <span className={styles.suggestionsLabel}>Предложения: </span>
                 {tagSuggestions.map(tag => (
                   <button
                     key={tag.id}

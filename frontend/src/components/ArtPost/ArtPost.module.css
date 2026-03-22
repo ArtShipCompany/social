@@ -237,10 +237,6 @@
     font-weight: 600;
 }
 
-.form span {
-    padding-block: 10px;
-}
-
 .tags {
     display: flex;
     flex-direction: column;
@@ -371,4 +367,25 @@
   color: var(--text-color);
   opacity: 70%;
   margin-left: 4px;
+}
+
+.tagSuggestions {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    align-items: baseline;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.suggestionsLabel {
+    margin-right: 5px;
+}
+
+.suggestionTag{
+    background-color: #dbefff;
+    border: 1px solid var(--text-color);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-color);
 }
