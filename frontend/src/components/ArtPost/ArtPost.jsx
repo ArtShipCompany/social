@@ -199,7 +199,17 @@ export default function ArtPost({
         if (query && /^[a-zA-Zа-яА-Я0-9_-]+$/.test(query)) {
           try {
             const suggestions = await tagApi.autocompleteTags(query);
-            setTagSuggestions(suggestions.slice(0, 5));
+
+            const existingTags = artTags.split(' ')
+              .filter(t => t.trim())
+              .map(t => t.replace('#', '').toLowerCase());
+            
+            const filtered = suggestions
+              .slice(0, 5)
+              .filter(tag => !existingTags.includes(tag.name.toLowerCase()));
+
+            
+            setTagSuggestions(filtered);
             return;
           } catch (error) {
             console.error('Ошибка автодополнения тегов:', error);
