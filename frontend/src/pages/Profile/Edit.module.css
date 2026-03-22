@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--btn-bg-color);
+    background-color: #dbefff;
     width: 500px;
     border-radius: 30px;
     padding: 20px;
@@ -80,14 +80,14 @@
 .inputGroup {
     display: flex;
     flex-direction: column;
-    min-width: 80%;
-    padding-bottom: 15px;
+    min-width: 90%;
     gap: 20px;
 }
 
 .inputGroup label {
-    text-align: center;
+    text-align: left;
     padding-bottom: 2px;
+    padding-left: 2px;
 }
 
 .inputGroup input,
@@ -147,7 +147,6 @@
 .textareaWrapper {
     position: relative;
     width: 100%;
-    text-align: center;
 }
 
 .bioTextarea {
@@ -164,11 +163,18 @@
     pointer-events: none;
 }
 
-.loginBtn {
-    background-color: #59b4ff !important;
-    padding: 10px 30px !important;
+.buttons {
+    display: flex;
+    width: 90%;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 10px;
 }
 
-.loginBtn:hover {
-    background-color: #48adff !important;
+.cancelBtn {
+    background-color: #dbefff !important;
+}
+
+.cancelBtn:hover {
+    background-color: #c7e8ff !important;
 }

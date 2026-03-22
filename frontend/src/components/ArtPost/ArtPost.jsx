@@ -355,12 +355,21 @@ export default function ArtPost({
     }
   };
 
-  // Обработчик сохранения (общий для create и edit)
+  // Обработчик сохранения 
   const handleSave = () => {
     if (mode === 'create') {
       handleCreateArt();
     } else if (mode === 'edit') {
       handleUpdateArt();
+    }
+  };
+
+  // обработчик отмены действия 
+  const handleCancel = () => {
+    if (mode === 'edit' && artId) {
+      navigate(`/art/${artId}`, { replace: true });
+    } else if (mode === 'create') {
+      navigate('/me', { replace: true });
     }
   };
 
@@ -549,6 +558,14 @@ export default function ArtPost({
           
           {/* Кнопки действий */}
           <div className={styles.btnArea}>
+
+            <DefaultBtn 
+              text="Отмена" 
+              className={styles.cancelBtn}
+              onClick={handleCancel}
+              disabled={saving}
+            />
+
             <DefaultBtn 
               text={saving ? "Сохранение..." : "Сохранить"} 
               onClick={handleSave}

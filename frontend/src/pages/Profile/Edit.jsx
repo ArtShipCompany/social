@@ -197,7 +197,7 @@ export default function Edit() {
 
                 <div className={styles.inputGroup}>
                     <div className={styles.nameInput}>
-                        <label htmlFor="username">Никнейм</label>
+                        <label htmlFor="username">Никнейм:</label>
                         <div className={styles.usernameWrapper}>
                             <span className={styles.prefix}>@</span>
                             <input
@@ -217,7 +217,7 @@ export default function Edit() {
                         </div>
                     </div>
                     <div className={styles.nameInput}>
-                        <label htmlFor="displayName">Имя</label>
+                        <label htmlFor="displayName">Имя:</label>
                         <input
                             id="displayName"
                             type="text"
@@ -234,7 +234,7 @@ export default function Edit() {
                     </div>
                     
                     <div className={styles.textareaWrapper}>
-                        <label htmlFor="bio">Описание профиля</label>
+                        <label htmlFor="bio">Описание профиля:</label>
                         <textarea
                             id="bio"
                             value={bio}

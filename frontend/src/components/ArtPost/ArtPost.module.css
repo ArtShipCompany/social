@@ -265,7 +265,15 @@
 
 .btnArea {
     display: flex;
-    justify-content: flex-end
+    justify-content: space-between;
+}
+
+.cancelBtn {
+    background-color: #dbefff !important;
+}
+
+.cancelBtn:hover {
+    background-color: #c7e8ff !important;
 }
 
 .privateBadge {
