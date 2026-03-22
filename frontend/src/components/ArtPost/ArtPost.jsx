@@ -47,6 +47,7 @@ export default function ArtPost({
   // Для автодополнения тегов
   const [tagSuggestions, setTagSuggestions] = useState([]);
   
+  const tagsTextareaRef = useRef(null);
   const hasLoadedRef = useRef(false);
   const imgRef = useRef(null);
 
@@ -190,19 +191,22 @@ export default function ArtPost({
         return;
       }
       
-      const lastTag = artTags.split(' ').pop();
-      if (lastTag.startsWith('#') && lastTag.length > 1) {
-        const query = lastTag.substring(1);
-        try {
-          const suggestions = await tagApi.autocompleteTags(query);
-          setTagSuggestions(suggestions.slice(0, 5));
-        } catch (error) {
-          console.error('Ошибка автодополнения тегов:', error);
-          setTagSuggestions([]);
+      const lastTag = artTags.split(' ').pop()?.trim();
+      
+      if (lastTag && lastTag.length >= 2) {
+        const query = lastTag.startsWith('#') ? lastTag.substring(1) : lastTag;
+        
+        if (query && /^[a-zA-Zа-яА-Я0-9_-]+$/.test(query)) {
+          try {
+            const suggestions = await tagApi.autocompleteTags(query);
+            setTagSuggestions(suggestions.slice(0, 5));
+            return;
+          } catch (error) {
+            console.error('Ошибка автодополнения тегов:', error);
+          }
         }
-      } else {
-        setTagSuggestions([]);
       }
+      setTagSuggestions([]);
     };
     
     const timeoutId = setTimeout(fetchSuggestions, 300);
@@ -212,9 +216,20 @@ export default function ArtPost({
   const handleAddSuggestion = (tagName) => {
     const tagsArray = artTags.split(' ').filter(t => t.trim());
     tagsArray.pop();
+    
     tagsArray.push(`#${tagName}`);
-    setArtTags(tagsArray.join(' ') + ' ');
+    
+    const newValue = tagsArray.join(' ') + ' ';
+    setArtTags(newValue);
     setTagSuggestions([]);
+
+    requestAnimationFrame(() => {
+      if (tagsTextareaRef.current) {
+        const len = newValue.length;
+        tagsTextareaRef.current.focus();
+        tagsTextareaRef.current.setSelectionRange(len, len);
+      }
+  });
   };
 
   // СОЗДАНИЕ НОВОГО АРТА
@@ -477,6 +492,7 @@ export default function ArtPost({
 
             {/* Теги */}
             <CustomTextArea
+              ref={tagsTextareaRef}
               value={artTags}
               onChange={handleTagsChange}
               maxLength={MAX_LENGTH}
@@ -495,6 +511,10 @@ export default function ArtPost({
                     key={tag.id}
                     type="button"
                     className={styles.suggestionTag}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                     onClick={() => handleAddSuggestion(tag.name)}
                     disabled={saving}
                   >

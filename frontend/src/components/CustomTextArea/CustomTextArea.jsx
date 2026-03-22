@@ -1,21 +1,20 @@
-import { useState } from 'react';
+import { forwardRef } from 'react';
 import styles from './CustomTextArea.module.css';
 
-export default function CustomTextArea({
+export default forwardRef(function CustomTextArea({
     value,
     onChange,
     maxLength,
     placeholder,
     label,
     id,
-}) {
+}, ref) {
     const handleInput = (e) => {
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
 
     const handleChange = (e) => {
-        console.log('📝 CustomTextArea onChange:', e.target.value);
         if (onChange) {
             onChange(e);
         }
@@ -26,6 +25,7 @@ export default function CustomTextArea({
             {label && <label htmlFor={id}>{label}</label>}
             <div className={styles.textareaContainer}>
                 <textarea
+                    ref={ref}
                     id={id}
                     value={value}
                     onChange={handleChange}
@@ -35,9 +35,9 @@ export default function CustomTextArea({
                     className={styles.textarea}
                 />
                 <div className={styles.charCount}>
-                    {value.length}/{maxLength}
+                    {value?.length || 0}/{maxLength}
                 </div>
             </div>
         </div>
     );
-}
+});
