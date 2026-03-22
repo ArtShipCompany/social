@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { formatDate } from '../../utils/formatDate';
 import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
@@ -590,13 +591,18 @@ export default function ArtPost({
                   </span>
                 </div>
               </Link>
-              
               <LikeBtn 
                 className={styles.like} 
                 typeShow={"full"} 
                 artId={artId}
               />
+              {artDetails?.createdAt && (
+                <span className={styles.artDate}>
+                  {formatDate(artDetails.createdAt)}
+                </span>
+              )}
             </div>
+
             
             <div className={styles.hr}></div>
             
@@ -606,7 +612,7 @@ export default function ArtPost({
                 <span>{artTags || '#no-tags'}</span>
               </div>
               <span className={styles.description}>
-                {artDescription || 'Без описания'}
+                {artDescription || ''}
               </span>
             </div>
           </div>

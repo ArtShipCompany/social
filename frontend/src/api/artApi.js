@@ -192,7 +192,8 @@ const formatArt = (art) => {
     ...art,
     imageUrl: getImageUrl(art.imageUrl || art.image || art.imagePath || ''),
     tags: formatTags(art.tags),
-    author: formatAuthor(art.author, art.authorId, art.authorName)
+    author: formatAuthor(art.author, art.authorId, art.authorName),
+    createdAt: art.createdAt,
   };
 };
 
