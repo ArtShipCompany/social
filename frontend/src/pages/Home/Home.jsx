@@ -217,8 +217,7 @@ export default function Home() {
                             key={art.id} 
                             id={art.id} 
                             image={imageUrl}
-                            typeShow="showLikes"
-                            likesCount={art.likesCount || 0}
+                            typeShow="full"
                             initialIsPrivate={art.isPublicFlag === false}
                             title={art.title || 'Без названия'}
                             author={art.author || art.username || 'Автор'}

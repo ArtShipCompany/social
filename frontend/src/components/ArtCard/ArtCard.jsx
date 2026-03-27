@@ -16,7 +16,6 @@ const ArtCard = memo(function ArtCard({
     initialIsPrivate = false,
     onOpenConfirmModal, 
     onTogglePrivacy, 
-    likesCount = 0,
     title = 'Без названия',
 }) {
     const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
@@ -92,7 +91,10 @@ const ArtCard = memo(function ArtCard({
                     </div>
                 )}
                 
-                
+                <LikeBtn 
+                    artId={id}
+                    typeShow={typeShow}
+                />
                 
                 {showDeleteIcon && (
                     <button 

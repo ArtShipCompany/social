@@ -9,13 +9,12 @@ import { formatNumber } from '../../utils/formatNumber';
 export default function LikeBtn({ 
   typeShow = 'full',
   className, 
-  amountLikes = 0,
   artId,
   onLikeChange
 }) {
     const { user, isAuthenticated } = useAuth();
     const [isLiked, setIsLiked] = useState(false);
-    const [likesCount, setLikesCount] = useState(amountLikes);
+    const [likesCount, setLikesCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
 
@@ -28,7 +27,7 @@ export default function LikeBtn({
         const loadLikeStatus = async () => {
             try {
                 const count = await likeApi.getLikeCountByArt(artId);
-                setLikesCount(count);
+                setLikesCount(count ?? 0);
                 
                 if (isAuthenticated && user?.id) {
                     const liked = await likeApi.isLiked(user.id, artId);
@@ -36,14 +35,13 @@ export default function LikeBtn({
                 }
             } catch (error) {
                 console.error('Ошибка загрузки лайков:', error);
-                setLikesCount(amountLikes);
             } finally {
                 setIsInitialized(true);
             }
         };
         
         loadLikeStatus();
-    }, [artId, isAuthenticated, user?.id, amountLikes]);
+    }, [artId, isAuthenticated, user?.id]);
 
     const toggleLike = async () => {
         if (!isAuthenticated || !user?.id || isLoading || !artId) {
@@ -56,19 +54,23 @@ export default function LikeBtn({
             if (isLiked) {
                 await likeApi.removeLike(user.id, artId);
                 setIsLiked(false);
-                setLikesCount(prev => Math.max(0, prev - 1));
-                
-                if (onLikeChange) {
-                    onLikeChange(likesCount - 1);
-                }
+                setLikesCount(prev => {
+                    const newCount = Math.max(0, prev - 1);
+                    if (onLikeChange) {
+                        onLikeChange(newCount);
+                    }
+                    return newCount;
+                });
             } else {
                 await likeApi.addLike(user.id, artId);
                 setIsLiked(true);
-                setLikesCount(prev => prev + 1);
-                
-                if (onLikeChange) {
-                    onLikeChange(likesCount + 1);
-                }
+                setLikesCount(prev => {
+                    const newCount = prev + 1;
+                    if (onLikeChange) {
+                        onLikeChange(newCount);
+                    }
+                    return newCount;
+                });
             }
         } catch (error) {
             console.error('Ошибка при лайке:', error);
@@ -76,6 +78,7 @@ export default function LikeBtn({
             setIsLoading(false);
         }
     };
+
 
     if (!isInitialized && artId) {
         return (
@@ -95,7 +98,7 @@ export default function LikeBtn({
         );
     }
 
-    const formattedLikes = formatNumber(likesCount);
+    const formattedLikes = formatNumber(likesCount ?? 0);
 
     const showText = typeShow === 'amount' || typeShow === 'full';
     const showHeart = typeShow === 'like' || typeShow === 'full';
