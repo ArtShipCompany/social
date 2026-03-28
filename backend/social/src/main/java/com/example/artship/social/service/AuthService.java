@@ -1,5 +1,26 @@
 package com.example.artship.social.service;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import com.example.artship.social.auth.AuthRequest;
 import com.example.artship.social.auth.AuthResponse;
 import com.example.artship.social.auth.RefreshTokenRequest;
@@ -11,30 +32,19 @@ import com.example.artship.social.repository.UserRepository;
 import com.example.artship.social.repository.mongo.VerificationTokenRepository;
 import com.example.artship.social.security.CustomUserDetails;
 import com.example.artship.social.security.JwtTokenUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Transactional
 public class AuthService {
     
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+    
+    
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+    
+    @Value("${app.cookie.domain:}")
+    private String cookieDomain;
     
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -56,8 +66,52 @@ public class AuthService {
     
     @Autowired
     private EmailService emailService;
+
+
+    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        Cookie cookie = new Cookie("refresh_token", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieSecure); // true для HTTPS
+        cookie.setPath("/api/auth");
+        cookie.setMaxAge(30 * 24 * 60 * 60); // 30 дней
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            cookie.setDomain(cookieDomain);
+        }
+        cookie.setAttribute("SameSite", "Strict"); // Защита от CSRF
+        response.addCookie(cookie);
+        logger.debug("Refresh token cookie установлен");
+    }
     
-    public AuthResponse authenticate(AuthRequest authRequest, HttpServletRequest request) {
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refresh_token", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieSecure);
+        cookie.setPath("/api/auth");
+        cookie.setMaxAge(0);
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            cookie.setDomain(cookieDomain);
+        }
+        response.addCookie(cookie);
+        logger.debug("Refresh token cookie удален");
+    }
+    
+    private String extractRefreshTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    logger.debug("Refresh token найден в cookie");
+                    return cookie.getValue();
+                }
+            }
+        }
+        logger.debug("Refresh token не найден в cookie");
+        return null;
+    }
+    
+    public AuthResponse authenticate(AuthRequest authRequest, 
+                                      HttpServletRequest request, 
+                                      HttpServletResponse response) {
         logger.info("=== НАЧАЛО АУТЕНТИФИКАЦИИ ===");
         logger.info("Пользователь: {}", authRequest.getUsername());
         logger.info("Request time: {}", new Date());
@@ -73,9 +127,9 @@ public class AuthService {
             Authentication authentication;
             try {
                 authentication = authenticationManager.authenticate(authToken);
-                logger.info("✅ Аутентификация УСПЕШНА для пользователя: {}", authRequest.getUsername());
+                logger.info("Аутентификация УСПЕШНА для пользователя: {}", authRequest.getUsername());
             } catch (AuthenticationException e) {
-                logger.error("❌ Ошибка аутентификации для пользователя {}: {}", 
+                logger.error("Ошибка аутентификации для пользователя {}: {}", 
                     authRequest.getUsername(), e.getMessage());
                 throw e;
             }
@@ -88,14 +142,14 @@ public class AuthService {
             
             User user = userRepository.findById(userDetails.getId())
                     .orElseThrow(() -> {
-                        logger.error("❌ Пользователь с ID {} не найден в БД", userDetails.getId());
+                        logger.error("Пользователь с ID {} не найден в БД", userDetails.getId());
                         return new RuntimeException("User not found");
                     });
             
             logger.debug("Пользователь найден в БД: {} (ID: {})", user.getUsername(), user.getId());
             
             if (!user.isEmailVerified()) {
-                logger.error("❌ Попытка входа с неподтвержденным email: {}", user.getEmail());
+                logger.error("Попытка входа с неподтвержденным email: {}", user.getEmail());
                 throw new RuntimeException("Email not verified. Please verify your email before logging in.");
             }
             
@@ -104,7 +158,6 @@ public class AuthService {
             
             Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(accessToken);
             Date expiration = jwtTokenUtil.getExpirationDateFromToken(accessToken);
-            String jti = jwtTokenUtil.getJtiFromToken(accessToken);
             
             long currentTime = System.currentTimeMillis();
             long expiresIn = expiration.getTime() - currentTime;
@@ -128,24 +181,25 @@ public class AuthService {
                 userAgent
             );
             
-            logger.debug("Refresh token создан, ID: {}", refreshToken.getId());
-            logger.debug("Refresh token hash: {}", refreshToken.getTokenHash().substring(0, 20) + "...");
+            setRefreshTokenCookie(response, refreshToken.getTokenHash());
             
-            AuthResponse response = new AuthResponse(
+            logger.debug("Refresh token создан, ID: {}", refreshToken.getId());
+            
+            AuthResponse authResponse = new AuthResponse(
                 accessToken,
-                refreshToken.getTokenHash(),
+                null, 
                 expiresIn, 
                 new UserDto(user)
             );
             
-            logger.info("=== ✅ АУТЕНТИФИКАЦИЯ ЗАВЕРШЕНА УСПЕШНО ===");
+            logger.info("=== АУТЕНТИФИКАЦИЯ ЗАВЕРШЕНА УСПЕШНО ===");
             logger.info("Пользователь {} успешно авторизован", authRequest.getUsername());
             logger.info("Response time: {}", new Date());
             
-            return response;
+            return authResponse;
             
         } catch (Exception e) {
-            logger.error("=== ❌ КРИТИЧЕСКАЯ ОШИБКА АУТЕНТИФИКАЦИИ ===", e);
+            logger.error("=== КРИТИЧЕСКАЯ ОШИБКА АУТЕНТИФИКАЦИИ ===", e);
             logger.error("Тип исключения: {}", e.getClass().getName());
             logger.error("Сообщение: {}", e.getMessage());
             
@@ -158,17 +212,18 @@ public class AuthService {
         }
     }
     
-    public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest, HttpServletRequest request) {
+    public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
         logger.info("=== ОБНОВЛЕНИЕ ТОКЕНА ===");
         logger.info("Request time: {}", new Date());
         
-        String rawRefreshToken = refreshTokenRequest.getRefreshToken();
+        String rawRefreshToken = extractRefreshTokenFromCookies(request);
+        
         if (rawRefreshToken == null || rawRefreshToken.trim().isEmpty()) {
-            logger.error("Refresh token не предоставлен");
+            logger.error("Refresh token не найден в cookie");
             throw new RuntimeException("Refresh token is required");
         }
         
-        logger.debug("Refresh token получен, длина: {} символов", rawRefreshToken.length());
+        logger.debug("Refresh token получен из cookie, длина: {} символов", rawRefreshToken.length());
         
         RefreshToken refreshToken = refreshTokenService.findByToken(rawRefreshToken)
                 .orElseThrow(() -> {
@@ -190,7 +245,7 @@ public class AuthService {
         User user = refreshToken.getUser();
         
         if (!user.isEmailVerified()) {
-            logger.error("❌ Попытка обновления токена для неподтвержденного email: {}", user.getEmail());
+            logger.error("Попытка обновления токена для неподтвержденного email: {}", user.getEmail());
             throw new RuntimeException("Email not verified. Please verify your email before using the service.");
         }
         
@@ -200,14 +255,7 @@ public class AuthService {
         logger.info("Генерация нового access token...");
         String newAccessToken = jwtTokenUtil.generateAccessToken(userDetails);
         
-        Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(newAccessToken);
         Date expiration = jwtTokenUtil.getExpirationDateFromToken(newAccessToken);
-        String jti = jwtTokenUtil.getJtiFromToken(newAccessToken);
-        
-        logger.info("=== NEW ACCESS TOKEN INFO ===");
-        logger.info("New token JTI: {}", jti);
-        logger.info("New token issued at: {}", issuedAt);
-        logger.info("New token expires at: {}", expiration);
         
         long currentTime = System.currentTimeMillis();
         long expiresIn = expiration.getTime() - currentTime;
@@ -224,6 +272,8 @@ public class AuthService {
             request.getHeader("User-Agent")
         );
         
+        setRefreshTokenCookie(response, newRefreshToken.getTokenHash());
+        
         logger.debug("Новый refresh token создан, ID: {}", newRefreshToken.getId());
         
         logger.info("Токены успешно обновлены для пользователя: {}", user.getUsername());
@@ -231,24 +281,29 @@ public class AuthService {
         
         return new AuthResponse(
             newAccessToken,
-            newRefreshToken.getTokenHash(),
+            null, 
             expiresIn,  
             new UserDto(user)
         );
     }
     
-    public void logout(String refreshToken) {
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = extractRefreshTokenFromCookies(request);
+        
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             logger.warn("Попытка выхода без refresh token");
+            clearRefreshTokenCookie(response);
             return;
         }
         
         logger.info("Выход пользователя, refresh token длина: {}", refreshToken.length());
         try {
             refreshTokenService.revokeToken(refreshToken);
+            clearRefreshTokenCookie(response);
             logger.info("✅ Пользователь успешно вышел");
         } catch (Exception e) {
             logger.error("Ошибка при выходе пользователя: {}", e.getMessage());
+            clearRefreshTokenCookie(response);
             throw e;
         }
     }

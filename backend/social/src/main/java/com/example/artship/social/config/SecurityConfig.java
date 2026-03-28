@@ -136,12 +136,12 @@ public class SecurityConfig {
                     "/verify-success.html",
                     "/verify-failed.html",
                     "/static/**",
-                    "/api/users/public/**",   // Публичные данные пользователей
-                    "/api/test/**",           // Тестовые endpoints
-                    "/api/arts/public/**",    // Публичные арты
-                    "/api/arts/{id}/access",  // Проверка доступа к арту
-                    "/api/tags/public/**",    // Публичные теги
-                    "/api/files/images/**"    // Изображения 
+                    "/api/users/public/**",   
+                    "/api/test/**",           
+                    "/api/arts/public/**",    
+                    "/api/arts/{id}/access",  
+                    "/api/tags/public/**",    
+                    "/api/files/images/**"    
                 ).permitAll()
                 
                 .anyRequest().authenticated()
@@ -166,11 +166,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",     // React/Vue dev server
-            "http://localhost:8081",     // Spring Boot
-            "http://localhost:8080",     // Другой порт
-            "http://127.0.0.1:3000",     // Альтернативный localhost
-            "http://127.0.0.1:8081"      // Альтернативный localhost
+            "http://localhost:5173",     
+            "http://localhost:8081",     
+            "http://localhost:8080",     
+            "http://127.0.0.1:3000",    
+            "http://127.0.0.1:8081"     
         ));
         configuration.setAllowedMethods(Arrays.asList(
             "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"

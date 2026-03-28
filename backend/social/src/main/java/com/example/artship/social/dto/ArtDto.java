@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.example.artship.social.model.Art;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ArtDto {
     private Long id;

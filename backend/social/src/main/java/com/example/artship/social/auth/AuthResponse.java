@@ -5,17 +5,16 @@ import com.example.artship.social.dto.UserDto;
 public class AuthResponse {
     private String accessToken;
     private String refreshToken;
-    private long expiresIn;  // ← Это должно быть оставшееся время в миллисекундах
+    private long expiresIn;  
     private UserDto user;
     
     public AuthResponse(String accessToken, String refreshToken, long expiresIn, UserDto user) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
-        this.expiresIn = expiresIn;  // ← Оставшееся время жизни
+        this.expiresIn = expiresIn; 
         this.user = user;
     }
     
-    // Геттеры и сеттеры
     public String getAccessToken() { return accessToken; }
     public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
     
