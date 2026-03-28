@@ -6,6 +6,8 @@ import Footer from './layout/Footer/Footer'
 import Home from './pages/Home/Home'
 import Login from './pages/Login/Login'
 import Register from './pages/Register/Register'
+import VerificationSent from './pages/Register/VerificationSent'
+import EmailVerification from './pages/Register/EmailVerification'
 
 import ArtView from './pages/ArtView/ArtView'
 import EditArt from './pages/ArtView/EditArt'
@@ -30,9 +32,12 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
+            <Route path="/verify-email-sent" element={<VerificationSent />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
+
             <Route path="/me" element={<Me />} />
             {/* Edit - редактирование профиля */}
-            <Route path="edit" element={<Edit />} />
+            <Route path="/edit" element={<Edit />} />
             <Route path="/profile/:userId" element={<Profile />} />
 
             <Route path="/art/:id" element={<ArtView />} />

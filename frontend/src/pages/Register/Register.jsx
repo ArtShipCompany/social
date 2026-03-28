@@ -161,13 +161,13 @@ export default function Register() {
             
             console.log('✅ Регистрация успешна:', registerResult.data);
             
-            // Сразу перекидываем на страницу логина
-            navigate('/login', { 
+            localStorage.setItem('pendingVerificationEmail', formData.email);
+
+            navigate('/verify-email-sent', { 
                 replace: true,
                 state: { 
-                    message: 'Регистрация успешна! Теперь войдите в систему.',
-                    username: formData.login,
-                    email: formData.email
+                    email: formData.email,
+                    username: formData.login
                 }
             });
             

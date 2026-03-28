@@ -129,15 +129,59 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const verifyEmail = async (token) => {
+        try {
+            const response = await authApi.verifyEmail(token);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Verify email error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Не удалось подтвердить email' 
+            };
+        }
+    };
+
+    const resendVerification = async (email) => {
+        try {
+            const response = await authApi.resendVerification(email);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Resend verification error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Не удалось отправить письмо' 
+            };
+        }
+    };
+
+    const checkVerificationStatus = async (email) => {
+        try {
+            const response = await authApi.checkVerificationStatus(email);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Check verification status error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Не удалось проверить статус' 
+            };
+        }
+    };
     const value = {
         user,
         isLoading: isInitializing,
         isProcessing,
         isAuthChecked,
         isAuthenticated: !!user && isAuthenticated(),
+        
         login,
         logout,
         register,
+
+        verifyEmail,
+        resendVerification,
+        checkVerificationStatus,
+
         setUser,
         refreshUser 
     };

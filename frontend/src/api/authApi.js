@@ -104,7 +104,47 @@ export const authApi = {
         console.error('❌ Registration API error:', error);
         throw error;
     }
-},
+  },
+
+  // Верификация email по токену
+  async verifyEmail(token) {
+    try {
+      const response = await fetchWithErrorHandling(`${API_URL}/auth/verify?token=${token}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      console.error('❌ Verify email API error:', error);
+      throw error;
+    }
+  },
+
+  // Повторная отправка письма верификации
+  async resendVerification(email) {
+    try {
+      const response = await fetchWithErrorHandling(`${API_URL}/auth/resend-verification`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      return response;
+    } catch (error) {
+      console.error('❌ Resend verification API error:', error);
+      throw error;
+    }
+  },
+
+  // Проверка статуса верификации email
+  async checkVerificationStatus(email) {
+    try {
+      const response = await fetchWithErrorHandling(`${API_URL}/auth/requires-verification?email=${encodeURIComponent(email)}`, {
+        method: 'GET',
+      });
+      return response;
+    } catch (error) {
+      console.error('❌ Check verification status API error:', error);
+      throw error;
+    }
+  },
 
   // Логин 
   async login(credentials) {
@@ -197,6 +237,7 @@ export const authApi = {
     }
   },
 };
+
 
 // Проверка авторизации
 export const isAuthenticated = () => {
