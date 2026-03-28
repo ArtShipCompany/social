@@ -1,0 +1,42 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.email {
+    background-color: var(--input-bg-color);
+    padding: 5px 10px;
+    border-radius: 20px;
+    color: var(--text-color);
+}
+
+
+.container p, h1 {
+    text-align: center;
+}
+
+.container h1 {
+    color: var(--text-color);
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+}
+
+.info p:last-child {
+    text-decoration: underline;
+}
+
+.backBtn {
+    background-color: #B8DFFF;
+}
+
+.action {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}

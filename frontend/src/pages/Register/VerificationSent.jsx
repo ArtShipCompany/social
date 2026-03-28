@@ -68,8 +68,6 @@ export default function VerificationSent() {
 
     return (
         <div className={styles.container}>
-            <div className={styles.card}>
-                <div className={styles.icon}>📧</div>
                 
                 <h1 className={styles.title}>Подтвердите ваш email</h1>
                 
@@ -77,12 +75,11 @@ export default function VerificationSent() {
                     Мы отправили письмо с ссылкой для подтверждения на адрес:
                 </p>
                 
-                <p className={styles.email}>{email}</p>
+                <span className={styles.email}>{email}</span>
                 
                 <div className={styles.info}>
-                    <p>🔗 Перейдите по ссылке в письме, чтобы активировать аккаунт</p>
-                    <p>⏱️ Ссылка действительна в течение 24 часов</p>
-                    <p>📁 Не забудьте проверить папку "Спам"</p>
+                    <p>Перейдите по ссылке в письме, чтобы активировать аккаунт</p>
+                    <p>Не забудьте проверить папку "Спам"</p>
                 </div>
 
                 {message && <div className={styles.successMessage}>{message}</div>}
@@ -96,21 +93,12 @@ export default function VerificationSent() {
                         className={styles.resendBtn}
                     />
                     
-                    <button 
+                    <DefaultBtn 
+                        text={'Вернуться ко входу'}
                         onClick={handleBackToLogin}
                         className={styles.backBtn}
-                    >
-                        Вернуться ко входу
-                    </button>
+                    />
                 </div>
-
-                <p className={styles.footerText}>
-                    Не получили письмо?{' '}
-                    <Link to="/support" className={styles.link}>
-                        Свяжитесь с поддержкой
-                    </Link>
-                </p>
-            </div>
         </div>
     );
 }
