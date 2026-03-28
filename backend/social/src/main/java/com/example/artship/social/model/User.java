@@ -36,6 +36,9 @@ public class User {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @Column(name = "is_public")
     private Boolean isPublic = true;
     
@@ -127,6 +130,14 @@ public class User {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public boolean isEmailVerified() { 
+        return emailVerified;
+    }
+    
+    public void setEmailVerified(boolean emailVerified) { 
+        this.emailVerified = emailVerified; 
     }
 
     public Boolean getIsPublic() {
