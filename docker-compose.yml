@@ -1,4 +1,3 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
@@ -19,7 +18,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - artship-network
 
+  mongodb:
+    image: mongo:6
+    container_name: artship-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - artship-network
   backend:
     build: ./backend/social
     container_name: artship-backend
@@ -31,18 +47,40 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/artship_social
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: root
+      
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/artship
+      
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+      
+
+      APP_EMAIL_ENABLED: "true"
+      APP_EMAIL_FROM: noreply@artship.com
+      APP_BASE_URL: http://localhost:8081
+      
       CORS_ALLOWED_ORIGINS: http://frontend:5173,http://localhost:5173
       JWT_SECRET: aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789AbCdEfGhIjKlMn=
     volumes:
       - uploads-data:/app/uploads
+    env_file:
+      - .env  
     depends_on:
       postgres:
         condition: service_healthy
+      mongodb:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health || exit 0"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health", "||", "exit", "0"]
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - artship-network
 
   frontend:
     build: ./frontend
@@ -60,11 +98,16 @@ services:
     tty: true
     depends_on:
       - backend
+    networks:
+      - artship-network
 
 volumes:
   postgres-data:
+    driver: local
+  mongodb-data:
+    driver: local
   uploads-data:
 
 networks:
-  default:
-    name: artship-network
+  artship-network:
+    driver: bridge

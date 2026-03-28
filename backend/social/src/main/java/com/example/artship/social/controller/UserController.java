@@ -90,9 +90,6 @@ public class UserController {
         summary = "Update current user profile",
         description = """
             Updates the authenticated user's profile information.
-            - Each field is sent as separate form-data parameter
-            - Avatar file upload is optional
-            - If username is changed, a new JWT token is returned
             """
     )
     @ApiResponses(value = {

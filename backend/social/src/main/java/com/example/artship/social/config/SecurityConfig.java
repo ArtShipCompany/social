@@ -124,7 +124,18 @@ public class SecurityConfig {
                 // Публичные API
                 .requestMatchers(
                     "/api/auth/**",           // Аутентификация
-                    "/api/users/register",    // Регистрация
+                    "/api/users/register",
+                    "/api/auth/verify",
+                    "/api/auth/verify/**",
+                    "/api/auth/resend-verification",
+                    "/api/auth/forgot-password",
+                    "/api/auth/reset-password",
+                    "/api/auth/reset-password/**",
+                    "/api/auth/verify-status",
+                    "/api/auth/requires-verification",
+                    "/verify-success.html",
+                    "/verify-failed.html",
+                    "/static/**",
                     "/api/users/public/**",   // Публичные данные пользователей
                     "/api/test/**",           // Тестовые endpoints
                     "/api/arts/public/**",    // Публичные арты

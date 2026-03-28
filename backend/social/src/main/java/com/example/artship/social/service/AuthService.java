@@ -6,7 +6,9 @@ import com.example.artship.social.auth.RefreshTokenRequest;
 import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.model.RefreshToken;
 import com.example.artship.social.model.User;
+import com.example.artship.social.model.mongo.VerificationToken;
 import com.example.artship.social.repository.UserRepository;
+import com.example.artship.social.repository.mongo.VerificationTokenRepository;
 import com.example.artship.social.security.CustomUserDetails;
 import com.example.artship.social.security.JwtTokenUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,8 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -47,13 +51,18 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+    
+    @Autowired
+    private EmailService emailService;
+    
     public AuthResponse authenticate(AuthRequest authRequest, HttpServletRequest request) {
         logger.info("=== НАЧАЛО АУТЕНТИФИКАЦИИ ===");
         logger.info("Пользователь: {}", authRequest.getUsername());
         logger.info("Request time: {}", new Date());
         
         try {
-            // Логируем информацию о пароле
             String password = authRequest.getPassword();
             
             logger.debug("Создание UsernamePasswordAuthenticationToken...");
@@ -73,7 +82,6 @@ public class AuthService {
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
-            // Получаем детали пользователя
             logger.debug("Получение CustomUserDetails из authentication...");
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             logger.debug("ID пользователя: {}", userDetails.getId());
@@ -86,24 +94,24 @@ public class AuthService {
             
             logger.debug("Пользователь найден в БД: {} (ID: {})", user.getUsername(), user.getId());
             
-           
+            if (!user.isEmailVerified()) {
+                logger.error("❌ Попытка входа с неподтвержденным email: {}", user.getEmail());
+                throw new RuntimeException("Email not verified. Please verify your email before logging in.");
+            }
+            
             logger.info("Генерация access token...");
             String accessToken = jwtTokenUtil.generateAccessToken(userDetails);
-            
             
             Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(accessToken);
             Date expiration = jwtTokenUtil.getExpirationDateFromToken(accessToken);
             String jti = jwtTokenUtil.getJtiFromToken(accessToken);
             
-            
-           
             long currentTime = System.currentTimeMillis();
             long expiresIn = expiration.getTime() - currentTime;
             
             logger.info("Current time: {}", new Date(currentTime));
             logger.info("Expires in (remaining): {} ms ({} minutes)", 
                 expiresIn, expiresIn / 60000);
-            
             
             logger.info("Генерация refresh token...");
             String deviceInfo = extractDeviceInfo(request);
@@ -122,7 +130,6 @@ public class AuthService {
             
             logger.debug("Refresh token создан, ID: {}", refreshToken.getId());
             logger.debug("Refresh token hash: {}", refreshToken.getTokenHash().substring(0, 20) + "...");
-            
             
             AuthResponse response = new AuthResponse(
                 accessToken,
@@ -163,7 +170,6 @@ public class AuthService {
         
         logger.debug("Refresh token получен, длина: {} символов", rawRefreshToken.length());
         
-        
         RefreshToken refreshToken = refreshTokenService.findByToken(rawRefreshToken)
                 .orElseThrow(() -> {
                     logger.error("Refresh token не найден или невалиден");
@@ -173,25 +179,26 @@ public class AuthService {
         logger.debug("Refresh token найден в БД, ID: {}, user ID: {}", 
             refreshToken.getId(), refreshToken.getUser().getId());
         
-        
         if (!refreshToken.isValid()) {
             logger.error("Refresh token истек или отозван. Expiry: {}, Revoked: {}", 
                 refreshToken.getExpiryDate(), refreshToken.isRevoked());
             throw new RuntimeException("Refresh token is expired or revoked");
         }
         
-        
-      
         refreshTokenService.revokeToken(rawRefreshToken);
         
         User user = refreshToken.getUser();
+        
+        if (!user.isEmailVerified()) {
+            logger.error("❌ Попытка обновления токена для неподтвержденного email: {}", user.getEmail());
+            throw new RuntimeException("Email not verified. Please verify your email before using the service.");
+        }
+        
         logger.debug("Создание CustomUserDetails для пользователя: {}", user.getUsername());
         CustomUserDetails userDetails = new CustomUserDetails(user);
         
-       
         logger.info("Генерация нового access token...");
         String newAccessToken = jwtTokenUtil.generateAccessToken(userDetails);
-        
         
         Date issuedAt = jwtTokenUtil.getIssuedAtDateFromToken(newAccessToken);
         Date expiration = jwtTokenUtil.getExpirationDateFromToken(newAccessToken);
@@ -230,7 +237,6 @@ public class AuthService {
         );
     }
     
-
     public void logout(String refreshToken) {
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             logger.warn("Попытка выхода без refresh token");
@@ -265,7 +271,6 @@ public class AuthService {
         logger.info("Имя пользователя: {}, Email: {}", 
             authRequest.getUsername(), authRequest.getEmail());
         
-
         if (authRequest.getUsername() == null || authRequest.getUsername().trim().isEmpty()) {
             logger.error("Имя пользователя не может быть пустым");
             throw new RuntimeException("Username cannot be empty");
@@ -285,37 +290,31 @@ public class AuthService {
         String email = authRequest.getEmail().trim();
         String password = authRequest.getPassword();
         
-      
         if (userRepository.existsByUsername(username)) {
             logger.error("Имя пользователя '{}' уже существует", username);
             throw new RuntimeException("Username already exists");
         }
         
-
         if (userRepository.existsByEmail(email)) {
             logger.error("Email '{}' уже существует", email);
             throw new RuntimeException("Email already exists");
         }
-
+        
         logger.debug("Пароль при регистрации, длина: {} символов, {} байт (UTF-8)", 
             password.length(), password.getBytes(StandardCharsets.UTF_8).length);
         
-
         if (password.length() > 72) {
             logger.warn("⚠️ Пароль длиннее 72 символов, будет обрезан BCrypt");
         }
         
-
         logger.debug("Создание объекта User...");
         User user = new User();
         user.setUsername(username);
         user.setEmail(email); 
-        user.setDisplayName(username); 
+        user.setDisplayName(username);
         
-
         String hashedPassword = passwordEncoder.encode(password);
         logger.debug("Хешированный пароль, длина: {} символов", hashedPassword.length());
-
         
         if (!hashedPassword.startsWith("$2")) {
             logger.warn("Хеш не имеет формат BCrypt! Проверьте PasswordEncoder");
@@ -323,15 +322,216 @@ public class AuthService {
         
         user.setPasswordHash(hashedPassword);
         
+        user.setEmailVerified(false);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        
         logger.debug("Сохранение пользователя в БД...");
         User savedUser = userRepository.save(user);
- 
+        
+        // НОВОЕ: Создаем токен верификации в MongoDB
+        String verificationToken = UUID.randomUUID().toString();
+        VerificationToken token = new VerificationToken(
+            verificationToken,
+            savedUser.getId(),
+            VerificationToken.TokenType.EMAIL_VERIFICATION,
+            LocalDateTime.now().plusHours(24)
+        );
+        
+        verificationTokenRepository.save(token);
+        logger.debug("Токен верификации создан: {}", verificationToken);
+        
+        try {
+            emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getUsername(), verificationToken);
+            logger.info("Письмо для подтверждения email отправлено на: {}", savedUser.getEmail());
+        } catch (Exception e) {
+            logger.error("Не удалось отправить письмо подтверждения: {}", e.getMessage());
+        }
+        
         logger.info("Пользователь '{}' зарегистрирован с ID: {} и email: {}", 
             savedUser.getUsername(), savedUser.getId(), savedUser.getEmail());
+        logger.info("⚠️ Email НЕ ПОДТВЕРЖДЕН. Пользователь должен подтвердить email перед входом.");
         
         return savedUser;
     }
     
+    public void verifyEmail(String token) {
+        logger.info("=== ПОДТВЕРЖДЕНИЕ EMAIL ===");
+        logger.info("Token: {}", token);
+        
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+            .orElseThrow(() -> {
+                logger.error("Токен верификации не найден: {}", token);
+                return new RuntimeException("Invalid verification token");
+            });
+        
+        if (!verificationToken.isValid()) {
+            if (verificationToken.isUsed()) {
+                logger.error("Токен уже использован");
+                throw new RuntimeException("Token already used");
+            }
+            logger.error("Токен истек: expiryDate={}", verificationToken.getExpiryDate());
+            throw new RuntimeException("Verification token has expired");
+        }
+        
+        if (verificationToken.getType() != VerificationToken.TokenType.EMAIL_VERIFICATION) {
+            logger.error("Неверный тип токена: {}", verificationToken.getType());
+            throw new RuntimeException("Invalid token type");
+        }
+        
+        User user = userRepository.findById(verificationToken.getUserId())
+            .orElseThrow(() -> {
+                logger.error("Пользователь с ID {} не найден", verificationToken.getUserId());
+                return new RuntimeException("User not found");
+            });
+        
+        if (user.isEmailVerified()) {
+            logger.warn("Email уже подтвержден для пользователя: {}", user.getEmail());
+            throw new RuntimeException("Email already verified");
+        }
+        
+        user.setEmailVerified(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        verificationToken.setUsed(true);
+        verificationTokenRepository.save(verificationToken);
+        
+        verificationTokenRepository.deleteByUserIdAndType(user.getId(), 
+            VerificationToken.TokenType.EMAIL_VERIFICATION);
+        
+        logger.info("✅ Email успешно подтвержден для пользователя: {}", user.getEmail());
+    }
+    
+    public void resendVerificationEmail(String email) {
+        logger.info("=== ПОВТОРНАЯ ОТПРАВКА ПИСЬМА ПОДТВЕРЖДЕНИЯ ===");
+        logger.info("Email: {}", email);
+        
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> {
+                logger.error("Пользователь с email {} не найден", email);
+                return new RuntimeException("User not found");
+            });
+        
+        if (user.isEmailVerified()) {
+            logger.warn("Email уже подтвержден для пользователя: {}", email);
+            throw new RuntimeException("Email already verified");
+        }
+        
+        // Ищем активные токены
+        java.util.List<VerificationToken> activeTokens = verificationTokenRepository.findActiveTokensByUserAndType(
+            user.getId(),
+            VerificationToken.TokenType.EMAIL_VERIFICATION,
+            LocalDateTime.now()
+        );
+        
+        String tokenValue;
+        
+        if (!activeTokens.isEmpty()) {
+            tokenValue = activeTokens.get(0).getToken();
+            logger.debug("Используем существующий токен: {}", tokenValue);
+        } else {
+            tokenValue = UUID.randomUUID().toString();
+            VerificationToken token = new VerificationToken(
+                tokenValue,
+                user.getId(),
+                VerificationToken.TokenType.EMAIL_VERIFICATION,
+                LocalDateTime.now().plusHours(24)
+            );
+            verificationTokenRepository.save(token);
+            logger.debug("Создан новый токен: {}", tokenValue);
+        }
+        
+        try {
+            emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), tokenValue);
+            logger.info("Письмо подтверждения отправлено на: {}", email);
+        } catch (Exception e) {
+            logger.error("Не удалось отправить письмо: {}", e.getMessage());
+            throw new RuntimeException("Failed to send verification email");
+        }
+    }
+    
+    public void requestPasswordReset(String email) {
+        logger.info("=== ЗАПРОС НА СБРОС ПАРОЛЯ ===");
+        logger.info("Email: {}", email);
+        
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> {
+                logger.error("Пользователь с email {} не найден", email);
+                return new RuntimeException("User not found");
+            });
+        
+        verificationTokenRepository.deleteByUserIdAndType(user.getId(), 
+            VerificationToken.TokenType.PASSWORD_RESET);
+        
+        String tokenValue = UUID.randomUUID().toString();
+        VerificationToken token = new VerificationToken(
+            tokenValue,
+            user.getId(),
+            VerificationToken.TokenType.PASSWORD_RESET,
+            LocalDateTime.now().plusHours(1)
+        );
+        
+        verificationTokenRepository.save(token);
+        logger.debug("Токен сброса пароля создан: {}", tokenValue);
+        
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), tokenValue);
+            logger.info("Письмо для сброса пароля отправлено на: {}", email);
+        } catch (Exception e) {
+            logger.error("Не удалось отправить письмо: {}", e.getMessage());
+            throw new RuntimeException("Failed to send password reset email");
+        }
+    }
+    
+    public void resetPassword(String token, String newPassword) {
+        logger.info("=== СБРОС ПАРОЛЯ ===");
+        logger.info("Token: {}", token);
+        
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+            .orElseThrow(() -> {
+                logger.error("Токен сброса пароля не найден: {}", token);
+                return new RuntimeException("Invalid reset token");
+            });
+        
+        if (!verificationToken.isValid()) {
+            if (verificationToken.isUsed()) {
+                logger.error("Токен уже использован");
+                throw new RuntimeException("Token already used");
+            }
+            logger.error("Токен истек: expiryDate={}", verificationToken.getExpiryDate());
+            throw new RuntimeException("Reset token has expired");
+        }
+        
+        if (verificationToken.getType() != VerificationToken.TokenType.PASSWORD_RESET) {
+            logger.error("Неверный тип токена: {}", verificationToken.getType());
+            throw new RuntimeException("Invalid token type");
+        }
+        
+        User user = userRepository.findById(verificationToken.getUserId())
+            .orElseThrow(() -> {
+                logger.error("Пользователь с ID {} не найден", verificationToken.getUserId());
+                return new RuntimeException("User not found");
+            });
+        
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        verificationToken.setUsed(true);
+        verificationTokenRepository.save(verificationToken);
+        
+        verificationTokenRepository.deleteByUserIdAndType(user.getId(), 
+            VerificationToken.TokenType.PASSWORD_RESET);
+        
+        logger.info("✅ Пароль успешно сброшен для пользователя: {}", user.getEmail());
+    }
+    
+    public boolean isEmailVerified(String email) {
+        return userRepository.findByEmail(email)
+            .map(User::isEmailVerified)
+            .orElse(false);
+    }
     
     public Optional<User> findByUsernameOrEmail(String identifier) {
         logger.debug("Поиск пользователя по identifier: {}", identifier);
@@ -342,7 +542,6 @@ public class AuthService {
                 });
     }
     
-
     @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         logger.info("Смена пароля для пользователя: {}", username);
@@ -364,6 +563,7 @@ public class AuthService {
             logger.warn("Новый пароль длиннее 72 символов, будет обрезан");
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
         
         userRepository.save(user);
         logger.info("Пароль успешно изменен для пользователя: {}", username);
@@ -389,7 +589,6 @@ public class AuthService {
         return matches;
     }
     
-    // Метод для получения информации о пользователе
     public void logUserPasswordInfo(String username) {
         try {
             User user = userRepository.findByUsername(username)
@@ -398,6 +597,7 @@ public class AuthService {
             logger.info("=== ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ ===");
             logger.info("Username: {}", user.getUsername());
             logger.info("Email: {}", user.getEmail());
+            logger.info("Email verified: {}", user.isEmailVerified());
             logger.info("Password hash length: {}", 
                 user.getPasswordHash() != null ? user.getPasswordHash().length() : 0);
             
@@ -407,7 +607,6 @@ public class AuthService {
                 logger.info("BCrypt prefix: {}", 
                     user.getPasswordHash().substring(0, Math.min(7, user.getPasswordHash().length())));
                 
-                // Проверяем формат BCrypt
                 if (user.getPasswordHash().startsWith("$2")) {
                     logger.info("✅ Хеш имеет формат BCrypt");
                 } else {
@@ -419,7 +618,6 @@ public class AuthService {
         }
     }
     
-    // Метод для проверки возможности аутентификации 
     public boolean canAuthenticate(String username, String password) {
         try {
             logger.debug("Проверка возможности аутентификации для пользователя: {}", username);
@@ -435,7 +633,6 @@ public class AuthService {
         }
     }
     
-    // Извлечение информации об устройстве
     private String extractDeviceInfo(HttpServletRequest request) {
         String userAgent = request.getHeader("User-Agent");
         String deviceInfo = userAgent != null ? 
@@ -447,7 +644,6 @@ public class AuthService {
         return deviceInfo;
     }
     
-    // Метод для получения текущего пользователя из SecurityContext
     public Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
@@ -458,5 +654,28 @@ public class AuthService {
         logger.debug("Нет аутентифицированного пользователя");
         return Optional.empty();
     }
-    
+
+    public boolean validateResetToken(String token) {
+    logger.debug("Validating reset token: {}", token);
+        
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElse(null);
+        
+        if (verificationToken == null) {
+            logger.warn("Token not found: {}", token);
+            return false;
+        }
+        
+        if (!verificationToken.isValid()) {
+            logger.warn("Token is invalid or expired: {}", token);
+            return false;
+        }
+        
+        if (verificationToken.getType() != VerificationToken.TokenType.PASSWORD_RESET) {
+            logger.warn("Invalid token type: {}", verificationToken.getType());
+            return false;
+        }
+        
+        return true;
+    }
 }
