@@ -75,6 +75,79 @@ public class FollowService {
         return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
     }
     
+    //Поиск среди подписчиков пользователя по username
+    
+    @Transactional(readOnly = true)
+    public Page<FollowDto> searchFollowersByUsername(Long userId, String usernameSearch, Pageable pageable) {
+        log.info("Searching followers for user {} by username: {}", userId, usernameSearch);
+        
+        if (usernameSearch == null || usernameSearch.trim().isEmpty()) {
+            // Если поиск пустой, возвращаем всех подписчиков
+            return getFollowers(userId, pageable);
+        }
+        
+        Page<Follow> followersPage = followRepository.findByFollowingIdAndFollowerUsernameContainingIgnoreCase(
+            userId, usernameSearch, pageable);
+        
+        List<FollowDto> dtos = followersPage.getContent().stream()
+                .map(FollowDto::new)
+                .collect(Collectors.toList());
+        
+        log.info("Found {} followers matching search", dtos.size());
+        
+        return new PageImpl<>(dtos, pageable, followersPage.getTotalElements());
+    }
+    
+
+    @Transactional(readOnly = true)
+    public Page<FollowDto> searchFollowingByUsername(Long userId, String usernameSearch, Pageable pageable) {
+        log.info("Searching following for user {} by username: {}", userId, usernameSearch);
+        
+        if (usernameSearch == null || usernameSearch.trim().isEmpty()) {
+            return getFollowing(userId, pageable);
+        }
+        
+        // Поиск подписок, у которых username содержит поисковую строку
+        Page<Follow> followingPage = followRepository.findByFollowerIdAndFollowingUsernameContainingIgnoreCase(
+            userId, usernameSearch, pageable);
+        
+        List<FollowDto> dtos = followingPage.getContent().stream()
+                .map(FollowDto::new)
+                .collect(Collectors.toList());
+        
+        log.info("Found {} following matching search", dtos.size());
+        
+        return new PageImpl<>(dtos, pageable, followingPage.getTotalElements());
+    }
+    
+
+    @Transactional(readOnly = true)
+    public Page<FollowDto> searchFollowersByUsername(Long userId, String usernameSearch, 
+                                                      Pageable pageable, boolean excludeCurrentUser) {
+        log.info("Searching followers for user {} by username: {} (excludeCurrentUser={})", 
+                 userId, usernameSearch, excludeCurrentUser);
+        
+        if (usernameSearch == null || usernameSearch.trim().isEmpty()) {
+            Page<Follow> followersPage = getFollowersPage(userId, pageable);
+            List<FollowDto> dtos = followersPage.getContent().stream()
+                    .filter(follow -> !excludeCurrentUser || !follow.getFollower().getId().equals(userId))
+                    .map(FollowDto::new)
+                    .collect(Collectors.toList());
+            return new PageImpl<>(dtos, pageable, followersPage.getTotalElements());
+        }
+        
+        Page<Follow> followersPage = followRepository.findByFollowingIdAndFollowerUsernameContainingIgnoreCase(
+            userId, usernameSearch, pageable);
+        
+        List<FollowDto> dtos = followersPage.getContent().stream()
+                .filter(follow -> !excludeCurrentUser || !follow.getFollower().getId().equals(userId))
+                .map(FollowDto::new)
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtos, pageable, followersPage.getTotalElements());
+    }
+    
+    
     // Получение подписчиков (с пагинацией)
     @Transactional(readOnly = true)
     public Page<FollowDto> getFollowers(Long userId, Pageable pageable) {
@@ -105,7 +178,12 @@ public class FollowService {
         return new PageImpl<>(dtos, pageable, followingPage.getTotalElements());
     }
     
-    // Методы без пагинации (для обратной совместимости, если нужны)
+    // Приватный метод для получения страницы подписчиков (для внутреннего использования)
+    private Page<Follow> getFollowersPage(Long userId, Pageable pageable) {
+        return followRepository.findByFollowingId(userId, pageable);
+    }
+    
+    
     @Transactional(readOnly = true)
     public List<FollowDto> getFollowers(Long userId) {
         log.debug("Getting all followers for user {} (without pagination)", userId);
@@ -124,6 +202,7 @@ public class FollowService {
                 .collect(Collectors.toList());
     }
     
+    
     // Количество подписчиков
     @Transactional(readOnly = true)
     public Long getFollowerCount(Long userId) {
@@ -134,5 +213,26 @@ public class FollowService {
     @Transactional(readOnly = true)
     public Long getFollowingCount(Long userId) {
         return followRepository.countByFollowerId(userId);
+    }
+    
+ 
+     //Получить количество подписчиков, соответствующих поиску
+    
+    @Transactional(readOnly = true)
+    public Long countFollowersBySearch(Long userId, String usernameSearch) {
+        if (usernameSearch == null || usernameSearch.trim().isEmpty()) {
+            return followRepository.countByFollowingId(userId);
+        }
+        return followRepository.countByFollowingIdAndFollowerUsernameContainingIgnoreCase(userId, usernameSearch);
+    }
+    
+    
+    // Получить количество подписок, соответствующих поиску
+    @Transactional(readOnly = true)
+    public Long countFollowingBySearch(Long userId, String usernameSearch) {
+        if (usernameSearch == null || usernameSearch.trim().isEmpty()) {
+            return followRepository.countByFollowerId(userId);
+        }
+        return followRepository.countByFollowerIdAndFollowingUsernameContainingIgnoreCase(userId, usernameSearch);
     }
 }

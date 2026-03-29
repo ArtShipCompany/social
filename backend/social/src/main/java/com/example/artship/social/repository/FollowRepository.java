@@ -1,7 +1,6 @@
 package com.example.artship.social.repository;
 
 import com.example.artship.social.model.Follow;
-import com.example.artship.social.model.Follow.FollowId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,39 +12,47 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FollowRepository extends JpaRepository<Follow, FollowId> {
+public interface FollowRepository extends JpaRepository<Follow, Long> {
     
-    // Найти подписку по follower и following
-    @Query("SELECT f FROM Follow f WHERE f.follower.id = :followerId AND f.following.id = :followingId")
-    Optional<Follow> findByFollowerIdAndFollowingId(@Param("followerId") Long followerId, 
-                                                    @Param("followingId") Long followingId);
+    Optional<Follow> findByFollowerIdAndFollowingId(Long followerId, Long followingId);
     
-    // Проверить существование подписки
-    @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END FROM Follow f " +
-           "WHERE f.follower.id = :followerId AND f.following.id = :followingId")
-    boolean existsByFollowerIdAndFollowingId(@Param("followerId") Long followerId, 
-                                             @Param("followingId") Long followingId);
+    boolean existsByFollowerIdAndFollowingId(Long followerId, Long followingId);
     
-    // Подписчики пользователя (кто подписан на него) - с пагинацией
-    @Query("SELECT f FROM Follow f WHERE f.following.id = :userId")
-    Page<Follow> findByFollowingId(@Param("userId") Long userId, Pageable pageable);
+    // Получение всех подписчиков пользователя (кто подписан на userId)
+    List<Follow> findByFollowingId(Long followingId);
+    Page<Follow> findByFollowingId(Long followingId, Pageable pageable);
     
-    // Подписки пользователя (на кого он подписан) - с пагинацией
-    @Query("SELECT f FROM Follow f WHERE f.follower.id = :userId")
-    Page<Follow> findByFollowerId(@Param("userId") Long userId, Pageable pageable);
+    // Получение всех подписок пользователя (на кого подписан userId)
+    List<Follow> findByFollowerId(Long followerId);
+    Page<Follow> findByFollowerId(Long followerId, Pageable pageable);
     
-    // Методы без пагинации (для обратной совместимости, если нужны)
-    @Query("SELECT f FROM Follow f WHERE f.following.id = :userId")
-    List<Follow> findByFollowingId(@Param("userId") Long userId);
+    // Подсчет количества
+    Long countByFollowingId(Long followingId);
+    Long countByFollowerId(Long followerId);
+        
+    // Поиск среди подписчиков по username
+    @Query("SELECT f FROM Follow f WHERE f.following.id = :userId AND LOWER(f.follower.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+    Page<Follow> findByFollowingIdAndFollowerUsernameContainingIgnoreCase(
+            @Param("userId") Long userId, 
+            @Param("username") String username, 
+            Pageable pageable);
     
-    @Query("SELECT f FROM Follow f WHERE f.follower.id = :userId")
-    List<Follow> findByFollowerId(@Param("userId") Long userId);
+    // Поиск среди подписок по username
+    @Query("SELECT f FROM Follow f WHERE f.follower.id = :userId AND LOWER(f.following.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+    Page<Follow> findByFollowerIdAndFollowingUsernameContainingIgnoreCase(
+            @Param("userId") Long userId, 
+            @Param("username") String username, 
+            Pageable pageable);
     
-    // Количество подписчиков
-    @Query("SELECT COUNT(f) FROM Follow f WHERE f.following.id = :userId")
-    Long countByFollowingId(@Param("userId") Long userId);
+    // Подсчет подписчиков, соответствующих поиску
+    @Query("SELECT COUNT(f) FROM Follow f WHERE f.following.id = :userId AND LOWER(f.follower.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+    Long countByFollowingIdAndFollowerUsernameContainingIgnoreCase(
+            @Param("userId") Long userId, 
+            @Param("username") String username);
     
-    // Количество подписок
-    @Query("SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :userId")
-    Long countByFollowerId(@Param("userId") Long userId);
+    // Подсчет подписок, соответствующих поиску
+    @Query("SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :userId AND LOWER(f.following.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+    Long countByFollowerIdAndFollowingUsernameContainingIgnoreCase(
+            @Param("userId") Long userId, 
+            @Param("username") String username);
 }

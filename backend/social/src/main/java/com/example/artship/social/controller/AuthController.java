@@ -2,8 +2,6 @@ package com.example.artship.social.controller;
 
 import com.example.artship.social.auth.AuthRequest;
 import com.example.artship.social.auth.AuthResponse;
-import com.example.artship.social.auth.LogoutRequest;
-import com.example.artship.social.auth.RefreshTokenRequest;
 import com.example.artship.social.dto.*;
 import com.example.artship.social.model.User;
 import com.example.artship.social.service.AuthService;
@@ -16,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,11 +40,12 @@ public class AuthController {
     })
     public ResponseEntity<?> login(
             @Valid @RequestBody AuthRequest authRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         
         try {
-            AuthResponse response = authService.authenticate(authRequest, request);
-            return ResponseEntity.ok(response);
+            AuthResponse authResponse = authService.authenticate(authRequest, request, response);
+            return ResponseEntity.ok(authResponse);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -244,14 +244,14 @@ public class AuthController {
     }
     
     @PostMapping("/refresh")
-    @Operation(summary = "Обновление токенов", description = "Получает новую пару токенов по refresh token")
+    @Operation(summary = "Обновление токенов", description = "Получает новую пару токенов по refresh token из cookie")
     public ResponseEntity<?> refreshToken(
-            @Valid @RequestBody RefreshTokenRequest refreshTokenRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         
         try {
-            AuthResponse response = authService.refreshToken(refreshTokenRequest, request);
-            return ResponseEntity.ok(response);
+            AuthResponse authResponse = authService.refreshToken(request, response);
+            return ResponseEntity.ok(authResponse);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -261,12 +261,14 @@ public class AuthController {
     
     @PostMapping("/logout")
     @Operation(summary = "Выход из системы", description = "Завершает сессию пользователя")
-    public ResponseEntity<?> logout(@Valid @RequestBody LogoutRequest logoutRequest) {
+    public ResponseEntity<?> logout(
+            HttpServletRequest request,
+            HttpServletResponse response) {
         try {
-            authService.logout(logoutRequest.getRefreshToken());
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Logged out successfully");
-            return ResponseEntity.ok(response);
+            authService.logout(request, response);
+            Map<String, String> result = new HashMap<>();
+            result.put("message", "Logged out successfully");
+            return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -276,12 +278,15 @@ public class AuthController {
     
     @PostMapping("/logout-all")
     @Operation(summary = "Выход со всех устройств", description = "Завершает все сессии пользователя")
-    public ResponseEntity<?> logoutAll(@RequestParam Long userId) {
+    public ResponseEntity<?> logoutAll(
+            @RequestParam Long userId,
+            HttpServletResponse response) {
         try {
             authService.logoutAll(userId);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Logged out from all devices successfully");
-            return ResponseEntity.ok(response);
+            authService.logout(null, response);
+            Map<String, String> result = new HashMap<>();
+            result.put("message", "Logged out from all devices successfully");
+            return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());

@@ -13,3 +13,8 @@ logging:
     com.example.artship: DEBUG
     org.springframework.security: DEBUG
     org.mongodb.driver: INFO
+
+app:
+  cookie:
+    secure: false  
+    domain:  
