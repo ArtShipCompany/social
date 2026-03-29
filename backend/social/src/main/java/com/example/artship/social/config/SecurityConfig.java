@@ -183,7 +183,8 @@ public class SecurityConfig {
             "Origin",
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers",
-            "Cache-Control"
+            "Cache-Control",
+            "Cookie"
         ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

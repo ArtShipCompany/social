@@ -23,7 +23,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.example.artship.social.auth.AuthRequest;
 import com.example.artship.social.auth.AuthResponse;
-import com.example.artship.social.auth.RefreshTokenRequest;
 import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.model.RefreshToken;
 import com.example.artship.social.model.User;
@@ -69,43 +68,73 @@ public class AuthService {
 
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        Cookie cookie = new Cookie("refresh_token", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure); // true для HTTPS
-        cookie.setPath("/api/auth");
-        cookie.setMaxAge(30 * 24 * 60 * 60); // 30 дней
-        if (cookieDomain != null && !cookieDomain.isEmpty()) {
-            cookie.setDomain(cookieDomain);
+        String cookieValue = String.format(
+            "refresh_token=%s; Path=/; HttpOnly; Max-Age=%d; SameSite=Lax",
+            refreshToken,
+            30 * 24 * 60 * 60
+        );
+        
+        if (cookieSecure) {
+            cookieValue += "; Secure";
         }
-        cookie.setAttribute("SameSite", "Strict"); // Защита от CSRF
-        response.addCookie(cookie);
-        logger.debug("Refresh token cookie установлен");
+        
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            cookieValue += "; Domain=" + cookieDomain;
+        }
+        
+        response.addHeader("Set-Cookie", cookieValue);
+        
+        response.addHeader("Access-Control-Allow-Credentials", "true");
+        
+        logger.debug("Refresh token cookie установлен с Path=/");
     }
-    
+
     private void clearRefreshTokenCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refresh_token", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/api/auth");
-        cookie.setMaxAge(0);
-        if (cookieDomain != null && !cookieDomain.isEmpty()) {
-            cookie.setDomain(cookieDomain);
+        String cookieValue = "refresh_token=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax";
+        
+        if (cookieSecure) {
+            cookieValue += "; Secure";
         }
-        response.addCookie(cookie);
+        
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            cookieValue += "; Domain=" + cookieDomain;
+        }
+        
+        response.addHeader("Set-Cookie", cookieValue);
         logger.debug("Refresh token cookie удален");
     }
-    
+
     private String extractRefreshTokenFromCookies(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
+            logger.debug("Total cookies found: {}", cookies.length);
             for (Cookie cookie : cookies) {
+                logger.debug("Cookie: name={}, path={}, value={}", 
+                    cookie.getName(), cookie.getPath(), 
+                    cookie.getValue() != null ? cookie.getValue().substring(0, Math.min(10, cookie.getValue().length())) + "..." : "null");
+                
                 if ("refresh_token".equals(cookie.getName())) {
                     logger.debug("Refresh token найден в cookie");
                     return cookie.getValue();
                 }
             }
+        } else {
+            logger.warn("No cookies found in request");
         }
-        logger.debug("Refresh token не найден в cookie");
+        
+        String cookieHeader = request.getHeader("Cookie");
+        if (cookieHeader != null && cookieHeader.contains("refresh_token=")) {
+            logger.debug("Found refresh_token in Cookie header");
+            String[] cookies_arr = cookieHeader.split(";");
+            for (String c : cookies_arr) {
+                c = c.trim();
+                if (c.startsWith("refresh_token=")) {
+                    return c.substring("refresh_token=".length());
+                }
+            }
+        }
+        
+        logger.debug("Refresh token не найден");
         return null;
     }
     

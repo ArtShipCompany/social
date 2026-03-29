@@ -2,8 +2,6 @@ package com.example.artship.social.controller;
 
 import com.example.artship.social.auth.AuthRequest;
 import com.example.artship.social.auth.AuthResponse;
-import com.example.artship.social.auth.LogoutRequest;
-import com.example.artship.social.auth.RefreshTokenRequest;
 import com.example.artship.social.dto.*;
 import com.example.artship.social.model.User;
 import com.example.artship.social.service.AuthService;
