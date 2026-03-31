@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useApi } from '../../hooks/useApi';
 import { useNotification } from '../../contexts/NotificationContext';
 import { formatDate } from '../../utils/formatDate';
 import styles from './ArtPost.module.css';
@@ -25,6 +26,7 @@ export default function ArtPost({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const tagApiHook = useApi(tagApi);
   const notification = useNotification();
   const MAX_LENGTH = 500;
   
@@ -246,12 +248,10 @@ export default function ArtPost({
   // СОЗДАНИЕ НОВОГО АРТА
   const handleCreateArt = async () => {
     if (saving) return;
-
     if (!uploadedImage) {
       notification.warning('Пожалуйста, загрузите изображение арта', 3000);
       return;
     }
-    
     if (!artTitle.trim()) {
       notification.warning('Пожалуйста, введите заголовок арта', 3000);
       return;
@@ -268,31 +268,20 @@ export default function ArtPost({
       
       const createdArt = await artApi.createArt(artData, uploadedImage);
       
-      // Обрабатываем теги если есть
-      if (artTags && artTags.trim()) {
+      if (artTags?.trim()) {
         try {
-          const tagNames = tagApi.parseTagsString(artTags);
-          if (tagNames.length > 0) {
-            for (const tagName of tagNames) {
-              try {
-                const tag = await tagApi.getOrCreateTag(tagName);
-                await tagApi.addTagToArt(createdArt.id, tag.id);
-              } catch (tagError) {
-                console.error(`Ошибка с тегом "${tagName}":`, tagError);
-              }
-            }
-          }
+          await tagApi.processTagsString(createdArt.id, artTags);
         } catch (tagError) {
           console.error('Ошибка обработки тегов:', tagError);
+          notification.warning('Арт создан, но возникла проблема с тегами', 3000);
         }
       }
       
-      // Перенаправляем на страницу арта
       navigate(`/art/${createdArt.id}`);
       
     } catch (error) {
       console.error('Ошибка создания арта:', error);
-      notification.error(`Ошибка создания арта: ${error.message}`, 3000);
+      notification.error(`Ошибка: ${error.message}`, 3000);
     } finally {
       setSaving(false);
     }

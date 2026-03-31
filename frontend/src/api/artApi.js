@@ -28,11 +28,26 @@ const requestPublic = (url, options = {}) =>
   });
 
 // Для multipart/form-data (файлы + авто-рефреш)
-const requestMultipart = (url, options = {}) =>
-  authApi.fetchProtected(url, {
+const requestMultipart = async (url, options = {}) => {
+  const token = localStorage.getItem('accessToken');
+  
+  const response = await fetch(url, {
     credentials: 'include',
     ...options,
+    headers: {
+      // 👇 ТОЛЬКО Authorization, без Content-Type!
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
   });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}`);
+  }
+  
+  return response.json();
+};
 
 // === ФОРМАТТИРОВАНИЕ (твои хелперы, чуть почищенные) ===
 
@@ -73,27 +88,56 @@ const formatTags = (tags) => {
 
 const getImageUrl = (imageUrl) => {
   if (!imageUrl) return '/default-art.jpg';
-  if (imageUrl.startsWith('http')) return imageUrl;
-  if (imageUrl.startsWith('/api/files/images/')) {
-    return `/uploads/images/${imageUrl.split('/').pop()}`;
+  
+  // Если уже полный URL - возвращаем как есть
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
   }
-  if (imageUrl.startsWith('/uploads/images/')) return imageUrl;
-  if (imageUrl.startsWith('/')) return imageUrl;
-  if (imageUrl.includes('.')) return `/uploads/images/${imageUrl}`;
+  
+  // 👇 ВСЕГДА добавляем http://localhost:8081 для изображений
+  if (imageUrl.startsWith('/uploads/images/')) {
+    return `http://localhost:8081${imageUrl}`;
+  }
+  
+  if (imageUrl.startsWith('/api/files/images/')) {
+    // Конвертируем в /uploads/images/
+    const filename = imageUrl.split('/').pop();
+    return `http://localhost:8081/uploads/images/${filename}`;
+  }
+  
+  if (imageUrl.startsWith('/')) {
+    // Другие пути тоже на бэк
+    return `http://localhost:8081${imageUrl}`;
+  }
+  
+  if (imageUrl.includes('.')) {
+    // Просто имя файла
+    return `http://localhost:8081/uploads/images/${imageUrl}`;
+  }
+  
   return '/default-art.jpg';
 };
 
 export const getFullUrl = (path) => {
   if (!path) return '/default-avatar.png';
-  if (path.startsWith('http')) return path;
+  
+  // Если уже полный URL
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  // 👇 ВСЕГДА добавляем http://localhost:8081
   let finalPath = path;
+  
   if (path.startsWith('/api/files/images/')) {
-    finalPath = `/uploads/images/${path.split('/').pop()}`;
+    const filename = path.split('/').pop();
+    finalPath = `/uploads/images/${filename}`;
   } else if (path.startsWith('uploads/')) {
     finalPath = `/${path}`;
   } else if (!path.includes('/')) {
     finalPath = `/uploads/images/${path}`;
   }
+  
   return `http://localhost:8081${finalPath}`;
 };
 

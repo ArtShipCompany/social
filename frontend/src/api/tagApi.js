@@ -1,382 +1,241 @@
 // api/tagApi.js
+import { authApi, fetchWithErrorHandling } from './authApi';
+
 const API_URL = 'http://localhost:8081/api';
 
-const getToken = () => {
-  return localStorage.getItem('accessToken');
-};
+// === ХЕЛПЕРЫ ДЛЯ ЗАПРОСОВ ===
 
-async function fetchWithErrorHandling(url, options = {}) {
-  const finalOptions = {
+// Для приватных запросов с авто-рефрешем
+const requestProtected = (url, options = {}) => 
+  authApi.fetchProtected(url, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+// Для публичных запросов (без рефреша, но с куками)
+const requestPublic = (url, options = {}) =>
+  fetchWithErrorHandling(url, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+// === ФОРМАТТИРОВАНИЕ ===
+
+const formatTag = (tag) => {
+  if (!tag) return null;
+  return {
+    id: tag.id,
+    name: tag.name || tag.tagName,
+    artCount: tag.artCount || 0,
+    createdAt: tag.createdAt,
   };
-  
-  const token = getToken();
-  if (token) {
-    finalOptions.headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  try {
-    console.log(`[Tag API] ${options.method || 'GET'} ${url}`);
-    const response = await fetch(url, finalOptions);
-    
-    if (response.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-      throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
-    }
-    
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const data = await response.json();
-        errorMessage = data.error || data.message || errorMessage;
-      } catch {
-        // Если не удалось распарсить JSON
-      }
-      throw new Error(errorMessage);
-    }
-    
-    if (response.status === 204) {
-      return null;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('[Tag API] Error:', error);
-    throw error;
-  }
-}
+};
+
+const formatTagPage = (pageData) => {
+  if (!pageData?.content) return pageData;
+  return {
+    ...pageData,
+    content: pageData.content.map(formatTag),
+  };
+};
+
+// === API МЕТОДЫ ===
 
 export const tagApi = {
-  // === ОСНОВНЫЕ ОПЕРАЦИИ С ТЕГАМИ ===
   
-  // Создать тег
+  // 🔐 ПРИВАТНЫЕ ОПЕРАЦИИ (с авто-рефрешем)
+  
   async createTag(name) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags`, {
-        method: 'POST',
-        body: JSON.stringify({ name })
-      });
-    } catch (error) {
-      console.error('[Tag API] Error creating tag:', error);
-      throw error;
-    }
+    const data = await requestProtected(`${API_URL}/tags`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    return formatTag(data);
   },
   
-  // Получить все теги
+  async updateTag(id, name) {
+    const data = await requestProtected(`${API_URL}/tags/${id}?name=${encodeURIComponent(name)}`, {
+      method: 'PUT',
+    });
+    return formatTag(data);
+  },
+  
+  async deleteTag(id) {
+    await requestProtected(`${API_URL}/tags/${id}`, { method: 'DELETE' });
+    return true;
+  },
+  
+  async createTagsBatch(tagNames) {
+    const data = await requestProtected(`${API_URL}/tags/batch`, {
+      method: 'POST',
+      body: JSON.stringify(tagNames),
+    });
+    return Array.isArray(data) ? data.map(formatTag) : [];
+  },
+  
+  // 🌐 ПУБЛИЧНЫЕ ОПЕРАЦИИ
+  
   async getAllTags(page = 0, size = 50, sortBy = 'name', direction = 'asc') {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/tags?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`
-      );
-    } catch (error) {
-      console.error('[Tag API] Error getting all tags:', error);
-      throw error;
-    }
+    const url = `${API_URL}/tags?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+    const data = await requestPublic(url);
+    return formatTagPage(data);
   },
   
-  // Получить тег по ID
   async getTagById(id) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/${id}`);
-    } catch (error) {
-      console.error('[Tag API] Error getting tag by ID:', error);
-      throw error;
-    }
+    const data = await requestPublic(`${API_URL}/tags/${id}`);
+    return formatTag(data);
   },
   
-  // Получить тег по имени
   async getTagByName(name) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/name/${name}`);
-    } catch (error) {
-      console.error('[Tag API] Error getting tag by name:', error);
-      throw error;
-    }
+    const data = await requestPublic(`${API_URL}/tags/name/${name}`);
+    return formatTag(data);
   },
   
-  // Поиск тегов
   async searchTags(query, page = 0, size = 20) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/tags/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}`
-      );
-    } catch (error) {
-      console.error('[Tag API] Error searching tags:', error);
-      throw error;
-    }
+    const url = `${API_URL}/tags/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}`;
+    const data = await requestPublic(url);
+    return formatTagPage(data);
   },
   
-  // Популярные теги
   async getPopularTags(limit = 10) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/popular?limit=${limit}`);
-    } catch (error) {
-      console.error('[Tag API] Error getting popular tags:', error);
-      throw error;
-    }
+    const data = await requestPublic(`${API_URL}/tags/popular?limit=${limit}`);
+    return Array.isArray(data) ? data.map(formatTag) : [];
   },
   
-  // Автодополнение тегов
   async autocompleteTags(query) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/autocomplete?q=${encodeURIComponent(query)}`);
-    } catch (error) {
-      console.error('[Tag API] Error autocomplete tags:', error);
-      throw error;
-    }
+    const data = await requestPublic(`${API_URL}/tags/autocomplete?q=${encodeURIComponent(query)}`);
+    return Array.isArray(data) ? data.map(formatTag) : [];
   },
   
-  // Проверить существование тега
   async tagExists(name) {
     try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/exists/${name}`);
-    } catch (error) {
-      console.error('[Tag API] Error checking tag existence:', error);
+      await requestPublic(`${API_URL}/tags/exists/${name}`);
+      return true;
+    } catch {
       return false;
     }
   },
   
-  // Обновить тег
-  async updateTag(id, name) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/${id}?name=${encodeURIComponent(name)}`, {
-        method: 'PUT'
-      });
-    } catch (error) {
-      console.error('[Tag API] Error updating tag:', error);
-      throw error;
-    }
-  },
+  // 🔗 СВЯЗИ АРТ-ТЕГ (приватные)
   
-  // Удалить тег
-  async deleteTag(id) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/${id}`, {
-        method: 'DELETE'
-      });
-    } catch (error) {
-      console.error('[Tag API] Error deleting tag:', error);
-      throw error;
-    }
-  },
-  
-  // Создать несколько тегов
-  async createTagsBatch(tagNames) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/tags/batch`, {
-        method: 'POST',
-        body: JSON.stringify(tagNames)
-      });
-    } catch (error) {
-      console.error('[Tag API] Error creating tags batch:', error);
-      throw error;
-    }
-  },
-  
-  // === РАБОТА С АРТ-ТЕГ СВЯЗЯМИ ===
-  
-  // Добавить тег к арту
   async addTagToArt(artId, tagId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tag/${tagId}`, {
-        method: 'POST'
-      });
-    } catch (error) {
-      console.error('[Tag API] Error adding tag to art:', error);
-      throw error;
-    }
+    return requestProtected(`${API_URL}/art-tags/art/${artId}/tag/${tagId}`, {
+      method: 'POST',
+    });
   },
   
-  // Удалить тег из арта
   async removeTagFromArt(artId, tagId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tag/${tagId}`, {
-        method: 'DELETE'
-      });
-    } catch (error) {
-      console.error('[Tag API] Error removing tag from art:', error);
-      throw error;
-    }
+    await requestProtected(`${API_URL}/art-tags/art/${artId}/tag/${tagId}`, {
+      method: 'DELETE',
+    });
+    return true;
   },
   
-  // Проверить связь арт-тег
   async checkTagArtRelation(artId, tagId) {
     try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tag/${tagId}/exists`);
-    } catch (error) {
-      console.error('[Tag API] Error checking tag-art relation:', error);
+      await requestProtected(`${API_URL}/art-tags/art/${artId}/tag/${tagId}/exists`);
+      return true;
+    } catch {
       return false;
     }
   },
   
-  // Получить теги арта
   async getTagsByArt(artId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tags`);
-    } catch (error) {
-      console.error('[Tag API] Error getting tags by art:', error);
-      throw error;
-    }
+    const data = await requestProtected(`${API_URL}/art-tags/art/${artId}/tags`);
+    return Array.isArray(data) ? data.map(formatTag) : [];
   },
   
-  // Получить арты по тегу
-  async getArtsByTag(tagId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/tag/${tagId}/arts`);
-    } catch (error) {
-      console.error('[Tag API] Error getting arts by tag:', error);
-      throw error;
-    }
-  },
-  
-  // Массовое добавление тегов к арту
   async addTagsBatchToArt(artId, tagNames) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tags/batch`, {
-        method: 'POST',
-        body: JSON.stringify({ tagNames })
-      });
-    } catch (error) {
-      console.error('[Tag API] Error adding tags batch to art:', error);
-      throw error;
-    }
+    return requestProtected(`${API_URL}/art-tags/art/${artId}/tags/batch`, {
+      method: 'POST',
+      body: JSON.stringify({ tagNames }),
+    });
   },
   
-  // Удалить все теги из арта
   async removeAllTagsFromArt(artId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tags`, {
-        method: 'DELETE'
-      });
-    } catch (error) {
-      console.error('[Tag API] Error removing all tags from art:', error);
-      throw error;
-    }
+    await requestProtected(`${API_URL}/art-tags/art/${artId}/tags`, {
+      method: 'DELETE',
+    });
+    return true;
   },
   
-  // Получить количество тегов у арта
   async getTagCountByArt(artId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/art/${artId}/tags/count`);
-    } catch (error) {
-      console.error('[Tag API] Error getting tag count by art:', error);
-      return 0;
-    }
+    const data = await requestProtected(`${API_URL}/art-tags/art/${artId}/tags/count`);
+    return data?.count ?? 0;
   },
   
-  // Получить количество артов по тегу
   async getArtCountByTag(tagId) {
-    try {
-      return await fetchWithErrorHandling(`${API_URL}/art-tags/tag/${tagId}/arts/count`);
-    } catch (error) {
-      console.error('[Tag API] Error getting art count by tag:', error);
-      return 0;
-    }
+    const data = await requestProtected(`${API_URL}/art-tags/tag/${tagId}/arts/count`);
+    return data?.count ?? 0;
   },
   
-  // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
+  // 🎯 УТИЛИТЫ
   
-  // Создать или получить существующий тег
   async getOrCreateTag(name) {
-    try {
-      // Сначала проверяем существование
-      const exists = await this.tagExists(name);
-      if (exists) {
-        return await this.getTagByName(name);
-      } else {
-        return await this.createTag(name);
-      }
-    } catch (error) {
-      console.error('[Tag API] Error getting or creating tag:', error);
-      throw error;
+    const exists = await this.tagExists(name);
+    if (exists) {
+      return await this.getTagByName(name);
     }
+    return await this.createTag(name);
   },
   
-  // Обработать строку тегов (например: "#живопись #art #fyp")
   async processTagsString(artId, tagsString) {
-    try {
-      if (!tagsString || !tagsString.trim()) {
-        return [];
+    if (!tagsString?.trim()) return [];
+    
+    const tagNames = tagsString.split(' ')
+      .map(t => t.trim())
+      .filter(Boolean)
+      .map(t => t.startsWith('#') ? t.slice(1) : t)
+      .filter(Boolean);
+    
+    if (tagNames.length === 0) return [];
+    
+    const results = [];
+    for (const tagName of tagNames) {
+      try {
+        const tag = await this.getOrCreateTag(tagName);
+        await this.addTagToArt(artId, tag.id);
+        results.push(tag);
+      } catch (err) {
+        console.error(`[Tag API] Ошибка с тегом "${tagName}":`, err);
       }
-      
-      // Разделяем теги по пробелам и убираем #
-      const tagNames = tagsString.split(' ')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0)
-        .map(tag => tag.startsWith('#') ? tag.substring(1) : tag)
-        .filter(tag => tag.length > 0);
-      
-      if (tagNames.length === 0) {
-        return [];
-      }
-      
-      // Создаем теги если их нет
-      const createdTags = await this.createTagsBatch(tagNames);
-      
-      // Добавляем теги к арту
-      const results = [];
-      for (const tag of createdTags) {
-        try {
-          const result = await this.addTagToArt(artId, tag.id);
-          results.push(result);
-        } catch (error) {
-          console.error(`[Tag API] Error adding tag ${tag.name} to art ${artId}:`, error);
-        }
-      }
-      
-      return results;
-    } catch (error) {
-      console.error('[Tag API] Error processing tags string:', error);
-      throw error;
     }
+    return results;
   },
   
-  // Форматировать теги для отображения
   formatTagsForDisplay(tagsArray) {
     if (!Array.isArray(tagsArray)) return '#no-tags';
-    
-    const tagStrings = tagsArray.map(tag => {
-      if (typeof tag === 'string') {
-        return tag.startsWith('#') ? tag : `#${tag}`;
-      }
-      if (tag && typeof tag === 'object') {
-        const tagName = tag.name || tag.tag || tag.displayName || '';
-        return tagName.startsWith('#') ? tagName : `#${tagName}`;
-      }
-      return '';
-    }).filter(tag => tag !== '');
-    
-    return tagStrings.join(' ') || '#no-tags';
+    return tagsArray.map(tag => {
+      const name = typeof tag === 'string' ? tag : tag?.name || tag?.tagName || '';
+      return name.startsWith('#') ? name : `#${name}`;
+    }).filter(Boolean).join(' ') || '#no-tags';
   },
   
-  // Парсить строку тегов в массив имен
   parseTagsString(tagsString) {
-    if (!tagsString || !tagsString.trim()) return [];
-    
+    if (!tagsString?.trim()) return [];
     return tagsString.split(' ')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0)
-      .map(tag => tag.startsWith('#') ? tag.substring(1) : tag);
+      .map(t => t.trim())
+      .filter(Boolean)
+      .map(t => t.startsWith('#') ? t.slice(1) : t);
   },
   
-  // Обновить теги арта (полная замена)
   async updateArtTags(artId, newTagsString) {
-    try {
-      // Удаляем все старые теги
-      await this.removeAllTagsFromArt(artId);
-      
-      // Добавляем новые теги
-      return await this.processTagsString(artId, newTagsString);
-    } catch (error) {
-      console.error('[Tag API] Error updating art tags:', error);
-      throw error;
-    }
+    await this.removeAllTagsFromArt(artId);
+    return await this.processTagsString(artId, newTagsString);
+  },
+  
+  // Экспорт форматтеров
+  utils: {
+    formatTag,
+    formatTagPage,
   }
 };
 
