@@ -1,11 +1,8 @@
-// api/tagApi.js
 import { authApi, fetchWithErrorHandling } from './authApi';
 
 const API_URL = 'http://localhost:8081/api';
 
-// === ХЕЛПЕРЫ ДЛЯ ЗАПРОСОВ ===
 
-// Для приватных запросов с авто-рефрешем
 const requestProtected = (url, options = {}) => 
   authApi.fetchProtected(url, {
     credentials: 'include',
@@ -16,7 +13,6 @@ const requestProtected = (url, options = {}) =>
     },
   });
 
-// Для публичных запросов (без рефреша, но с куками)
 const requestPublic = (url, options = {}) =>
   fetchWithErrorHandling(url, {
     credentials: 'include',
@@ -27,7 +23,6 @@ const requestPublic = (url, options = {}) =>
     },
   });
 
-// === ФОРМАТТИРОВАНИЕ ===
 
 const formatTag = (tag) => {
   if (!tag) return null;
@@ -47,11 +42,8 @@ const formatTagPage = (pageData) => {
   };
 };
 
-// === API МЕТОДЫ ===
 
 export const tagApi = {
-  
-  // 🔐 ПРИВАТНЫЕ ОПЕРАЦИИ (с авто-рефрешем)
   
   async createTag(name) {
     const data = await requestProtected(`${API_URL}/tags`, {
@@ -95,7 +87,7 @@ export const tagApi = {
   },
   
   async getTagByName(name) {
-    const data = await requestPublic(`${API_URL}/tags/name/${name}`);
+    const data = await requestPublic(`${API_URL}/tags/name/${encodeURIComponent(name)}`);
     return formatTag(data);
   },
   
@@ -117,14 +109,13 @@ export const tagApi = {
   
   async tagExists(name) {
     try {
-      await requestPublic(`${API_URL}/tags/exists/${name}`);
+      await requestPublic(`${API_URL}/tags/exists/${encodeURIComponent(name)}`);
       return true;
     } catch {
       return false;
     }
   },
   
-  // 🔗 СВЯЗИ АРТ-ТЕГ (приватные)
   
   async addTagToArt(artId, tagId) {
     return requestProtected(`${API_URL}/art-tags/art/${artId}/tag/${tagId}`, {
@@ -177,14 +168,17 @@ export const tagApi = {
     return data?.count ?? 0;
   },
   
-  // 🎯 УТИЛИТЫ
+  // УТИЛИТЫ
   
   async getOrCreateTag(name) {
-    const exists = await this.tagExists(name);
-    if (exists) {
+    try {
       return await this.getTagByName(name);
+    } catch (error) {
+      if (error.status === 404) {
+        return await this.createTag(name);
+      }
+      throw error;
     }
-    return await this.createTag(name);
   },
   
   async processTagsString(artId, tagsString) {
@@ -198,17 +192,7 @@ export const tagApi = {
     
     if (tagNames.length === 0) return [];
     
-    const results = [];
-    for (const tagName of tagNames) {
-      try {
-        const tag = await this.getOrCreateTag(tagName);
-        await this.addTagToArt(artId, tag.id);
-        results.push(tag);
-      } catch (err) {
-        console.error(`[Tag API] Ошибка с тегом "${tagName}":`, err);
-      }
-    }
-    return results;
+    return await this.addTagsBatchToArt(artId, tagNames);
   },
   
   formatTagsForDisplay(tagsArray) {
@@ -232,7 +216,6 @@ export const tagApi = {
     return await this.processTagsString(artId, newTagsString);
   },
   
-  // Экспорт форматтеров
   utils: {
     formatTag,
     formatTagPage,

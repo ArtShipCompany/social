@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -54,27 +54,14 @@ export default function ArtPost({
   const hasLoadedRef = useRef(false);
   const imgRef = useRef(null);
 
-  const getArtImageUrl = (imagePath) => {
-    if (!imagePath) return '/default-art.jpg';
-    
-    // Для Docker всегда используем прямой URL к бэкенду
-    if (imagePath.startsWith('http')) return imagePath;
-    
-    // Если путь относительный, добавляем хост бэкенда
-    if (imagePath.startsWith('/')) {
-      return `http://localhost:8081${imagePath}`;
-    }
-    
-    return `http://localhost:8081/uploads/images/${imagePath}`;
-  };
+  const getImageUrl = useCallback((imagePath) => {
+    return artApi.utils?.getImageUrl?.(imagePath) || '/default-art.jpg';
+  }, []);
 
-  
   // Получаем URL изображения
-  const currentImageUrl = getArtImageUrl(
-    mode === 'create' ? imagePreview : 
-    uploadedImage ? URL.createObjectURL(uploadedImage) : 
-    artImage
-  );
+  const currentImageUrl = mode === 'create' 
+    ? (imagePreview || '/default-art.jpg')
+    : (uploadedImage ? URL.createObjectURL(uploadedImage) : getImageUrl(artImage));
 
   // Инициализация состояний при изменении пропсов
   useEffect(() => {
@@ -91,10 +78,7 @@ export default function ArtPost({
     if ((mode === 'view' || mode === 'edit') && artId && !hasLoadedRef.current) {
       loadArtDetails();
     }
-    
-    return () => {
-      hasLoadedRef.current = false;
-    };
+    return () => { hasLoadedRef.current = false; };
   }, [mode, artId]);
 
   // Проверка владельца
@@ -104,7 +88,6 @@ export default function ArtPost({
     } else if (user && owner) {
       setIsOwner(owner.id === user.id);
     }
-    console.log("владелец",{owner})
   }, [user, artDetails, owner]);
 
   // Загрузка деталей арта
@@ -116,11 +99,12 @@ export default function ArtPost({
       const data = await artApi.getArtById(artId);
       setArtDetails(data);
       
-      // Устанавливаем данные
       setArtTitle(data.title || '');
       setArtDescription(data.description || '');
       setArtImage(data.imageUrl || '');
-      setIsPublic(data.isPublicFlag !== false);
+      if (mode === 'create') {
+        setIsPublic(data.isPublicFlag !== false);
+      }
       
       // Загружаем теги
       try {
@@ -134,6 +118,7 @@ export default function ArtPost({
       
     } catch (error) {
       console.error('Ошибка загрузки арта:', error);
+      notification.error('Не удалось загрузить арт', 3000);
     } finally {
       setLoading(false);
     }
@@ -144,13 +129,11 @@ export default function ArtPost({
     const file = e.target.files[0];
     if (!file) return;
 
-    // Проверка типа файла
     if (!file.type.startsWith('image/')) {
       notification.warning('Пожалуйста, выберите файл изображения', 3000);
       return;
     }
 
-    // Проверка размера (макс 10MB)
     if (file.size > 10 * 1024 * 1024) {
       notification.warning('Размер файла не должен превышать 10MB', 3000);
       return;
@@ -158,60 +141,41 @@ export default function ArtPost({
 
     setUploadedImage(file);
     
-    // Создаем превью
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   // Обработчики изменения полей
-  const handleTitleChange = (e) => {
-    setArtTitle(e.target.value);
-  };
+  const handleTitleChange = (e) => setArtTitle(e.target.value);
 
   const handleTagsChange = (e) => {
-      const value = typeof e === 'string' ? e : e.target.value;
-      if (value.length <= MAX_LENGTH) {
-          setArtTags(value);
-      }
+    const value = typeof e === 'string' ? e : e.target.value;
+    if (value.length <= MAX_LENGTH) setArtTags(value);
   };
 
   const handleDescriptionChange = (e) => {
     const value = e.target.value;
-    if (value.length <= MAX_LENGTH) {
-      setArtDescription(value);
-    }
+    if (value.length <= MAX_LENGTH) setArtDescription(value);
   };
 
   // Автодополнение тегов
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (mode !== 'edit' && mode !== 'create') return;
-      if (!artTags || !artTags.trim()) {
-        setTagSuggestions([]);
-        return;
-      }
+      if (!artTags?.trim()) { setTagSuggestions([]); return; }
       
       const lastTag = artTags.split(' ').pop()?.trim();
-      
       if (lastTag && lastTag.length >= 2) {
         const query = lastTag.startsWith('#') ? lastTag.substring(1) : lastTag;
-        
         if (query && /^[a-zA-Zа-яА-Я0-9_-]+$/.test(query)) {
           try {
             const suggestions = await tagApi.autocompleteTags(query);
-
             const existingTags = artTags.split(' ')
               .filter(t => t.trim())
               .map(t => t.replace('#', '').toLowerCase());
-            
-            const filtered = suggestions
-              .slice(0, 5)
-              .filter(tag => !existingTags.includes(tag.name.toLowerCase()));
-
-            
+            const filtered = suggestions.slice(0, 5)
+              .filter(tag => !existingTags.includes(tag.name?.toLowerCase()));
             setTagSuggestions(filtered);
             return;
           } catch (error) {
@@ -229,9 +193,7 @@ export default function ArtPost({
   const handleAddSuggestion = (tagName) => {
     const tagsArray = artTags.split(' ').filter(t => t.trim());
     tagsArray.pop();
-    
     tagsArray.push(`#${tagName}`);
-    
     const newValue = tagsArray.join(' ') + ' ';
     setArtTags(newValue);
     setTagSuggestions([]);
@@ -242,7 +204,7 @@ export default function ArtPost({
         tagsTextareaRef.current.focus();
         tagsTextareaRef.current.setSelectionRange(len, len);
       }
-  });
+    });
   };
 
   // СОЗДАНИЕ НОВОГО АРТА
@@ -297,33 +259,21 @@ export default function ArtPost({
       const artData = {
         title: artTitle.trim(),
         description: artDescription.trim(),
-        isPublic: artDetails?.isPublic !== false
       };
       
-      // Обновляем арт с изображением если есть новое
       const updatedArt = await artApi.updateArt(
         artId, 
         artData, 
         uploadedImage || null
       );
       
-      // Обрабатываем теги
       try {
-        // Удаляем старые теги
         await tagApi.removeAllTagsFromArt(artId);
         
-        // Добавляем новые если есть
-        if (artTags && artTags.trim()) {
+        if (artTags?.trim()) {
           const tagNames = tagApi.parseTagsString(artTags);
           if (tagNames.length > 0) {
-            for (const tagName of tagNames) {
-              try {
-                const tag = await tagApi.getOrCreateTag(tagName);
-                await tagApi.addTagToArt(artId, tag.id);
-              } catch (tagError) {
-                console.error(`Ошибка с тегом "${tagName}":`, tagError);
-              }
-            }
+            await tagApi.addTagsBatchToArt(artId, tagNames);
           }
         }
       } catch (tagError) {
@@ -331,11 +281,7 @@ export default function ArtPost({
         notification.warning('Арт сохранен, но возникла проблема с тегами', 3000);
       }
       
-      // Даем время для обновления и перенаправляем
-      setTimeout(() => {
-        navigate(`/art/${artId}`);
-      }, 500);
-      
+      setTimeout(() => navigate(`/art/${artId}`), 500);
     } catch (error) {
       console.error('Ошибка обновления арта:', error);
       notification.error(`Ошибка обновления: ${error.message}`, 3000);
@@ -346,34 +292,22 @@ export default function ArtPost({
 
   // Обработчик сохранения 
   const handleSave = () => {
-    if (mode === 'create') {
-      handleCreateArt();
-    } else if (mode === 'edit') {
-      handleUpdateArt();
-    }
+    if (mode === 'create') handleCreateArt();
+    else if (mode === 'edit') handleUpdateArt();
   };
 
   // обработчик отмены действия 
   const handleCancel = () => {
-    if (mode === 'edit' && artId) {
-      navigate(`/art/${artId}`, { replace: true });
-    } else if (mode === 'create') {
-      navigate('/me', { replace: true });
-    }
+    if (mode === 'edit' && artId) navigate(`/art/${artId}`, { replace: true });
+    else if (mode === 'create') navigate('/me', { replace: true });
   };
 
   // Обработчики для изображения
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    setImageError(false);
-  };
+  const handleImageLoad = () => { setImageLoaded(true); setImageError(false); };
 
   const handleImageError = (e) => {
     const usedDefault = artApi.utils.handleImageError(e, currentImageUrl);
-    if (usedDefault) {
-      setImageError(true);
-      setImageLoaded(true);
-    }
+    if (usedDefault) { setImageError(true); setImageLoaded(true); }
   };
 
   if (loading && mode === 'view') {
