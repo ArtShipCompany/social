@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useApi } from '../../hooks/useApi';
 import { userApi } from '../../api/userApi';
 import { followApi } from '../../api/followApi';
 import { artApi } from '../../api/artApi';
@@ -20,8 +21,6 @@ export default function Me() {
     const notification = useNotification();
     
     const [userArts, setUserArts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
     const [showDeleteIcons, setShowDeleteIcons] = useState(false);
@@ -31,6 +30,9 @@ export default function Me() {
     const [modalArtId, setModalArtId] = useState(null);
     const [deletingArtId, setDeletingArtId] = useState(null);
 
+    const artApiHook = useApi(artApi);
+    const followApiHook = useApi(followApi);
+
     const getImageUrl = useCallback((imagePath) => {
         return userApi.getFullUrl(imagePath) || '/default-art.jpg';
     }, []);
@@ -39,62 +41,41 @@ export default function Me() {
         return art && art.id && (art.image || art.imageUrl) && (art.image !== 'string');
     }, []);
 
-    // Загрузка данных пользователя
     const loadUserData = useCallback(async () => {
-        if (!isAuthenticated || !currentUser) {
-            return;
-        }
+        if (!isAuthenticated || !currentUser) return;
 
-        try {
-            setLoading(true);
-            setError(null);
-            
-            // GET ARTS BY AUTHOR
-            try {
-                const artsData = await artApi.getMyArts();
-                
-                let formattedArts = [];
-                
-                if (artsData && artsData.content && Array.isArray(artsData.content)) {
-                    formattedArts = artsData.content;
-                } 
-                
-                setUserArts(formattedArts || []);
-                
-            } catch (artsError) {
-                console.error('Ошибка загрузки артов:', artsError);
-                setUserArts([]);
-            }
-            
-            try {
-                const [followers, following] = await Promise.all([
-                    followApi.getFollowerCount(currentUser.id).catch(() => 0),
-                    followApi.getFollowingCount(currentUser.id).catch(() => 0)
-                ]);
-                
-                setFollowerCount(followers);
-                setFollowingCount(following);
-            } catch (statsError) {
-                console.error('Ошибка загрузки статистики:', statsError);
-            }
-            
-        } catch (err) {
-            console.error('Ошибка загрузки профиля:', err);
-            setError(err.message || 'Не удалось загрузить данные профиля');
-        } finally {
-            setLoading(false);
+        const { data: artsData, error: artsError } = await artApiHook.callApiMethod('getMyArts');
+        
+        if (artsError) {
+            console.error('Ошибка загрузки артов:', artsError);
+            setUserArts([]);
+        } else {
+            const formattedArts = artsData?.content && Array.isArray(artsData.content) 
+                ? artsData.content 
+                : [];
+            setUserArts(formattedArts);
         }
-    }, [currentUser, isAuthenticated]);
+        
+        const { data: followers } = await followApiHook.callApiMethod('getFollowerCount', currentUser.id);
+        const { data: following } = await followApiHook.callApiMethod('getFollowingCount', currentUser.id);
+        
+        setFollowerCount(followers ?? 0);
+        setFollowingCount(following ?? 0);
+        
+    }, [currentUser, isAuthenticated, artApiHook, followApiHook]);
+
+    useEffect(() => {
+        return () => {
+            artApiHook.cancel();
+            followApiHook.cancel();
+        };
+    }, [artApiHook, followApiHook]);
 
     useEffect(() => {
         if (!isAuthenticated || !currentUser) {
-            const timer = setTimeout(() => {
-                console.log('Перенаправление на /login из Me');
-                navigate('/login');
-            }, 100);
+            const timer = setTimeout(() => navigate('/login'), 100);
             return () => clearTimeout(timer);
         }
-        
         loadUserData();
     }, [isAuthenticated, currentUser, navigate, loadUserData]);
 
@@ -137,27 +118,25 @@ export default function Me() {
         
         try {
             setDeletingArtId(modalArtId);
+
+            const { error } = await artApiHook.callApiMethod('deleteArt', modalArtId);
             
-            await artApi.deleteArt(modalArtId);
+            if (error) throw error;
             
-            setUserArts(prevArts => prevArts.filter(art => art.id !== modalArtId));
-            
+            setUserArts(prev => prev.filter(art => art.id !== modalArtId));
             setShowConfirmModal(false);
             setModalArtId(null);
-
             notification.success('Арт успешно удалён!', 3000);
             
-            if (userArts.length <= 1) {
-                setShowDeleteIcons(false);
-            }
+            if (userArts.length <= 1) setShowDeleteIcons(false);
             
         } catch (error) {
             console.error('Ошибка удаления арта:', error);
-            notification.error(error.message, 3000)
+            notification.error(error.message || 'Не удалось удалить арт', 3000);
         } finally {
             setDeletingArtId(null);
         }
-    }, [modalArtId, userArts.length]);
+    }, [modalArtId, userArts.length, artApiHook, notification]);
 
     const cancelDelete = useCallback(() => {
         setShowConfirmModal(false);
@@ -166,40 +145,40 @@ export default function Me() {
 
     // Функция для изменения приватности арта
     const toggleArtPrivacy = useCallback(async (artId) => {
-        try {
-            const artToUpdate = userArts.find(art => art.id === artId);
-            if (!artToUpdate) return;
-            
-            const newIsPublic = !(artToUpdate.isPublicFlag === true);
-            
-            await artApi.updateArtPrivacy(artId, newIsPublic, currentUser.id);
-            
-            setUserArts(prevArts => 
-                prevArts.map(art => 
-                    art.id === artId 
-                        ? { ...art, isPublicFlag: newIsPublic }
-                        : art
-                )
-            );
-
-            notification.info(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`, 3000);
-            
-        } catch (error) {
+        const artToUpdate = userArts.find(art => art.id === artId);
+        if (!artToUpdate) return;
+        
+        const newIsPublic = !(artToUpdate.isPublicFlag === true);
+        
+        const { error } = await artApiHook.callApiMethod(
+            'updateArtPrivacy', 
+            artId, 
+            newIsPublic, 
+            currentUser.id
+        );
+        
+        if (error) {
             console.error('Ошибка изменения приватности:', error);
-            notification.error(`Ошибка изменения приватности: ${error.message}`, 3000);
+            notification.error(`Ошибка: ${error.message}`, 3000);
+            return;
         }
-    }, [userArts]);
+        
+        // Оптимистичное обновление UI
+        setUserArts(prev => prev.map(art => 
+            art.id === artId ? { ...art, isPublicFlag: newIsPublic } : art
+        ));
+        notification.info(`Арт теперь ${newIsPublic ? 'публичный' : 'приватный'}`, 3000);
+        
+    }, [userArts, currentUser?.id, artApiHook, notification]);
+
+    const isLoading = artApiHook.loading || followApiHook.loading;
+    const apiError = artApiHook.error || followApiHook.error;
 
     if (!isAuthenticated) {
-        return (
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <span>Перенаправление на страницу входа...</span>
-            </div>
-        );
+        return <div className={styles.loading}>Перенаправление...</div>;
     }
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -208,15 +187,12 @@ export default function Me() {
         );
     }
 
-    if (error) {
+    if (apiError) {
         return (
             <div className={styles.error}>
                 <h2>Ошибка</h2>
-                <p>{error}</p>
-                <button 
-                    onClick={() => navigate('/')}
-                    className={styles.backButton}
-                >
+                <p>{apiError.message || 'Не удалось загрузить данные'}</p>
+                <button onClick={() => navigate('/')} className={styles.backButton}>
                     Вернуться на главную
                 </button>
             </div>
@@ -224,7 +200,6 @@ export default function Me() {
     }
 
     const validArts = userArts.filter(isValidArt);
-    console.log(validArts)
     const displayNameToShow = currentUser.displayName || currentUser.username;
 
     return (

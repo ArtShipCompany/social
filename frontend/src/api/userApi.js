@@ -8,6 +8,7 @@ const getToken = () => {
 async function fetchWithErrorHandling(url, options = {}) {
   const finalOptions = {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -86,7 +87,7 @@ export const userApi = {
   // Получить публичного пользователя по ID
   async getPublicUser(id) {
     try {
-      const response = await fetch(`${API_URL}/users/public/${id}`);
+      const response = await fetch(`${API_URL}/users/public/${id}`, {credentials: 'include',});
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Пользователь не найден');
@@ -147,7 +148,10 @@ export const userApi = {
       
       const response = await fetch(`${API_URL}/users/me`, {
         method: 'PUT',
-        headers,
+        credentials: 'include', // 🔥 ДОБАВЬ
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
       
@@ -189,7 +193,10 @@ export const userApi = {
       
       const response = await fetch(`${API_URL}/users/me`, {
         method: 'PUT',
-        headers,
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
       
@@ -230,6 +237,7 @@ export const userApi = {
       
       const response = await fetch(`${API_URL}/users/me/avatar`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`
         },

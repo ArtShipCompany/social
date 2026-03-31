@@ -10,7 +10,7 @@ class ApiError extends Error {
   }
 }
 
-// === ОБРАБОТЧИК TOKEN ===
+// === TOKEN MANAGEMENT (только access token) ===
 let authToken = localStorage.getItem('accessToken') || null;
 
 export const setAuthToken = (token) => {
@@ -22,24 +22,28 @@ export const setAuthToken = (token) => {
   }
 };
 
-export const getAuthToken = () => {
-  const token = localStorage.getItem('accessToken');
-  return token;
+export const getAuthToken = () => localStorage.getItem('accessToken');
+
+export const clearAuthStorage = () => {
+  setAuthToken(null);
+  localStorage.removeItem('user');
+  localStorage.removeItem('tokenExpiry');
 };
 
 // === ОСНОВНАЯ ФУНКЦИЯ ДЛЯ ЗАПРОСОВ ===
 async function fetchWithErrorHandling(url, options = {}) {
   const finalOptions = {
     ...options,
+    credentials: 'include', // 🔥 КРИТИЧНО: отправляем/получаем куки
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
   };
   
-  // Добавляем токен если есть
+  // Добавляем access token в заголовок, если есть
   const token = getAuthToken();
-  if (token && !url.includes('/auth/')) {
+  if (token) {
     finalOptions.headers['Authorization'] = `Bearer ${token}`;
   }
   
@@ -50,223 +54,172 @@ async function fetchWithErrorHandling(url, options = {}) {
     try {
       const text = await response.text();
       data = text ? JSON.parse(text) : {};
-    } catch (jsonError) {
+    } catch {
       data = {};
     }
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}`;
-      if (data && typeof data === 'object') {
-        errorMessage = data.message || data.error || errorMessage;
+      if (data?.message || data?.error) {
+        errorMessage = data.message || data.error;
       }
-      
-      const error = new ApiError(errorMessage, response.status, data);
-      throw error;
+      throw new ApiError(errorMessage, response.status, data);
     }
     
     return data;
     
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
+    if (error instanceof ApiError) throw error;
     
-    const apiError = new ApiError(
+    throw new ApiError(
       error.message || 'Network error',
       0,
       { originalError: error }
     );
-    throw apiError;
+  }
+}
+
+// === ФУНКЦИЯ ОБНОВЛЕНИЯ ТОКЕНА (внутренняя) ===
+async function handleTokenRefresh() {
+  try {
+    const response = await fetchWithErrorHandling(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+    });
+    
+    if (response.accessToken) {
+      setAuthToken(response.accessToken);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn('❌ Token refresh failed:', error.message);
+    clearAuthStorage();
+    return false;
+  }
+}
+
+// === WRAPPER С АВТО-РЕФРЕШЕМ ===
+async function fetchWithAutoRefresh(url, options = {}, retryCount = 0) {
+  try {
+    return await fetchWithErrorHandling(url, options);
+  } catch (error) {
+    // 🔁 Если 401 и ещё не пробовали рефрешить — пытаемся обновить токен
+    if (error.status === 401 && retryCount === 0 && !url.includes('/auth/')) {
+      console.log('🔄 Access token expired, trying refresh...');
+      const refreshed = await handleTokenRefresh();
+      
+      if (refreshed) {
+        // Повторяем исходный запрос с новым токеном
+        return fetchWithAutoRefresh(url, options, 1);
+      }
+    }
+    throw error;
   }
 }
 
 // === API МЕТОДЫ ===
 export const authApi = {
-  // Регистрация
   async register(userData) {
-    try {
-        const response = await fetchWithErrorHandling(`${API_URL}/auth/register`, {
-            method: 'POST',
-            body: JSON.stringify({
-                username: userData.login || userData.username,
-                email: userData.email,
-                password: userData.password
-            }),
-        });
-        
-        // Некоторые бэкенды возвращают пользователя сразу после регистрации
-        if (response.user) {
-            localStorage.setItem('user', JSON.stringify(response.user));
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('❌ Registration API error:', error);
-        throw error;
+    const response = await fetchWithErrorHandling(`${API_URL}/auth/register`, {
+      method: 'POST',
+      body: JSON.stringify({
+        username: userData.login || userData.username,
+        email: userData.email,
+        password: userData.password
+      }),
+    });
+    
+    if (response.user) {
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
+    return response;
   },
 
-  // Верификация email по токену
   async verifyEmail(token) {
-    try {
-      const response = await fetchWithErrorHandling(`${API_URL}/auth/verify?token=${token}`, {
-        method: 'GET',
-      });
-      return response;
-    } catch (error) {
-      console.error('❌ Verify email API error:', error);
-      throw error;
-    }
+    return fetchWithErrorHandling(`${API_URL}/auth/verify?token=${token}`, {
+      method: 'GET',
+    });
   },
 
-  // Повторная отправка письма верификации
   async resendVerification(email) {
-    try {
-      const response = await fetchWithErrorHandling(`${API_URL}/auth/resend-verification`, {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
-      return response;
-    } catch (error) {
-      console.error('❌ Resend verification API error:', error);
-      throw error;
-    }
+    return fetchWithErrorHandling(`${API_URL}/auth/resend-verification`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
   },
 
-  // Проверка статуса верификации email
   async checkVerificationStatus(email) {
-    try {
-      const response = await fetchWithErrorHandling(`${API_URL}/auth/requires-verification?email=${encodeURIComponent(email)}`, {
-        method: 'GET',
-      });
-      return response;
-    } catch (error) {
-      console.error('❌ Check verification status API error:', error);
-      throw error;
-    }
+    return fetchWithErrorHandling(`${API_URL}/auth/requires-verification?email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+    });
   },
 
-  // Логин 
   async login(credentials) {
-    try {
-      const username = credentials.username || credentials.identifier || credentials.login || '';
-      
-      const response = await fetchWithErrorHandling(`${API_URL}/auth/login`, {
-        method: 'POST',
-        body: JSON.stringify({
-          username: username.trim(),
-          password: credentials.password || ''
-        }),
-      });
-      
-      // Сохраняем данные
-      if (response.accessToken) {
-        setAuthToken(response.accessToken);
-        localStorage.setItem('accessToken', response.accessToken);
-      }
-      
-      if (response.refreshToken) {
-        localStorage.setItem('refreshToken', response.refreshToken);
-      }
-      
-      if (response.user) {
-        localStorage.setItem('user', JSON.stringify(response.user));
-      }
-      
-      if (response.expiresIn) {
-        localStorage.setItem('tokenExpiry', (Date.now() + response.expiresIn).toString());
-      }
-      
-      return response;
-      
-    } catch (error) {
-      throw error;
+    const username = credentials.username || credentials.identifier || credentials.login || '';
+    
+    const response = await fetchWithErrorHandling(`${API_URL}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({
+        username: username.trim(),
+        password: credentials.password || ''
+      }),
+    });
+    
+    // 🔥 Сохраняем только access token (refresh теперь в HttpOnly cookie)
+    if (response.accessToken) {
+      setAuthToken(response.accessToken);
     }
+    
+    if (response.user) {
+      localStorage.setItem('user', JSON.stringify(response.user));
+    }
+    
+    if (response.expiresIn) {
+      localStorage.setItem('tokenExpiry', (Date.now() + response.expiresIn).toString());
+    }
+    
+    return response;
   },
 
-  // Выход
-  async logout(refreshToken = null) {
+  async logout() {
     try {
-      const tokenToUse = refreshToken || localStorage.getItem('refreshToken');
-      
-      if (tokenToUse) {
-        await fetchWithErrorHandling(`${API_URL}/auth/logout`, {
-          method: 'POST',
-          body: JSON.stringify({ refreshToken: tokenToUse }),
-        });
-      }
-      
-      // Очищаем локальное хранилище
-      setAuthToken(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tokenExpiry');
-      
-      return { success: true };
-    } catch (error) {
-      // Все равно очищаем локальное хранилище даже при ошибке
-      setAuthToken(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tokenExpiry');
-      throw error;
+      // 🔥 Просто вызываем эндпоинт — бэк сам прочитает куку и очистит её
+      await fetchWithErrorHandling(`${API_URL}/auth/logout`, {
+        method: 'POST',
+      });
+    } finally {
+      // Всегда чистим локальное хранилище
+      clearAuthStorage();
     }
+    return { success: true };
   },
 
-  // Обновление токена
-  async refreshToken(refreshToken) {
-    try {
-      const response = await fetchWithErrorHandling(`${API_URL}/auth/refresh`, {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      });
-      
-      if (response.accessToken) {
-        setAuthToken(response.accessToken);
-        localStorage.setItem('accessToken', response.accessToken);
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  // 🔥 Публичный метод рефреша (если нужно вызвать вручную)
+  async refreshToken() {
+    return handleTokenRefresh();
   },
+
+  // 🔥 Метод для защищённых запросов с авто-рефрешем
+  async fetchProtected(url, options = {}) {
+    return fetchWithAutoRefresh(url, options);
+  }
 };
 
-
-// Проверка авторизации
+// === УТИЛИТЫ ===
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('accessToken');
+  const token = getAuthToken();
   const tokenExpiry = localStorage.getItem('tokenExpiry');
   
-  if (!token) {
-    return false;
-  }
-  
-  // Проверяем не истек ли токен
-  if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {
-    return false;
-  }
+  if (!token) return false;
+  if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) return false;
   return true;
 };
 
-// Получение текущего пользователя
 export const getCurrentUser = () => {
   try {
     const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      return null;
-    }
-    
-    const user = JSON.parse(userStr);
-    return user;
-  } catch (error) {
-    console.error('👤 getCurrentUser error:', error);
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
     return null;
   }
 };

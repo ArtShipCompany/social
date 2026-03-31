@@ -56,6 +56,11 @@
     color: transparent;
 }
 
+.forgotPass {
+    margin-top: 5px;
+    font-size: 14px;
+}
+
 .errorText {
     color: #e74c3c;
     font-size: 14px;
@@ -63,6 +68,7 @@
 }
 
 .loginBtn {
+    width: 100%;
     background-color: #59b4ff !important;
     padding: 10px 30px !important;
     margin-block: 10px;
@@ -70,6 +76,13 @@
 
 .loginBtn:hover {
     background-color: #48adff !important;
+}
+
+.formFooter {
+    display: flex;
+    min-width: 80%;
+    flex-direction: column;
+    align-items: center;
 }
 
 .footerText {

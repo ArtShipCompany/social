@@ -172,12 +172,6 @@ export default function Login() {
                     </div>
                 )}
 
-                {/* {errors.form && (
-                    <div className={styles.formError}>
-                        {errors.form}
-                    </div>
-                )} */}
-
                 <form onSubmit={handleSubmit} className={styles.inputGroup}>
                     <Input
                         name="identifier"
@@ -200,25 +194,27 @@ export default function Login() {
                         disabled={isSubmitting}
                     />
 
-                    <DefaultBtn 
-                        text={isSubmitting ? "Вход..." : "Войти"}
-                        className={styles.loginBtn} 
-                        type="submit"
-                        disabled={isSubmitting}
-                    />
+                    <div className={styles.formFooter}>
+                        <DefaultBtn 
+                            text={isSubmitting ? "Вход..." : "Войти"}
+                            className={styles.loginBtn} 
+                            type="submit"
+                            disabled={isSubmitting}
+                        />
+                        
+                        <span className={styles.footerText}>
+                            Нет аккаунта?{' '}
+                            <Link to="/register" className={styles.link}>
+                                Зарегистрироваться
+                            </Link>
+                        </span>
                     
-                    <p className={styles.footerText}>
-                        Нет аккаунта?{' '}
-                        <Link to="/register" className={styles.link}>
-                            Зарегистрироваться
-                        </Link>
-                    </p>
-
-                    <p className={styles.footerText}>
-                        <Link to="/forgot-password" className={styles.link}>
-                            Забыли пароль?
-                        </Link>
-                    </p>
+                        <span className={styles.forgotPass}>
+                            <Link to="/forgot-password" className={styles.link}>
+                                Забыли пароль?
+                            </Link>
+                        </span>
+                    </div>
                 </form>
             </div>
         </>

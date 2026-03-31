@@ -19,65 +19,48 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const loadUser = () => {
-            // console.log('🔄 AuthProvider: loading user...');
             try {
                 const token = getAuthToken();
-                // console.log('🔑 Token from localStorage:', token ? 'Exists' : 'None');
                 
                 if (token && isAuthenticated()) {
                     const userData = getCurrentUser();
-                    // console.log('👤 User data from localStorage:', userData);
-                    
-                    if (userData && userData.id) {
+                    if (userData?.id) {
                         setUser(userData);
-                        // console.log('✅ User loaded:', userData.username);
                     } else {
-                        // console.log('⚠️ User data invalid or missing');
                         setUser(null);
                     }
                 } else {
-                    // console.log('⚠️ No valid token or not authenticated');
                     setUser(null);
                 }
             } catch (error) {
-                // console.error('❌ Error loading user:', error);
+                console.error('❌ Error loading user:', error);
                 setUser(null);
             } finally {
                 setIsInitializing(false);
                 setIsAuthChecked(true);
-                // console.log('🏁 AuthProvider: initialization complete');
             }
         };
 
         loadUser();
-        
-        // Слушаем изменения localStorage
+
         const handleStorageChange = (e) => {
-            if (e.key === 'accessToken' || e.key === 'user') {
-                // console.log('📦 LocalStorage changed:', e.key);
-                loadUser();
+            if (e.key === 'accessToken' && !e.newValue) {
+                setUser(null);
             }
         };
-        
         window.addEventListener('storage', handleStorageChange);
         
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
+    //LOGIN
     const login = async (credentials) => {
         try {
             setIsProcessing(true);
             const response = await authApi.login(credentials);
             
-            // Получаем пользователя после успешного логина
             const userData = getCurrentUser();
-            
-            if (userData) {
-                setUser(userData);
-                // console.log('✅ User set after login:', userData.username);
-            }
+            if (userData) setUser(userData);
             
             return { success: true, data: response, user: userData };
         } catch (error) {
@@ -88,6 +71,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // LOGOUT
     const logout = async () => {
         try {
             setIsProcessing(true);
@@ -97,7 +81,6 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setUser(null);
             setIsProcessing(false);
-            // console.log('✅ User logged out');
         }
     };
 
@@ -185,12 +168,6 @@ export const AuthProvider = ({ children }) => {
         setUser,
         refreshUser 
     };
-
-    // console.log('AuthContext value:', {
-    //     user: user?.username,
-    //     isAuthenticated: value.isAuthenticated,
-    //     // isLoading
-    // });
 
     return (
         <AuthContext.Provider value={value}>
