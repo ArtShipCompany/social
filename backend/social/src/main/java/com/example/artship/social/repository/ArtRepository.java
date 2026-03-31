@@ -31,7 +31,6 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
            "(SELECT f.following.id FROM Follow f WHERE f.follower.id = :userId) " +
            "AND a.isPublicFlag = true ORDER BY a.createdAt DESC")
     Page<Art> findFeedByUserId(@Param("userId") Long userId, Pageable pageable);
-    
-    // Метод для поиска по тегу (ваш существующий)
+    long countByTitleContainingIgnoreCaseAndIsPublicFlagTrue(String title);
     Page<Art> findByTagsId(Long tagId, Pageable pageable);
 }

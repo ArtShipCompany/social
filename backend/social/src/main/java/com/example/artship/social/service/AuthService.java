@@ -84,8 +84,6 @@ public class AuthService {
         
         response.addHeader("Set-Cookie", cookieValue);
         
-        response.addHeader("Access-Control-Allow-Credentials", "true");
-        
         logger.debug("Refresh token cookie установлен с Path=/");
     }
 

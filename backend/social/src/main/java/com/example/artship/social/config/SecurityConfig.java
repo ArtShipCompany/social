@@ -141,7 +141,8 @@ public class SecurityConfig {
                     "/api/arts/public/**",    
                     "/api/arts/{id}/access",  
                     "/api/tags/public/**",    
-                    "/api/files/images/**"    
+                    "/api/files/images/**",
+                    "api/search/**"    
                 ).permitAll()
                 
                 .anyRequest().authenticated()
