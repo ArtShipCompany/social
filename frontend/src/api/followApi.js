@@ -1,303 +1,152 @@
-// api/followApi.js
+import { authApi } from './authApi';
+
 const API_URL = 'http://localhost:8081/api';
+const BASE_PATH = `${API_URL}/follow`;
 
-const getToken = () => {
-  return localStorage.getItem('accessToken');
-};
-
-// Основная функция для запросов с обработкой ошибок
-async function fetchWithErrorHandling(url, options = {}) {
-  const finalOptions = {
+const request = (url, options = {}) => 
+  authApi.fetchProtected(url, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+const formatFollow = (follow) => {
+  if (!follow) return null;
+  return {
+    id: follow.id,
+    follower: formatUserPreview(follow.follower),
+    following: formatUserPreview(follow.following),
+    createdAt: follow.createdAt,
   };
-  
-  // Добавляем токен если есть
-  const token = getToken();
-  if (token) {
-    finalOptions.headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  try {
-    console.log(`[Follow API] ${options.method || 'GET'} ${url}`);
-    const response = await fetch(url, finalOptions);
-    
-    if (response.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-      throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
-    }
-    
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const data = await response.json();
-        errorMessage = data.error || data.message || errorMessage;
-      } catch {
-        // Если не удалось распарсить JSON
-      }
-      throw new Error(errorMessage);
-    }
-    
-    // Для DELETE запросов с 204 No Content
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return null;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('[Follow API] Error:', error);
-    throw error;
-  }
-}
+};
+
+// Форматирует массив подписок с пагинацией
+const formatFollowPage = (pageData) => {
+  if (!pageData?.content) return pageData;
+  return {
+    ...pageData,
+    content: pageData.content.map(follow => formatFollow(follow)),
+  };
+};
+
+// Превью пользователя для списков подписок
+const formatUserPreview = (user) => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName || user.username,
+    avatarUrl: user.avatarUrl || user.pfp || '/default-avatar.png',
+    isPublic: user.isPublic !== false,
+  };
+};
+
 
 export const followApi = {
-  // Подписка на пользователя
-  async followUser(followerId, followingId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/follower/${followerId}/following/${followingId}`,
-        {
-          method: 'POST'
-        }
-      );
-    } catch (error) {
-      console.error('[Follow API] Error following user:', error);
-      throw error;
-    }
+  
+  // Подписаться на пользователя
+  async follow(followingId) {
+    const data = await request(`${BASE_PATH}/${followingId}`, {
+      method: 'POST',
+    });
+    return formatFollow(data);
   },
   
-  // Отписка от пользователя
-  async unfollowUser(followerId, followingId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/follower/${followerId}/following/${followingId}`,
-        {
-          method: 'DELETE'
-        }
-      );
-    } catch (error) {
-      console.error('[Follow API] Error unfollowing user:', error);
-      throw error;
-    }
+  // Отписаться от пользователя
+  async unfollow(followingId) {
+    await request(`${BASE_PATH}/${followingId}`, {
+      method: 'DELETE',
+    });
+    return true;
   },
   
-  // Проверка подписки
-  async isFollowing(followerId, followingId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/follower/${followerId}/following/${followingId}/exists`
-      );
-    } catch (error) {
-      console.error('[Follow API] Error checking follow status:', error);
-      throw error;
-    }
+  // Проверить, подписан ли текущий пользователь на target
+  async isFollowing(followingId) {
+    const data = await request(`${BASE_PATH}/check/${followingId}`);
+    return data?.isFollowing === true;
   },
   
-  // Получить подписчиков пользователя
-  async getFollowers(userId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/user/${userId}/followers`
-      );
-    } catch (error) {
-      console.error('[Follow API] Error getting followers:', error);
-      throw error;
-    }
-  },
   
-  // Получить подписки пользователя
-  async getFollowing(userId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/user/${userId}/following`
-      );
-    } catch (error) {
-      console.error('[Follow API] Error getting following:', error);
-      throw error;
-    }
-  },
-  
-  // Получить количество подписчиков
-  async getFollowerCount(userId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/user/${userId}/followers/count`
-      );
-    } catch (error) {
-      console.error('[Follow API] Error getting follower count:', error);
-      throw error;
-    }
-  },
-  
-  // Получить количество подписок
-  async getFollowingCount(userId) {
-    try {
-      return await fetchWithErrorHandling(
-        `${API_URL}/follows/user/${userId}/following/count`
-      );
-    } catch (error) {
-      console.error('[Follow API] Error getting following count:', error);
-      throw error;
-    }
-  },
-  
-  // === УПРОЩЕННЫЕ МЕТОДЫ ДЛЯ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ ===
-  
-  // Подписаться на пользователя (текущий пользователь -> targetUserId)
-  async follow(targetUserId) {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        throw new Error('Пользователь не авторизован');
-      }
-      
-      return await this.followUser(currentUser.id, targetUserId);
-    } catch (error) {
-      console.error('[Follow API] Error following:', error);
-      throw error;
-    }
-  },
-  
-  // Отписаться от пользователя (текущий пользователь -> targetUserId)
-  async unfollow(targetUserId) {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        throw new Error('Пользователь не авторизован');
-      }
-      
-      return await this.unfollowUser(currentUser.id, targetUserId);
-    } catch (error) {
-      console.error('[Follow API] Error unfollowing:', error);
-      throw error;
-    }
-  },
-  
-  // Проверить, подписан ли текущий пользователь на targetUserId
-  async isCurrentUserFollowing(targetUserId) {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        return false;
-      }
-      
-      return await this.isFollowing(currentUser.id, targetUserId);
-    } catch (error) {
-      console.error('[Follow API] Error checking if current user follows:', error);
-      return false;
-    }
-  },
-  
-  // Получить подписчиков текущего пользователя
-  async getCurrentUserFollowers() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        throw new Error('Пользователь не авторизован');
-      }
-      
-      return await this.getFollowers(currentUser.id);
-    } catch (error) {
-      console.error('[Follow API] Error getting current user followers:', error);
-      throw error;
-    }
-  },
-  
-  // Получить подписки текущего пользователя
-  async getCurrentUserFollowing() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        throw new Error('Пользователь не авторизован');
-      }
-      
-      return await this.getFollowing(currentUser.id);
-    } catch (error) {
-      console.error('[Follow API] Error getting current user following:', error);
-      throw error;
-    }
-  },
-  
-  // Получить количество подписчиков текущего пользователя
-  async getCurrentUserFollowerCount() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        return 0;
-      }
-      
-      return await this.getFollowerCount(currentUser.id);
-    } catch (error) {
-      console.error('[Follow API] Error getting current user follower count:', error);
-      return 0;
-    }
-  },
-  
-  // Получить количество подписок текущего пользователя
-  async getCurrentUserFollowingCount() {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!currentUser.id) {
-        return 0;
-      }
-      
-      return await this.getFollowingCount(currentUser.id);
-    } catch (error) {
-      console.error('[Follow API] Error getting current user following count:', error);
-      return 0;
-    }
-  },
-  
-  // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
-  
-  // Тоггл подписки (подписаться/отписаться)
-  async toggleFollow(targetUserId) {
-    try {
-      const isFollowing = await this.isCurrentUserFollowing(targetUserId);
-      
-      if (isFollowing) {
-        await this.unfollow(targetUserId);
-        return { following: false, action: 'unfollowed' };
-      } else {
-        await this.follow(targetUserId);
-        return { following: true, action: 'followed' };
-      }
-    } catch (error) {
-      console.error('[Follow API] Error toggling follow:', error);
-      throw error;
-    }
-  },
-  
-  // Форматировать данные подписчика/подписки
-  formatFollowData(followData) {
-    if (!followData) return null;
+  // Мои подписчики
+  async getMyFollowers(page = 0, size = 20, username = null) {
+    const params = new URLSearchParams({ page, size: size.toString() });
+    if (username) params.append('username', username);
     
-    return {
-      id: followData.id,
-      follower: followData.follower || {},
-      following: followData.following || {},
-      createdAt: followData.createdAt
-    };
+    const data = await request(`${BASE_PATH}/me/followers/search?${params}`);
+    return formatFollowPage(data);
   },
   
-  // Извлечь информацию о пользователях из массива followData
-  extractUsersFromFollows(followsArray, type = 'following') {
-    if (!Array.isArray(followsArray)) return [];
+  // Мои подписки
+  async getMyFollowing(page = 0, size = 20, username = null) {
+    const params = new URLSearchParams({ page, size: size.toString() });
+    if (username) params.append('username', username);
     
-    return followsArray.map(follow => {
+    const data = await request(`${BASE_PATH}/me/following/search?${params}`);
+    return formatFollowPage(data);
+  },
+  
+  
+  // Подписчики любого пользователя
+  async getFollowers(userId, page = 0, size = 20, username = null) {
+    const params = new URLSearchParams({ page, size: size.toString() });
+    if (username) params.append('username', username);
+    
+    const data = await request(`${BASE_PATH}/followers/${userId}/search?${params}`);
+    return formatFollowPage(data);
+  },
+  
+  // Подписки любого пользователя
+  async getFollowing(userId, page = 0, size = 20, username = null) {
+    const params = new URLSearchParams({ page, size: size.toString() });
+    if (username) params.append('username', username);
+    
+    const data = await request(`${BASE_PATH}/following/${userId}/search?${params}`);
+    return formatFollowPage(data);
+  },
+  
+  
+  // Количество подписчиков и подписок пользователя
+  async getFollowCounts(userId) {
+    return request(`${BASE_PATH}/count/${userId}`);
+  },
+  
+  // Количество подписчиков текущего пользователя
+  async getMyFollowerCount() {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!currentUser.id) throw new Error('Пользователь не авторизован');
+    return this.getFollowCounts(currentUser.id);
+  },
+  
+  
+  // Тоггл подписки (удобно для кнопки "Подписаться/Отписаться")
+  async toggleFollow(followingId) {
+    const isFollowing = await this.isFollowing(followingId);
+    if (isFollowing) {
+      await this.unfollow(followingId);
+      return { following: false, action: 'unfollowed' };
+    } else {
+      await this.follow(followingId);
+      return { following: true, action: 'followed' };
+    }
+  },
+  
+  // Извлечь массив пользователей из страницы подписок
+  extractUsersFromPage(pageData, type = 'following') {
+    if (!pageData?.content) return [];
+    return pageData.content.map(follow => {
       const user = type === 'following' ? follow.following : follow.follower;
-      return {
-        id: user?.id,
-        username: user?.username,
-        displayName: user?.displayName || user?.username,
-        avatarUrl: user?.avatarUrl || user?.pfp || '/default-avatar.png'
-      };
-    }).filter(user => user.id);
+      return formatUserPreview(user);
+    }).filter(Boolean);
+  },
+  
+  // Экспорт форматтеров для внешнего использования
+  utils: {
+    formatFollow,
+    formatFollowPage,
+    formatUserPreview,
   }
 };
 

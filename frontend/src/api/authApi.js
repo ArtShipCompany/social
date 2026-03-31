@@ -31,7 +31,7 @@ export const clearAuthStorage = () => {
 };
 
 // === ОСНОВНАЯ ФУНКЦИЯ ДЛЯ ЗАПРОСОВ ===
-async function fetchWithErrorHandling(url, options = {}) {
+export async function fetchWithErrorHandling(url, options = {}) {
   const finalOptions = {
     ...options,
     credentials: 'include', // 🔥 КРИТИЧНО: отправляем/получаем куки

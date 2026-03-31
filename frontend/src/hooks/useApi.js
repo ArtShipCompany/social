@@ -55,24 +55,10 @@ export const useApi = (apiModule = null) => {
       return { data, error: null };
     } catch (err) {
       setError(err);
-      
+
       if (err.status === 401) {
-        const refreshed = await authApi.refreshToken();
-        if (refreshed) {
-          try {
-            const data = await apiModule[methodName](...args);
-            return { data, error: null };
-          } catch (retryErr) {
-            setError(retryErr);
-            if (retryErr.status === 401) {
-              clearAuthStorage();
-              window.dispatchEvent(new CustomEvent('auth:logout'));
-            }
-          }
-        } else {
-          clearAuthStorage();
-          window.dispatchEvent(new CustomEvent('auth:logout'));
-        }
+        clearAuthStorage();
+        window.dispatchEvent(new CustomEvent('auth:logout'));
       }
       
       return { data: null, error: err };
