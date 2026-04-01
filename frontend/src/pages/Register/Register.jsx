@@ -257,19 +257,20 @@ export default function Register() {
                         required
                     />
 
-                    <DefaultBtn 
-                        text={isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
-                        className={styles.regBtn} 
-                        type="submit"
-                        disabled={isSubmitting}
-                    />
-                    
-                    <p className={styles.footerText}>
-                        Есть аккаунт?{' '}
-                        <Link to="/login" className={styles.link}>
-                            Войти
-                        </Link>
-                    </p>
+                    <div className={styles.submit}>
+                        <DefaultBtn 
+                            text={isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+                            className={styles.regBtn} 
+                            type="submit"
+                            disabled={isSubmitting}
+                        />
+                        <p className={styles.footerText}>
+                            Есть аккаунт?{' '}
+                            <Link to="/login" className={styles.link}>
+                                Войти
+                            </Link>
+                        </p>
+                    </div>
                 </form>
             </div>
         </>
