@@ -1,10 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState } from 'react'
 import Header from './layout/Header/Header'
 import Footer from './layout/Footer/Footer'
 
 import Home from './pages/Home/Home'
+
 import Login from './pages/Login/Login'
+import ForgotPassword from './pages/Login/ForgotPassword';
+import ResetPassword from './pages/Login/ResetPassword';
+
 import Register from './pages/Register/Register'
 import VerificationSent from './pages/Register/VerificationSent'
 import EmailVerification from './pages/Register/EmailVerification'
@@ -29,14 +32,16 @@ function App() {
         <div className="main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
 
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            <Route path="/register" element={<Register />} />
             <Route path="/verify-email-sent" element={<VerificationSent />} />
             <Route path="/verify-email" element={<EmailVerification />} />
 
             <Route path="/me" element={<Me />} />
-            {/* Edit - редактирование профиля */}
             <Route path="/edit" element={<Edit />} />
             <Route path="/profile/:userId" element={<Profile />} />
 

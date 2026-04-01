@@ -173,6 +173,45 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const forgotPassword = async (email) => {
+        try {
+            const response = await authApi.forgotPassword(email);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Forgot password error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Не удалось отправить письмо для сброса пароля' 
+            };
+        }
+    };
+
+    const validateResetToken = async (token) => {
+        try {
+            const response = await authApi.validateResetToken(token);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Validate reset token error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Токен недействителен или истёк' 
+            };
+        }
+    };
+
+    const resetPassword = async (token, newPassword) => {
+        try {
+            const response = await authApi.resetPassword(token, newPassword);
+            return { success: true, data: response };
+        } catch (error) {
+            console.error('❌ Reset password error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Не удалось сбросить пароль' 
+            };
+        }
+    };
+
     const checkVerificationStatus = async (email) => {
         try {
             const response = await authApi.checkVerificationStatus(email);
@@ -195,6 +234,10 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         register,
+
+        forgotPassword,
+        validateResetToken,
+        resetPassword,
 
         verifyEmail,
         resendVerification,

@@ -180,6 +180,32 @@ export const authApi = {
     return response;
   },
 
+  async forgotPassword(email, signal) {
+      return fetchWithErrorHandling(`${API_URL}/auth/forgot-password`, {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+          signal
+      });
+  },
+
+  async validateResetToken(token, signal) {
+      return fetchWithErrorHandling(
+          `${API_URL}/auth/reset-password?token=${encodeURIComponent(token)}`, 
+          {
+              method: 'GET',
+              signal
+          }
+      );
+  },
+
+  async resetPassword(token, newPassword, signal) {
+      return fetchWithErrorHandling(`${API_URL}/auth/reset-password`, {
+          method: 'POST',
+          body: JSON.stringify({ token, newPassword }),
+          signal
+      });
+  },
+
   async logout() {
     try {
       await fetchWithErrorHandling(`${API_URL}/auth/logout`, {
