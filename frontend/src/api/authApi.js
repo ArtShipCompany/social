@@ -165,7 +165,6 @@ export const authApi = {
       }),
     });
     
-    // 🔥 Сохраняем только access token (refresh теперь в HttpOnly cookie)
     if (response.accessToken) {
       setAuthToken(response.accessToken);
     }
@@ -183,23 +182,23 @@ export const authApi = {
 
   async logout() {
     try {
-      // 🔥 Просто вызываем эндпоинт — бэк сам прочитает куку и очистит её
       await fetchWithErrorHandling(`${API_URL}/auth/logout`, {
         method: 'POST',
       });
+    } catch (error) {
+      console.warn('⚠️ Logout endpoint error:', error.message);
     } finally {
-      // Всегда чистим локальное хранилище
       clearAuthStorage();
+      
+      window.dispatchEvent(new CustomEvent('auth:logout'));
     }
     return { success: true };
   },
 
-  // 🔥 Публичный метод рефреша (если нужно вызвать вручную)
   async refreshToken() {
     return handleTokenRefresh();
   },
 
-  // 🔥 Метод для защищённых запросов с авто-рефрешем
   async fetchProtected(url, options = {}) {
     return fetchWithAutoRefresh(url, options);
   }

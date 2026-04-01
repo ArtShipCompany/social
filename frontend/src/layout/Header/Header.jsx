@@ -8,21 +8,20 @@ function Header() {
     const { user, isAuthenticated, logout, isLoading, isProcessing, isAuthChecked } = useAuth();
     const location = useLocation();
 
-    // Функция для получения URL аватарки
     const getAvatarUrl = () => {
-        if (!user || !user.avatarUrl) return PFP;
-        return userApi.getFullUrl(user.avatarUrl);
+        if (!user) return PFP;
+        return userApi.getFullUrl(user.avatarUrl) || PFP;
     };
 
     const handleLogout = async () => {
         try {
             await logout();
         } catch (error) {
-            console.error('❌ Logout error:', error);
+            console.error('Logout error:', error);
         }
     };
 
-    if (isLoading || !isAuthChecked) {
+    if (isLoading) {
         return (
             <div className={styles.header}>
                 <Link to="/" className={styles.link}>
@@ -53,7 +52,7 @@ function Header() {
                             <button 
                                 onClick={handleLogout} 
                                 className={styles.cover}
-                                disabled={isProcessing}  // ✅ Блокируем кнопку во время logout
+                                disabled={isProcessing}
                             >
                                 {isProcessing ? 'Выход...' : 'Выйти'}
                             </button>
@@ -64,6 +63,7 @@ function Header() {
                                     src={getAvatarUrl()}
                                     alt="Аватарка" 
                                     onError={(e) => {
+                                        e.target.onerror = null;
                                         e.target.src = PFP;
                                     }}
                                 />

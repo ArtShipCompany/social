@@ -49,8 +49,17 @@ export const AuthProvider = ({ children }) => {
             }
         };
         window.addEventListener('storage', handleStorageChange);
+
+        const handleGlobalLogout = () => {
+            console.log('🔔 AuthProvider: received auth:logout event');
+            setUser(null);
+        };
+        window.addEventListener('auth:logout', handleGlobalLogout);
         
-        return () => window.removeEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('auth:logout', handleGlobalLogout);
+        }
     }, []);
 
     //LOGIN
@@ -155,7 +164,7 @@ export const AuthProvider = ({ children }) => {
         isLoading: isInitializing,
         isProcessing,
         isAuthChecked,
-        isAuthenticated: !!user && isAuthenticated(),
+        isAuthenticated: !!user,
         
         login,
         logout,
