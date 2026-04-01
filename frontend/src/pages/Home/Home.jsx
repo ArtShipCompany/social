@@ -7,7 +7,7 @@ import ArtCard from '../../components/ArtCard/ArtCard';
 import SearchIcon from '../../assets/search-icon.svg';
 import PFP from '../../assets/WA.jpg'
 import { TEXTS } from '../../assets/texts';
-import artApi from '../../api/artApi';
+import { artApi } from '../../api/artApi';
 
 export default function Home() {
     const { isAuthenticated, isLoading: authLoading, isAuthChecked } = useAuth();
@@ -24,35 +24,12 @@ export default function Home() {
     
     const isLoadingRef = useRef(false);
 
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return PFP;
-        
-        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-            return imagePath;
-        }
-        
-        let finalPath = imagePath;
-        
-        if (imagePath.startsWith('/api/files/images/')) {
-            const filename = imagePath.split('/').pop();
-            finalPath = `/uploads/images/${filename}`;
-        }
-        else if (imagePath.startsWith('/uploads/')) {
-            finalPath = imagePath;
-        }
-        else if (imagePath.startsWith('uploads/')) {
-            finalPath = `/${imagePath}`;
-        }
-        else if (!imagePath.includes('/')) {
-            finalPath = `/uploads/images/${imagePath}`;
-        }
-        
-        return `http://localhost:8081${finalPath}`;
-    };
+    const getImageUrl = useCallback((imagePath) => {
+        return artApi.utils?.getImageUrl?.(imagePath) || PFP;
+    }, []);
 
     const loadArts = useCallback(async (pageNum = 0, isSearchMode = false, reset = false) => {
         if (isLoadingRef.current) return;
-        
         isLoadingRef.current = true;
         
         if (reset || pageNum === 0) {
@@ -62,12 +39,10 @@ export default function Home() {
         }
         
         try {
-            let data;
-
             if (!isAuthChecked || authLoading) {
-                console.log('Waiting for auth check to complete...');
                 return;
             }
+            let data;
             
             const token = localStorage.getItem('accessToken');
             const isUserAuthenticated = token && isAuthenticated;
@@ -75,13 +50,10 @@ export default function Home() {
             if (isSearchMode && searchQuery.trim()) {
                 data = await artApi.searchByTag(searchQuery, pageNum, 30);
             } else if (isUserAuthenticated && activeTab === 'subscriptions') {
-                console.log('Loading feed (subscriptions)...');
                 try {
                     data = await artApi.getFeedArts(pageNum, 30);
                 } catch (feedError) {
-                    console.error('Feed load error:', feedError);
                     if (feedError.message.includes('401') || feedError.message.includes('Unauthorized')) {
-                        console.log('Token invalid, falling back to public arts');
                         setActiveTab('recommendations');
                         data = await artApi.getPublicArts(pageNum, 30);
                     } else {
@@ -132,10 +104,7 @@ export default function Home() {
     }, [isAuthenticated, searchQuery, authLoading, isAuthChecked, activeTab]);
 
     useEffect(() => {
-        if (!isAuthChecked || authLoading) {
-            return;
-        }
-        
+        if (!isAuthChecked || authLoading) return;
         const isSearchMode = searchQuery.trim() !== '';
         loadArts(0, isSearchMode, true);
     }, [isAuthenticated, searchQuery, loadArts, isAuthChecked, authLoading]);
@@ -144,17 +113,13 @@ export default function Home() {
         if (isAuthChecked && !authLoading && !searchQuery.trim()) {
             loadArts(0, false, true);
         }
-    }, [activeTab]);
+    }, [activeTab, loadArts, isAuthChecked, authLoading, searchQuery]);
 
     const handleTabChange = (tab) => {
-        if (activeTab !== tab) {
-            setActiveTab(tab);
-        }
+        if (activeTab !== tab) setActiveTab(tab);
     };
 
-    const handleInputChange = (e) => {
-        setSearchInput(e.target.value);
-    };
+    const handleInputChange = (e) => setSearchInput(e.target.value);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
