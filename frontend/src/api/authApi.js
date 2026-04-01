@@ -34,7 +34,7 @@ export const clearAuthStorage = () => {
 export async function fetchWithErrorHandling(url, options = {}) {
   const finalOptions = {
     ...options,
-    credentials: 'include', // 🔥 КРИТИЧНО: отправляем/получаем куки
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,

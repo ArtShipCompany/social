@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../api/userApi';
@@ -21,23 +21,26 @@ export default function Edit() {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
+    const getAvatarUrl = useCallback((user) => {
+        return userApi.utils?.getAvatarUrl?.(user) || blankPfp;
+    }, []);
+
     // Загрузка данных текущего пользователя
     useEffect(() => {
-        const loadUserData = async () => {
-            if (!isAuthenticated || !currentUser) {
-                navigate('/login');
-                return;
-            }
+        if (!isAuthenticated || !currentUser) {
+            navigate('/login');
+            return;
+        }
 
+        const loadUserData = async () => {
             try {
-                // Загружаем полные данные пользователя
                 const userData = await userApi.getCurrentUser();
                 
                 if (userData) {
                     setUsername(userData.username || '');
                     setDisplayName(userData.displayName || userData.username || '');
                     setBio(userData.bio || '');
-                    setAvatarUrl(userApi.getAvatarUrl(userData) || blankPfp);
+                    setAvatarUrl(getAvatarUrl(userData));
                 }
             } catch (err) {
                 console.error('Ошибка загрузки данных пользователя:', err);
@@ -46,18 +49,16 @@ export default function Edit() {
         };
 
         loadUserData();
-    }, [currentUser, isAuthenticated, navigate]);
+    }, [currentUser, isAuthenticated, navigate, getAvatarUrl]);
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Проверяем размер файла (макс 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 setError('Файл слишком большой. Максимальный размер: 5MB');
                 return;
             }
             
-            // Проверяем тип файла
             if (!file.type.startsWith('image/')) {
                 setError('Пожалуйста, выберите изображение');
                 return;
@@ -75,6 +76,19 @@ export default function Edit() {
             reader.readAsDataURL(file);
         }
     };
+
+    const updateUserInContext = useCallback((updatedUserData) => {
+        if (!currentUser) return;
+        
+        const newUserData = {
+            ...currentUser,
+            ...updatedUserData,
+            username: updatedUserData.username || currentUser.username
+        };
+        
+        setUser(newUserData);
+        localStorage.setItem('user', JSON.stringify(newUserData));
+    }, [currentUser, setUser]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -111,34 +125,16 @@ export default function Edit() {
                     avatarFile: avatarFile
                 });
                 
-                const response = await userApi.updateProfileWithAvatar(formData);
-                updatedUserData = response.user || response;
+                updatedUserData = await userApi.updateProfileWithAvatar(formData);
             } else if (Object.keys(updateData).length > 0) {
-                // Если изменены только текстовые поля
-                const response = await userApi.updateProfile(updateData);
-                updatedUserData = response.user || response;
+                updatedUserData = await userApi.updateProfile(updateData);
             } else {
                 navigate('/me');
                 return;
             }
 
             if (updatedUserData) {
-            const newUserData = {
-                ...currentUser,
-                ...updatedUserData,
-                username: updatedUserData.username || username
-            };
-            
-            setUser(newUserData);
-            localStorage.setItem('user', JSON.stringify(newUserData));
-            } else {
-               
-                const updatedLocalUser = {
-                    ...currentUser,
-                    ...updateData
-                };
-                setUser(updatedLocalUser);
-                localStorage.setItem('user', JSON.stringify(updatedLocalUser));
+                updateUserInContext(updatedUserData);
             }
 
             setSuccess(true);

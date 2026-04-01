@@ -16,14 +16,23 @@ async function request(url, options = {}) {
 
 // Для FormData-запросов (без Content-Type, чтобы браузер сам выставил boundary)
 async function requestMultipart(url, options = {}) {
-  return fetchWithErrorHandling(url, {
+  const token = localStorage.getItem('accessToken');
+  
+  const response = await fetch(url, {
     credentials: 'include',
     ...options,
-    // 👇 НЕ добавляем Content-Type — браузер сделает это сам
     headers: {
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}`);
+  }
+  
+  return response.json();
 }
 
 export const userApi = {
