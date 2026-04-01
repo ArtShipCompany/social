@@ -23,7 +23,6 @@ const formatFollow = (follow) => {
   };
 };
 
-// Форматирует массив подписок с пагинацией
 const formatFollowPage = (pageData) => {
   if (!pageData?.content) return pageData;
   return {
@@ -32,7 +31,6 @@ const formatFollowPage = (pageData) => {
   };
 };
 
-// Превью пользователя для списков подписок
 const formatUserPreview = (user) => {
   if (!user) return null;
   return {
@@ -49,79 +47,57 @@ export const followApi = {
   
   // Подписаться на пользователя
   async follow(followingId) {
-    const data = await request(`${BASE_PATH}/${followingId}`, {
-      method: 'POST',
-    });
+    const data = await request(`${BASE_PATH}/${followingId}`, { method: 'POST' });
     return formatFollow(data);
   },
   
-  // Отписаться от пользователя
   async unfollow(followingId) {
-    await request(`${BASE_PATH}/${followingId}`, {
-      method: 'DELETE',
-    });
+    await request(`${BASE_PATH}/${followingId}`, { method: 'DELETE' });
     return true;
   },
   
-  // Проверить, подписан ли текущий пользователь на target
   async isFollowing(followingId) {
     const data = await request(`${BASE_PATH}/check/${followingId}`);
     return data?.isFollowing === true;
   },
   
   
-  // Мои подписчики
   async getMyFollowers(page = 0, size = 20, username = null) {
     const params = new URLSearchParams({ page, size: size.toString() });
     if (username) params.append('username', username);
-    
     const data = await request(`${BASE_PATH}/me/followers/search?${params}`);
     return formatFollowPage(data);
   },
   
-  // Мои подписки
   async getMyFollowing(page = 0, size = 20, username = null) {
     const params = new URLSearchParams({ page, size: size.toString() });
     if (username) params.append('username', username);
-    
     const data = await request(`${BASE_PATH}/me/following/search?${params}`);
     return formatFollowPage(data);
   },
   
-  
-  // Подписчики любого пользователя
   async getFollowers(userId, page = 0, size = 20, username = null) {
     const params = new URLSearchParams({ page, size: size.toString() });
     if (username) params.append('username', username);
-    
     const data = await request(`${BASE_PATH}/followers/${userId}/search?${params}`);
     return formatFollowPage(data);
   },
   
-  // Подписки любого пользователя
   async getFollowing(userId, page = 0, size = 20, username = null) {
     const params = new URLSearchParams({ page, size: size.toString() });
     if (username) params.append('username', username);
-    
     const data = await request(`${BASE_PATH}/following/${userId}/search?${params}`);
     return formatFollowPage(data);
   },
-  
-  
-  // Количество подписчиков и подписок пользователя
+   
   async getFollowCounts(userId) {
-    return request(`${BASE_PATH}/count/${userId}`);
+    const data = await request(`${BASE_PATH}/count/${userId}`);
+    return {
+      followers: data?.followers ?? 0,
+      following: data?.following ?? 0,
+    };
   },
   
-  // Количество подписчиков текущего пользователя
-  async getMyFollowerCount() {
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!currentUser.id) throw new Error('Пользователь не авторизован');
-    return this.getFollowCounts(currentUser.id);
-  },
-  
-  
-  // Тоггл подписки (удобно для кнопки "Подписаться/Отписаться")
   async toggleFollow(followingId) {
     const isFollowing = await this.isFollowing(followingId);
     if (isFollowing) {
@@ -133,7 +109,6 @@ export const followApi = {
     }
   },
   
-  // Извлечь массив пользователей из страницы подписок
   extractUsersFromPage(pageData, type = 'following') {
     if (!pageData?.content) return [];
     return pageData.content.map(follow => {
@@ -142,7 +117,6 @@ export const followApi = {
     }).filter(Boolean);
   },
   
-  // Экспорт форматтеров для внешнего использования
   utils: {
     formatFollow,
     formatFollowPage,

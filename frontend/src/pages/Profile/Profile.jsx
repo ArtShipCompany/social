@@ -26,31 +26,9 @@ export default function Profile() {
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
 
-    const getImageUrl = (imagePath) => {
-        if (!imagePath) return '/default-art.jpg';
-        
-        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-            return imagePath;
-        }
-        
-        let finalPath = imagePath;
-        
-        if (imagePath.startsWith('/api/files/images/')) {
-            const filename = imagePath.split('/').pop();
-            finalPath = `/uploads/images/${filename}`;
-        }
-        else if (imagePath.startsWith('/uploads/')) {
-            finalPath = imagePath;
-        }
-        else if (imagePath.startsWith('uploads/')) {
-            finalPath = `/${imagePath}`;
-        }
-        else if (!imagePath.includes('/')) {
-            finalPath = `/uploads/images/${imagePath}`;
-        }
-        
-        return `http://localhost:8081${finalPath}`;
-    };
+    const getImageUrl = useCallback((imagePath) => {
+        return artApi.utils?.getImageUrl?.(imagePath) || '/default-art.jpg';
+    }, []);
 
     const isValidArt = (art) => {
         return art && art.id && (art.image || art.imageUrl) && (art.image !== 'string');
@@ -61,12 +39,11 @@ export default function Profile() {
             setLoading(true);
             setError(null);
             
-            // Загружаем данные пользователя
             let userData;
             if (isAuthenticated) {
                 try {
                     userData = await userApi.getUserById(userId);
-                } catch (error) {
+                } catch {
                     userData = await userApi.getPublicUser(userId);
                 }
             } else {
@@ -79,42 +56,30 @@ export default function Profile() {
             
             setUser(userApi.formatUser(userData));
             
-            // Загружаем арты пользователя
             try {
-                const artsData = await artApi.getArtsByAuthor(userId);
-                
-                let formattedArts = [];
-                
-                if (artsData && artsData.content && Array.isArray(artsData.content)) {
-                    formattedArts = artsData.content;
-                } else if (artsData && Array.isArray(artsData)) {
-                    formattedArts = artsData;
-                }
-                
-                setUserArts(formattedArts || []);
-                
+                const artsData = await artApi.getArtsByAuthor(userId, 0, 30);
+                const formattedArts = artsData?.content && Array.isArray(artsData.content) 
+                    ? artsData.content 
+                    : (Array.isArray(artsData) ? artsData : []);
+                setUserArts(formattedArts);
             } catch (artsError) {
                 console.error('Ошибка загрузки артов:', artsError);
                 setUserArts([]);
             }
             
-            // Загружаем статистику подписок
             try {
-                const [followers, following] = await Promise.all([
-                    followApi.getFollowerCount(userId).catch(() => 0),
-                    followApi.getFollowingCount(userId).catch(() => 0)
-                ]);
-                
-                setFollowerCount(followers);
-                setFollowingCount(following);
+                const counts = await followApi.getFollowCounts(userId);
+                setFollowerCount(counts?.followers ?? 0);
+                setFollowingCount(counts?.following ?? 0);
             } catch (statsError) {
                 console.error('Ошибка загрузки статистики:', statsError);
+                setFollowerCount(0);
+                setFollowingCount(0);
             }
             
-            // Проверяем подписку текущего пользователя
-            if (isAuthenticated && currentUser && currentUser.id !== userId) {
+            if (isAuthenticated && currentUser?.id && currentUser.id !== Number(userId)) {
                 try {
-                    const isFollowing = await followApi.isCurrentUserFollowing(userId);
+                    const isFollowing = await followApi.isFollowing(userId);
                     setIsSubscribed(isFollowing);
                 } catch (followError) {
                     console.error('Ошибка проверки подписки:', followError);
@@ -145,11 +110,13 @@ export default function Profile() {
             if (isSubscribed) {
                 await followApi.unfollow(userId);
                 setIsSubscribed(false);
-                setFollowerCount(prev => Math.max(0, prev - 1));
+                const counts = await followApi.getFollowCounts(userId);
+                setFollowerCount(counts?.followers ?? 0);
             } else {
                 await followApi.follow(userId);
                 setIsSubscribed(true);
-                setFollowerCount(prev => prev + 1);
+                const counts = await followApi.getFollowCounts(userId);
+                setFollowerCount(counts?.followers ?? 0);
             }
         } catch (error) {
             console.error('Ошибка подписки/отписки:', error);
@@ -162,7 +129,7 @@ export default function Profile() {
             navigate('/login');
             return;
         }
-        notification.warning('Функция сообщений в разработке', 3000)
+        notification.warning('Функция сообщений в разработке', 3000);
     };
 
     if (loading) {
@@ -278,7 +245,7 @@ export default function Profile() {
                                 key={art.id} 
                                 id={art.id} 
                                 image={imageUrl}
-                                typeShow="showLikes"
+                                typeShow="full"
                                 likesCount={art.likesCount || 0}
                                 initialIsPrivate={art.isPublic === false}
                                 title={art.title || 'Без названия'}
