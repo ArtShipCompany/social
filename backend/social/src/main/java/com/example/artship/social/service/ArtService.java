@@ -194,6 +194,45 @@ public class ArtService {
                 .collect(Collectors.toList());
     }
 
+     @Transactional(readOnly = true)
+    public Page<Art> findByTagNames(List<String> tagNames, Pageable pageable) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return artRepository.findByTagNamesAndIsPublicFlagTrue(tagNames, tagNames.size(), pageable);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<ArtDto> findDtosByTagNames(List<String> tagNames, Pageable pageable) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return artRepository.findByTagNamesAndIsPublicFlagTrue(tagNames, tagNames.size(), pageable)
+                .map(this::convertToDto);
+    }
+    
+
+    @Transactional(readOnly = true)
+    public Page<Art> findByAnyTagNames(List<String> tagNames, Pageable pageable) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return artRepository.findByAnyTagNamesAndIsPublicFlagTrue(tagNames, pageable);
+    }
+    
+    /**
+     * Поиск артов по нескольким тегам (DTO) - OR
+     */
+    @Transactional(readOnly = true)
+    public Page<ArtDto> findDtosByAnyTagNames(List<String> tagNames, Pageable pageable) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return artRepository.findByAnyTagNamesAndIsPublicFlagTrue(tagNames, pageable)
+                .map(this::convertToDto);
+    }
+
+
     
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {

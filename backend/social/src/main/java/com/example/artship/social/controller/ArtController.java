@@ -49,8 +49,6 @@ public class ArtController {
 
     
 
-    
-
     @Operation(
         summary = "Создать новый арт",
         description = "Создает арт с загрузкой изображения. Формат запроса: multipart/form-data"
@@ -521,25 +519,8 @@ public class ArtController {
         return ResponseEntity.ok(arts);
     }
 
-    // Поиск публичных артов по тегу
-    @Operation(summary = "Получить арты по тегу")
-    @GetMapping("/tag/{tagName}")
-    public ResponseEntity<Page<ArtDto>> getArtsByTag(
-        @Parameter(description = "Название тега", required = true) @PathVariable String tagName,
-        @Parameter(description = "Номер страницы (начиная с 0)", example = "0") 
-        @RequestParam(defaultValue = "0") int page,
-        @Parameter(description = "Количество элементов на странице", example = "20") 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        logger.info("Поиск артов по тегу: '{}'", tagName);
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<ArtDto> arts = artService.findDtosByTagName(tagName, pageable);
-        
-        logger.info("Найдено {} артов с тегом '{}'", arts.getTotalElements(), tagName);
-        return ResponseEntity.ok(arts);
-    }
-
+    
+    
     // Проверка прав доступа к арту
     @Operation(summary = "Проверить доступ к арту")
     @GetMapping("/{id}/access")

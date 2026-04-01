@@ -2,6 +2,9 @@ package com.example.artship.social.repository;
 
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,4 +36,17 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
     Page<Art> findFeedByUserId(@Param("userId") Long userId, Pageable pageable);
     long countByTitleContainingIgnoreCaseAndIsPublicFlagTrue(String title);
     Page<Art> findByTagsId(Long tagId, Pageable pageable);
+
+
+    @Query("SELECT a FROM Art a JOIN a.tags t WHERE t.name IN (:tagNames) AND a.isPublicFlag = true " +
+           "GROUP BY a.id HAVING COUNT(DISTINCT t.id) = :tagCount")
+    Page<Art> findByTagNamesAndIsPublicFlagTrue(@Param("tagNames") List<String> tagNames, 
+                                                 @Param("tagCount") long tagCount, 
+                                                 Pageable pageable);
+    
+    @Query("SELECT DISTINCT a FROM Art a JOIN a.tags t WHERE t.name IN (:tagNames) AND a.isPublicFlag = true")
+    Page<Art> findByAnyTagNamesAndIsPublicFlagTrue(@Param("tagNames") List<String> tagNames, Pageable pageable);
+    
+    @Query("SELECT COUNT(DISTINCT a) FROM Art a JOIN a.tags t WHERE LOWER(t.name) = LOWER(:tagName) AND a.isPublicFlag = true")
+    long countByTagName(@Param("tagName") String tagName);
 }
