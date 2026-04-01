@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8081/api';
+export const API_URL = 'http://localhost:8081/api';
 
 // === КЛАСС ДЛЯ КАСТОМНЫХ ОШИБОК ===
 class ApiError extends Error {

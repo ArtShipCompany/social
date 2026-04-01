@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authApi, isAuthenticated, getCurrentUser, getAuthToken } from '../api/authApi';
+import { authApi, isAuthenticated, getCurrentUser, getAuthToken, fetchWithErrorHandling, API_URL } from '../api/authApi';
 
 const AuthContext = createContext({});
 
@@ -18,30 +18,56 @@ export const AuthProvider = ({ children }) => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
-        const loadUser = () => {
-            try {
-                const token = getAuthToken();
+    const loadUser = async () => {
+        try {
+            const token = getAuthToken();
+            
+            if (token) {
+                const response = await fetchWithErrorHandling(`${API_URL}/users/me`, {
+                    method: 'GET',
+                });
                 
-                if (token && isAuthenticated()) {
-                    const userData = getCurrentUser();
-                    if (userData?.id) {
-                        setUser(userData);
-                    } else {
+                if (response?.id) {
+                    localStorage.setItem('user', JSON.stringify(response));
+                    setUser(response);
+                } else {
+                    throw new Error('Invalid user data');
+                }
+            } else {
+                setUser(null);
+            }
+        } catch (error) {
+            if (error.status === 401) {
+                console.log('🔄 Access token expired, trying silent refresh...');
+                const refreshed = await authApi.refreshToken();
+                
+                if (refreshed) {
+                    try {
+                        const response = await fetchWithErrorHandling(`${API_URL}/users/me`);
+                        if (response?.id) {
+                            localStorage.setItem('user', JSON.stringify(response));
+                            setUser(response);
+                        }
+                    } catch {
                         setUser(null);
+                        clearAuthStorage();
                     }
                 } else {
                     setUser(null);
+                    clearAuthStorage();
                 }
-            } catch (error) {
-                console.error('❌ Error loading user:', error);
+            } else {
+                console.error('❌ Auth init error:', error);
                 setUser(null);
-            } finally {
-                setIsInitializing(false);
-                setIsAuthChecked(true);
+                clearAuthStorage();
             }
-        };
+        } finally {
+            setIsInitializing(false);
+            setIsAuthChecked(true);
+        }
+    };
 
-        loadUser();
+    loadUser();
 
         const handleStorageChange = (e) => {
             if (e.key === 'accessToken' && !e.newValue) {
