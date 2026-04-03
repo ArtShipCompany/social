@@ -4,6 +4,7 @@ import styles from './Home.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
+import Switcher from '../../components/Switcher/Switcher';
 import SearchIcon from '../../assets/search-icon.svg';
 import PFP from '../../assets/WA.jpg'
 import { TEXTS } from '../../assets/texts';
@@ -21,7 +22,11 @@ export default function Home() {
     const [error, setError] = useState(null);
 
     const [activeTab, setActiveTab] = useState('recommendations');
-    
+    const feedTabs = [
+        { id: 'recommendations', label: 'Рекомендации' },
+        { id: 'subscriptions', label: 'Подписки' }
+    ];
+
     const isLoadingRef = useRef(false);
 
     const getImageUrl = useCallback((imagePath) => {
@@ -115,9 +120,7 @@ export default function Home() {
         }
     }, [activeTab, loadArts, isAuthChecked, authLoading, searchQuery]);
 
-    const handleTabChange = (tab) => {
-        if (activeTab !== tab) setActiveTab(tab);
-    };
+    const handleTabChange = (tabId) => setActiveTab(tabId);
 
     const handleInputChange = (e) => setSearchInput(e.target.value);
 
@@ -221,20 +224,11 @@ export default function Home() {
             </div>
             
             {isAuthenticated ? (
-                <div className={styles.switcher}>
-                    <button
-                        className={`${styles.switcherTab} ${activeTab === 'recommendations' ? styles.active : ''}`}
-                        onClick={() => handleTabChange('recommendations')}
-                    >
-                        Рекомендации
-                    </button>
-                    <button
-                        className={`${styles.switcherTab} ${activeTab === 'subscriptions' ? styles.active : ''}`}
-                        onClick={() => handleTabChange('subscriptions')}
-                    >
-                        Подписки
-                    </button>
-                </div>
+                <Switcher 
+                    tabs={feedTabs} 
+                    activeTab={activeTab} 
+                    onTabChange={handleTabChange} 
+                />
             ) : (
                 <div className={styles.switcherSpacer}></div>
             )}
