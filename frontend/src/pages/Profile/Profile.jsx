@@ -11,6 +11,7 @@ import artsIcon from '../../assets/arts-icon.svg';
 import sms from '../../assets/message-icon.svg';
 import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
+import ProfileStats from '../../components/ProfileStats/ProfileStats';
 
 export default function Profile() {
     const { userId } = useParams();
@@ -197,14 +198,12 @@ export default function Profile() {
                     </div>
 
                     <div className={styles.headSFooter}>
-                        <div className={styles.stats}>
-                            <div className={styles.arts}>
-                                <img src={artsIcon} alt="arts" />
-                                <span>{` ${validArts.length}`}</span>
-                            </div>
-                            <span>Подписчики: {followerCount}</span>
-                            <span>Подписки: {followingCount}</span>
-                        </div>
+                        <ProfileStats 
+                            userId={user?.id}
+                            artsCount={validArts.length}
+                            followersCount={followerCount}
+                            followingCount={followingCount}
+                        />
 
                         {user.bio && (
                             <div className={styles.bio}>

@@ -19,7 +19,7 @@ import CreateArt from './pages/ArtView/CreateArt'
 import Profile from './pages/Profile/Profile'
 import Me from './pages/Profile/Me'
 import Edit from './pages/Profile/Edit'
-
+import Follows from './pages/Follows/Follows';
 
 
 import './App.css'
@@ -44,6 +44,7 @@ function App() {
             <Route path="/me" element={<Me />} />
             <Route path="/edit" element={<Edit />} />
             <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/follows/:userId?" element={<Follows />} />
 
             <Route path="/art/:id" element={<ArtView />} />
             {/* EditArt - редактирование поста(лучше при рефакторинге переименовать PostView и EditPost) */}

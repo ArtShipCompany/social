@@ -14,6 +14,7 @@ import artsIcon from '../../assets/arts-icon.svg';
 import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import ArtCard from '../../components/ArtCard/ArtCard';
+import ProfileStats from '../../components/ProfileStats/ProfileStats';
 
 export default function Me() {
     const navigate = useNavigate();
@@ -234,14 +235,12 @@ const loadUserData = useCallback(async () => {
                     </div>
 
                     <div className={styles.headSFooter}>
-                        <div className={styles.stats}>
-                            <div className={styles.arts}>
-                                <img src={artsIcon} alt="Арты" />
-                                <span>{` ${validArts.length}`}</span>
-                            </div>
-                            <span>Подписчики: {followerCount}</span>
-                            <span>Подписки: {followingCount}</span>
-                        </div>
+                        <ProfileStats 
+                            userId={currentUser?.id}
+                            artsCount={validArts.length}
+                            followersCount={followerCount}
+                            followingCount={followingCount}
+                        />
 
                         {currentUser.bio && (
                             <div className={styles.bio}>

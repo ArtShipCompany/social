@@ -15,37 +15,84 @@ const request = (url, options = {}) =>
 
 const formatFollow = (follow) => {
   if (!follow) return null;
+  
+  console.log('[followApi] formatFollow input:', follow);
+  
+  const follower = follow.followerId ? {
+    id: follow.followerId,
+    username: follow.followerUsername || 'unknown',
+    displayName: follow.followerUsername || 'unknown',
+    avatarUrl: follow.followerAvatarUrl || '/default-avatar.png',
+    isPublic: true,
+  } : null;
+  
+  const following = follow.followingId ? {
+    id: follow.followingId,
+    username: follow.followingUsername || 'unknown',
+    displayName: follow.followingUsername || 'unknown',
+    avatarUrl: follow.followingAvatarUrl || '/default-avatar.png',
+    isPublic: true,
+  } : null;
+  
+  console.log('[followApi] formatFollow result:', { follower, following });
+  
   return {
-    id: follow.id,
-    follower: formatUserPreview(follow.follower),
-    following: formatUserPreview(follow.following),
+    id: follow.id || `${follow.followerId}-${follow.followingId}`,
+    followerId: follow.followerId,
+    followingId: follow.followingId,
+    follower: follower,
+    following: following,
     createdAt: follow.createdAt,
   };
 };
 
 const formatFollowPage = (pageData) => {
-  if (!pageData?.content) return pageData;
-  return {
-    ...pageData,
-    content: pageData.content.map(follow => formatFollow(follow)),
-  };
+  console.log('[followApi] formatFollowPage input:', pageData);
+  
+  if (Array.isArray(pageData)) {
+    console.log('[followApi] Получен массив, оборачиваем');
+    return {
+      content: pageData.map(follow => formatFollow(follow)),
+      totalElements: pageData.length,
+      last: true
+    };
+  }
+  
+  if (pageData?.content) {
+    console.log('[followApi] Есть content, форматируем');
+    return {
+      ...pageData,
+      content: pageData.content.map(follow => formatFollow(follow)),
+    };
+  }
+  
+  console.log('[followApi] Неизвестный формат, возвращаем пустой');
+  return { content: [], totalElements: 0, last: true };
 };
 
 const formatUserPreview = (user) => {
-  if (!user) return null;
-  return {
+  console.log('[followApi] formatUserPreview input:', user);
+  
+  if (!user) {
+    console.log('[followApi] formatUserPreview: user is null');
+    return null;
+  }
+  
+  const formatted = {
     id: user.id,
     username: user.username,
     displayName: user.displayName || user.username,
     avatarUrl: user.avatarUrl || user.pfp || '/default-avatar.png',
     isPublic: user.isPublic !== false,
   };
+  
+  console.log('[followApi] formatUserPreview result:', formatted);
+  return formatted;
 };
 
 
 export const followApi = {
   
-  // Подписаться на пользователя
   async follow(followingId) {
     const data = await request(`${BASE_PATH}/${followingId}`, { method: 'POST' });
     return formatFollow(data);
@@ -72,7 +119,22 @@ export const followApi = {
   async getMyFollowing(page = 0, size = 20, username = null) {
     const params = new URLSearchParams({ page, size: size.toString() });
     if (username) params.append('username', username);
-    const data = await request(`${BASE_PATH}/me/following/search?${params}`);
+    const url = `${BASE_PATH}/me/following/search?${params}`;
+    console.log('[followApi] getMyFollowing URL:', url);
+    
+    const data = await request(url);
+    console.log('[followApi] getMyFollowing response:', data);
+    
+    if (data?.content?.length > 0) {
+      console.log('[followApi] Первый элемент content:', data.content[0]);
+      console.log('[followApi] Есть ли followingId или followerId?', {
+        hasFollowingId: 'followingId' in data.content[0],
+        hasFollowerId: 'followerId' in data.content[0],
+        hasFollowing: 'following' in data.content[0],
+        hasFollower: 'follower' in data.content[0]
+      });
+    }
+    
     return formatFollowPage(data);
   },
   
@@ -110,11 +172,26 @@ export const followApi = {
   },
   
   extractUsersFromPage(pageData, type = 'following') {
-    if (!pageData?.content) return [];
-    return pageData.content.map(follow => {
+    console.log('[followApi] extractUsersFromPage input:', { pageData, type });
+    
+    if (!pageData?.content) {
+      console.log('[followApi] extractUsersFromPage: нет content, возвращаем []');
+      return [];
+    }
+    
+    console.log('[followApi] extractUsersFromPage: content length:', pageData.content.length);
+    
+    const users = pageData.content.map(follow => {
+      console.log('[followApi] Обрабатываю follow:', follow);
       const user = type === 'following' ? follow.following : follow.follower;
-      return formatUserPreview(user);
+      console.log('[followApi] Извлеченный user:', user);
+      const formatted = formatUserPreview(user);
+      console.log('[followApi] Отформатированный user:', formatted);
+      return formatted;
     }).filter(Boolean);
+    
+    console.log('[followApi] extractUsersFromPage result:', users);
+    return users;
   },
   
   utils: {
