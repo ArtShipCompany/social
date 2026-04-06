@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { followApi } from '../../api/followApi';
 import { userApi } from '../../api/userApi';
 import Switcher from '../../components/Switcher/Switcher';
-import UserCard from '../../components/UserCard/UserCard'; // допустим, у тебя есть такой
+import UserCard from '../../components/UserCard/UserCard';
 import styles from './Follows.module.css';
 
 export default function Follows() {
@@ -34,14 +34,14 @@ export default function Follows() {
         }
     }, [isAuthChecked, isAuthenticated, navigate]);
 
-    const checkSubscriptionStatus = async (userIds, myFollowingIds) => {
-        // myFollowingIds — это список ID, на которые я уже подписана (можно получить один раз)
-        const statusMap = {};
-        userIds.forEach(id => {
-            statusMap[id] = myFollowingIds.includes(id);
-        });
-        return statusMap;
-    };
+    // const checkSubscriptionStatus = async (userIds, myFollowingIds) => {
+    //     // myFollowingIds — это список ID, на которые я уже подписана (можно получить один раз)
+    //     const statusMap = {};
+    //     userIds.forEach(id => {
+    //         statusMap[id] = myFollowingIds.includes(id);
+    //     });
+    //     return statusMap;
+    // };
 
     // Конфиг для свитчера
     const followTabs = [
@@ -71,23 +71,24 @@ export default function Follows() {
             const userList = followApi.extractUsersFromPage(data, activeTab === 'subscribers' ? 'follower' : 'following');
             
           
-            if (userList.length > 0) {
-
-                const myFollowing = await followApi.getMyFollowing(0, 1000); // большой size чтобы получить все
-                const myFollowingIds = followApi.extractUsersFromPage(myFollowing, 'following').map(u => u.id);
-                
-                const usersWithStatus = userList.map(user => ({
-                    ...user,
-                    isSubscribed: myFollowingIds.includes(user.id)
-                }));
-                
-                if (reset || pageNum === 0) {
-                    setUsers(usersWithStatus);
-                } else {
-                    setUsers(prev => [...prev, ...usersWithStatus]);
+            const usersWithStatus = await Promise.all(
+                userList.map(async (user) => {
+                if (user.id === currentUser?.id) {
+                    return { ...user, isSubscribed: false };
                 }
+                try {
+                    const isSubscribed = await followApi.isFollowing(user.id);
+                    return { ...user, isSubscribed };
+                } catch {
+                    return { ...user, isSubscribed: false };
+                }
+                })
+            );
+            
+            if (reset || pageNum === 0) {
+                setUsers(usersWithStatus);
             } else {
-                if (reset || pageNum === 0) setUsers([]);
+                setUsers(prev => [...prev, ...usersWithStatus]);
             }
             
             setHasMore(data?.content?.length === size);

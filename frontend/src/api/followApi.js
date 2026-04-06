@@ -16,32 +16,28 @@ const request = (url, options = {}) =>
 const formatFollow = (follow) => {
   if (!follow) return null;
   
-  console.log('[followApi] formatFollow input:', follow);
-  
-  const follower = follow.followerId ? {
-    id: follow.followerId,
-    username: follow.followerUsername || 'unknown',
-    displayName: follow.followerUsername || 'unknown',
-    avatarUrl: follow.followerAvatarUrl || '/default-avatar.png',
+  const follower = follow.follower ? {
+    id: follow.follower.id,
+    username: follow.follower.username,
+    displayName: follow.follower.displayName || follow.follower.username,
+    avatarUrl: follow.follower.avatarUrl || '/default-avatar.png',
     isPublic: true,
   } : null;
   
-  const following = follow.followingId ? {
-    id: follow.followingId,
-    username: follow.followingUsername || 'unknown',
-    displayName: follow.followingUsername || 'unknown',
-    avatarUrl: follow.followingAvatarUrl || '/default-avatar.png',
+  const following = follow.following ? {
+    id: follow.following.id,
+    username: follow.following.username,
+    displayName: follow.following.displayName || follow.following.username,
+    avatarUrl: follow.following.avatarUrl || '/default-avatar.png',
     isPublic: true,
   } : null;
-  
-  console.log('[followApi] formatFollow result:', { follower, following });
   
   return {
-    id: follow.id || `${follow.followerId}-${follow.followingId}`,
-    followerId: follow.followerId,
-    followingId: follow.followingId,
-    follower: follower,
-    following: following,
+    id: follow.id || `${follower?.id}-${following?.id}`,
+    followerId: follower?.id,
+    followingId: following?.id,
+    follower,
+    following,
     createdAt: follow.createdAt,
   };
 };
@@ -172,26 +168,14 @@ export const followApi = {
   },
   
   extractUsersFromPage(pageData, type = 'following') {
-    console.log('[followApi] extractUsersFromPage input:', { pageData, type });
+    if (!pageData?.content) return [];
     
-    if (!pageData?.content) {
-      console.log('[followApi] extractUsersFromPage: нет content, возвращаем []');
-      return [];
-    }
-    
-    console.log('[followApi] extractUsersFromPage: content length:', pageData.content.length);
-    
-    const users = pageData.content.map(follow => {
-      console.log('[followApi] Обрабатываю follow:', follow);
-      const user = type === 'following' ? follow.following : follow.follower;
-      console.log('[followApi] Извлеченный user:', user);
-      const formatted = formatUserPreview(user);
-      console.log('[followApi] Отформатированный user:', formatted);
-      return formatted;
-    }).filter(Boolean);
-    
-    console.log('[followApi] extractUsersFromPage result:', users);
-    return users;
+    return pageData.content
+      .map(follow => {
+        const user = type === 'following' ? follow.following : follow.follower;
+        return this.utils.formatUserPreview(user);
+      })
+      .filter(Boolean);
   },
   
   utils: {
