@@ -34,6 +34,15 @@ export default function Follows() {
         }
     }, [isAuthChecked, isAuthenticated, navigate]);
 
+    const checkSubscriptionStatus = async (userIds, myFollowingIds) => {
+        // myFollowingIds — это список ID, на которые я уже подписана (можно получить один раз)
+        const statusMap = {};
+        userIds.forEach(id => {
+            statusMap[id] = myFollowingIds.includes(id);
+        });
+        return statusMap;
+    };
+
     // Конфиг для свитчера
     const followTabs = [
         { id: 'subscriptions', label: 'Подписки' },
@@ -41,18 +50,8 @@ export default function Follows() {
     ];
 
     const loadFollows = useCallback(async (pageNum = 0, reset = false) => {
-        if (!isAuthenticated || !currentUser?.id) {
-            console.log('[Follows] Не авторизован или нет currentUser');
-            return};
+        if (!isAuthenticated || !currentUser?.id) return;
         
-        console.log('[Follows] Загрузка данных...', {
-            activeTab,
-            profileUserId,
-            currentUserId: currentUser.id,
-            pageNum,
-            reset
-        });
-
         setLoading(true);
         try {
             const targetUserId = profileUserId ? Number(profileUserId) : currentUser.id;
@@ -60,52 +59,60 @@ export default function Follows() {
             
             let data;
             if (activeTab === 'subscribers') {
-                console.log('[Follows] Запрос подписчиков...');
-                
                 data = profileUserId 
                     ? await followApi.getFollowers(targetUserId, pageNum, size)
                     : await followApi.getMyFollowers(pageNum, size);
             } else {
-                console.log('[Follows] Запрос подписок...');
-                
                 data = profileUserId 
                     ? await followApi.getFollowing(targetUserId, pageNum, size)
                     : await followApi.getMyFollowing(pageNum, size);
             }
             
-            console.log('[Follows] Ответ от API:', data);
-            console.log('[Follows] data.content:', data?.content);
-            console.log('[Follows] data.content length:', data?.content?.length);
-
             const userList = followApi.extractUsersFromPage(data, activeTab === 'subscribers' ? 'follower' : 'following');
-            console.log('[Follows] Извлеченные пользователи:', userList);
-            console.log('[Follows] userList length:', userList.length);
+            
+          
+            if (userList.length > 0) {
 
-
-            if (reset || pageNum === 0) {
-                setUsers(userList);
+                const myFollowing = await followApi.getMyFollowing(0, 1000); // большой size чтобы получить все
+                const myFollowingIds = followApi.extractUsersFromPage(myFollowing, 'following').map(u => u.id);
+                
+                const usersWithStatus = userList.map(user => ({
+                    ...user,
+                    isSubscribed: myFollowingIds.includes(user.id)
+                }));
+                
+                if (reset || pageNum === 0) {
+                    setUsers(usersWithStatus);
+                } else {
+                    setUsers(prev => [...prev, ...usersWithStatus]);
+                }
             } else {
-                setUsers(prev => [...prev, ...userList]);
+                if (reset || pageNum === 0) setUsers([]);
             }
             
             setHasMore(data?.content?.length === size);
             setPage(pageNum);
             
         } catch (err) {
-            console.error('[Follows] Ошибка загрузки подписок:', err);
-            console.error('[Follows] Full error:', err)
-            console.error('Ошибка загрузки подписок:', err);
+            console.error('[Follows] Ошибка:', err);
         } finally {
             setLoading(false);
         }
     }, [activeTab, profileUserId, currentUser, isAuthenticated]);
 
-    // Перезагружаем список при смене таба или userId
     useEffect(() => {
         if (isAuthenticated && currentUser) {
             loadFollows(0, true);
         }
     }, [activeTab, profileUserId, isAuthenticated, currentUser, loadFollows]);
+
+    const handleToggleSubscribe = useCallback((userId, newIsSubscribed) => {
+        setUsers(prev => prev.map(user => 
+            user.id === userId 
+                ? { ...user, isSubscribed: newIsSubscribed } 
+                : user
+        ));
+    }, []);
 
     const handleTabChange = (tabId) => {
         const newParams = new URLSearchParams(searchParams);
@@ -141,10 +148,8 @@ export default function Follows() {
                     <UserCard 
                         key={user.id}
                         user={user} 
-                        showUnfollow={activeTab === 'subscriptions'}
-                        onUnfollow={(unfollowedId) => {
-                            setUsers(prev => prev.filter(u => u.id !== unfollowedId));
-                        }}
+                        isSubscribed={user.isSubscribed}
+                        onToggleSubscribe={handleToggleSubscribe} 
                     />
                 ))}
             </div>

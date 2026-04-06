@@ -8,11 +8,8 @@ import PFP from '../../assets/WA.jpg';
 
 export default function UserCard({ 
     user, 
-    onUnfollow,
-    onSubscribe,
-    showSubscribe = false,
     isSubscribed = false, 
-    showUnfollow = false,
+    onToggleSubscribe,
     className = '' 
 }) {
     const navigate = useNavigate();
@@ -24,14 +21,12 @@ export default function UserCard({
         username, 
         displayName, 
         avatarUrl, 
-        isPublic = true,
-        isCurrentUser = false 
+        isPublic = true
     } = user || {};
 
     const handleCardClick = (e) => {
         if (e.target.closest(`.${styles.actionBtn}`)) return;
-        
-        if (isCurrentUser) {
+        if (currentUser?.id === id) {
             navigate('/me');
         } else if (id) {
             navigate(`/profile/${id}`);
@@ -46,18 +41,19 @@ export default function UserCard({
             return;
         }
 
+        const newStatus = !isSubscribed;
+
         try {
             if (isSubscribed) {
                 await followApi.unfollow(id);
                 notification.success(`Вы отписались от @${username}`, 2000);
-                onUnfollow?.(id);
             } else {
                 await followApi.follow(id);
                 notification.success(`Вы подписались на @${username}`, 2000);
-                onSubscribe?.(id);
             }
+            onToggleSubscribe?.(id, newStatus);
         } catch (err) {
-            console.error('Ошибка подписки/отписки:', err);
+            console.error('Ошибка переключения подписки:', err);
             notification.error(err.message || 'Не удалось выполнить действие', 3000);
         }
     };
@@ -104,21 +100,11 @@ export default function UserCard({
                 </div>
             </div>
 
-
-            {showSubscribe && !isMe && (
+            {!isMe && (
                 <DefaultBtn
                     text={isSubscribed ? 'Подписка' : 'Подписаться'}
                     onClick={handleToggleSubscribe}
                     className={`${styles.subscribe} ${isSubscribed ? styles.subscribed : ''}`}
-                    disabled={!isAuthenticated}
-                />
-            )}
-
-            {showUnfollow && !isMe && !showSubscribe && (
-                <DefaultBtn
-                    text="Отписаться"
-                    onClick={handleToggleSubscribe}
-                    className={`${styles.unsubscribe} ${styles.actionBtn}`}
                     disabled={!isAuthenticated}
                 />
             )}
