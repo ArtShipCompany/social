@@ -84,29 +84,32 @@ export default function UserCard({
                         onError={(e) => { e.target.src = PFP; }}
                     />
                     {!isPublic && (
-                        <span className={styles.lockBadge} title="Приватный аккаунт">
-                            🔒
+                        <span className={styles.private} title="Приватный аккаунт">
+                            private
                         </span>
                     )}
                 </div>
 
 
                 <div className={styles.info}>
-                    <div className={styles.names}>
-                        <span className={styles.displayName}>{displayNameToShow}</span>
-                        {isMe && <span className={styles.meBadge}>вы</span>}
-                    </div>
                     <span className={styles.username}>@{username}</span>
+                    {isMe && <span className={styles.meBadge}> вы</span>}
+                    <div className={styles.name}>
+                        <span className={styles.displayName}>{displayNameToShow}</span>
+                    </div>
                 </div>
             </div>
 
             {!isMe && (
-                <DefaultBtn
-                    text={isSubscribed ? 'Подписка' : 'Подписаться'}
-                    onClick={handleToggleSubscribe}
-                    className={`${styles.subscribe} ${isSubscribed ? styles.subscribed : ''}`}
-                    disabled={!isAuthenticated}
-                />
+                <div className={styles.buttonWrap}>
+                    <DefaultBtn
+                        text={isSubscribed ? 'Подписка' : 'Подписаться'}
+                        onClick={handleToggleSubscribe}
+                        className={`${styles.subscribe} ${isSubscribed ? styles.subscribed : ''}`}
+                        disabled={!isAuthenticated}
+                    />
+                </div>
+
             )}
         </div>
     );
