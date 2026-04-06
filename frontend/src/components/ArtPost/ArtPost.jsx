@@ -16,7 +16,7 @@ import { artApi } from '../../api/artApi';
 import { tagApi } from '../../api/tagApi';
 
 export default function ArtPost({ 
-  mode = 'view', // 'view', 'edit', 'create'
+  mode = 'view',
   artId = '',  
   image = '',
   owner, 

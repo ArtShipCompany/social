@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { followApi } from '../../api/followApi';
-import { userApi } from '../../api/userApi';
+
+import SearchBar from '../../components/SearchBar/SearchBar';
 import Switcher from '../../components/Switcher/Switcher';
 import UserCard from '../../components/UserCard/UserCard';
 import styles from './Follows.module.css';
@@ -11,6 +12,7 @@ import styles from './Follows.module.css';
 export default function Follows() {
     const { userId: profileUserId } = useParams(); // чей профиль смотрим
     const [searchParams] = useSearchParams();
+    const [userSearchQuery, setUserSearchQuery] = useState('');
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, isAuthChecked } = useAuth();
     
@@ -20,7 +22,6 @@ export default function Follows() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
 
-    // 🔥 Читаем tab из URL при монтировании и при изменении searchParams
     useEffect(() => {
         const tabFromUrl = searchParams.get('tab');
         if (tabFromUrl === 'subscribers' || tabFromUrl === 'subscriptions') {
@@ -34,22 +35,12 @@ export default function Follows() {
         }
     }, [isAuthChecked, isAuthenticated, navigate]);
 
-    // const checkSubscriptionStatus = async (userIds, myFollowingIds) => {
-    //     // myFollowingIds — это список ID, на которые я уже подписана (можно получить один раз)
-    //     const statusMap = {};
-    //     userIds.forEach(id => {
-    //         statusMap[id] = myFollowingIds.includes(id);
-    //     });
-    //     return statusMap;
-    // };
-
-    // Конфиг для свитчера
     const followTabs = [
         { id: 'subscriptions', label: 'Подписки' },
         { id: 'subscribers', label: 'Подписчики' }
     ];
 
-    const loadFollows = useCallback(async (pageNum = 0, reset = false) => {
+    const loadFollows = useCallback(async (pageNum = 0, reset = false, username = null) => {
         if (!isAuthenticated || !currentUser?.id) return;
         
         setLoading(true);
@@ -60,12 +51,12 @@ export default function Follows() {
             let data;
             if (activeTab === 'subscribers') {
                 data = profileUserId 
-                    ? await followApi.getFollowers(targetUserId, pageNum, size)
-                    : await followApi.getMyFollowers(pageNum, size);
+                ? await followApi.getFollowers(targetUserId, pageNum, size, username)
+                : await followApi.getMyFollowers(pageNum, size, username);
             } else {
                 data = profileUserId 
-                    ? await followApi.getFollowing(targetUserId, pageNum, size)
-                    : await followApi.getMyFollowing(pageNum, size);
+                ? await followApi.getFollowing(targetUserId, pageNum, size, username)
+                : await followApi.getMyFollowing(pageNum, size, username);
             }
             
             const userList = followApi.extractUsersFromPage(data, activeTab === 'subscribers' ? 'follower' : 'following');
@@ -102,10 +93,10 @@ export default function Follows() {
     }, [activeTab, profileUserId, currentUser, isAuthenticated]);
 
     useEffect(() => {
-        if (isAuthenticated && currentUser) {
-            loadFollows(0, true);
-        }
-    }, [activeTab, profileUserId, isAuthenticated, currentUser, loadFollows]);
+    if (isAuthenticated && currentUser) {
+        loadFollows(0, true, userSearchQuery);
+    }
+    }, [activeTab, profileUserId, isAuthenticated, currentUser, userSearchQuery, loadFollows]);
 
     const handleToggleSubscribe = useCallback((userId, newIsSubscribed) => {
         setUsers(prev => prev.map(user => 
@@ -144,6 +135,17 @@ export default function Follows() {
                 onTabChange={handleTabChange} 
             />
             
+            <SearchBar
+                searchType="username"  
+                onSearch={(username) => {
+                    const cleanUsername = username || null;
+                    setUserSearchQuery(cleanUsername);
+                    loadFollows(0, true, cleanUsername);
+                }}
+                placeholder="Поиск по никнейму, например: @user"
+                className={styles.userSearch}
+            />            
+
             <div className={styles.list}>
                 {users.map(user => (
                     <UserCard 

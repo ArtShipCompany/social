@@ -222,19 +222,6 @@ export const artApi = {
     return formatArt(data);
   },
 
-  async searchByTag(tagName, page = 0, size = 30) {
-    const clean = tagName.replace(/^#/, '');
-    const data = await requestPublic(`${API_URL}/arts/tag/${clean}?page=${page}&size=${size}`);
-    return formatPage(data);
-  },
-
-  async searchByTitle(title, page = 0, size = 30) {
-    const data = await requestPublic(
-      `${API_URL}/arts/search?title=${encodeURIComponent(title)}&page=${page}&size=${size}`
-    );
-    return formatPage(data);
-  },
-
   // PRIVATE ENDPOINTS
   
   async getFeedArts(page = 0, size = 30) {

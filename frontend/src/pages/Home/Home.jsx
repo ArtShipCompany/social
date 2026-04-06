@@ -1,14 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Home.module.css';
+
+import { TEXTS } from '../../assets/texts';
+import { artApi } from '../../api/artApi';
+import { searchApi } from '../../api/searchApi';
+
+import SearchBar from '../../components/SearchBar/SearchBar';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import BoardCard from '../../components/BoardCard/BoardCard';
 import ArtCard from '../../components/ArtCard/ArtCard';
 import Switcher from '../../components/Switcher/Switcher';
-import SearchIcon from '../../assets/search-icon.svg';
+
 import PFP from '../../assets/WA.jpg'
-import { TEXTS } from '../../assets/texts';
-import { artApi } from '../../api/artApi';
+
 
 export default function Home() {
     const { isAuthenticated, isLoading: authLoading, isAuthChecked } = useAuth();
@@ -52,9 +57,10 @@ export default function Home() {
             const token = localStorage.getItem('accessToken');
             const isUserAuthenticated = token && isAuthenticated;
             
-            if (isSearchMode && searchQuery.trim()) {
-                data = await artApi.searchByTag(searchQuery, pageNum, 30);
-            } else if (isUserAuthenticated && activeTab === 'subscriptions') {
+            if (searchQuery.trim()) {
+                const cleanTag = searchQuery.replace(/^#/, '');
+            data = await searchApi.getByTag(cleanTag, pageNum, 30);
+            }  else if (isUserAuthenticated && activeTab === 'subscriptions') {
                 try {
                     data = await artApi.getFeedArts(pageNum, 30);
                 } catch (feedError) {
@@ -233,29 +239,14 @@ export default function Home() {
                 <div className={styles.switcherSpacer}></div>
             )}
 
-            <div className={styles.search}>
-                <div className={styles.searchInputWrapper}>
-                    <img src={SearchIcon} alt="Поиск" className={styles.icon} />
-                    <input
-                        type="text"
-                        placeholder="Поиск по тегу, например: #duo"
-                        className={styles.searchInput}
-                        value={searchInput}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                    />
-                    {(searchInput || searchQuery) && (
-                        <button 
-                            onClick={handleClearSearch}
-                            className={styles.clearButton}
-                            title="Очистить поиск"
-                        >
-                            ×
-                        </button>
-                    )}
-                </div>
-            </div>
-
+            <SearchBar 
+                searchType="tag"
+                onSearch={(query) => {
+                    setSearchQuery(query);
+                    setPage(0);
+                }}
+                placeholder="Поиск по тегу, например: #duo"
+            />
             
                 {renderContent()}
             
