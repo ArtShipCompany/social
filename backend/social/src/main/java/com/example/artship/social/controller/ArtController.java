@@ -497,29 +497,7 @@ public class ArtController {
                 arts.getTotalElements(), currentUser.getUsername());
         
         return ResponseEntity.ok(arts);
-    }
-
-    // Поиск публичных артов по названию
-    @Operation(summary = "Поиск публичных артов по названию")
-    @GetMapping("/search")
-    public ResponseEntity<Page<ArtDto>> searchPublicArts(
-        @Parameter(description = "Название для поиска", required = true) 
-        @RequestParam String title,
-        @Parameter(description = "Номер страницы (начиная с 0)", example = "0") 
-        @RequestParam(defaultValue = "0") int page,
-        @Parameter(description = "Количество элементов на странице", example = "20") 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        logger.info("Поиск публичных артов по названию: '{}'", title);
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<ArtDto> arts = artService.searchPublicArtDtosByTitle(title, pageable);
-        
-        logger.info("Найдено {} артов по запросу '{}'", arts.getTotalElements(), title);
-        return ResponseEntity.ok(arts);
-    }
-
-    
+    }    
     
     // Проверка прав доступа к арту
     @Operation(summary = "Проверить доступ к арту")

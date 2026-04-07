@@ -84,17 +84,6 @@ public class TagController {
                  .orElse(ResponseEntity.notFound().build());
     }
     
-    // Поиск тегов по имени
-    @GetMapping("/search")
-    public ResponseEntity<List<TagDto>> searchTags(
-            @RequestParam String q,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        List<TagDto> tags = tagService.searchTagDtos(q);
-        return ResponseEntity.ok(tags);
-    }
-    
     // Популярные теги
     @GetMapping("/popular")
     public ResponseEntity<List<TagDto>> getPopularTags(
