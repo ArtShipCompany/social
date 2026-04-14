@@ -22,9 +22,6 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
     
-    public List<User> findAll() {
-        return userRepository.findAll();
-    }
     
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
@@ -97,6 +94,26 @@ public class UserService {
         stats.setUserCount(userRepository.countByUserRole(UserRole.USER));
         
         return stats;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> findPublicUsers(Pageable pageable) {
+        logger.info("Finding public users with pagination: page={}, size={}", 
+                pageable.getPageNumber(), pageable.getPageSize());
+        return userRepository.findByIsPublicTrue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> findAll(Pageable pageable) {
+        logger.info("Getting all users with pagination: page={}, size={}", 
+                pageable.getPageNumber(), pageable.getPageSize());
+        return userRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> searchByUsername(String search, Pageable pageable) {
+        logger.info("Searching users by username: {}", search);
+        return userRepository.findByUsernameContainingIgnoreCase(search, pageable);
     }
 
     @Transactional(readOnly = true)

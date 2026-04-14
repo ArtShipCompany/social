@@ -161,7 +161,6 @@ public class UserController {
             System.out.println("Username changed from '" + oldUsername + "' to '" + username + "'");
         }
         
-        // 2. Обновляем displayName
         if (displayName != null) {
             existingUser.setDisplayName(displayName);
             System.out.println("DisplayName updated to: " + displayName);
@@ -204,7 +203,6 @@ public class UserController {
 
     private void handleAvatarUpdate(User user, MultipartFile avatarFile, String avatarUrl) throws Exception {
         if (avatarFile != null && !avatarFile.isEmpty()) {
-            // Загружаем новый файл аватара
             String contentType = avatarFile.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new IllegalArgumentException("File must be an image");
@@ -231,10 +229,8 @@ public class UserController {
     }
 
     private void updateSecurityContext(String newToken) {
-        // Получаем username из нового токена
         String newUsername = jwtTokenUtil.getUsernameFromToken(newToken);
         
-        // Создаем новую аутентификацию
         org.springframework.security.core.Authentication newAuth = 
             new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                 newUsername,
@@ -274,13 +270,23 @@ public class UserController {
     
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get all public users", description = "Returns list of all public user profiles")
+    @Operation(summary = "Get all public users", description = "Returns list of all public user profiles with pagination")
     @ApiResponse(responseCode = "200", description = "List of public users")
-    public List<UserDto> getAllUsers() {
-        return userService.findAll().stream()
-                .filter(User::getIsPublic) 
-                .map(UserDto::new)
-                .collect(Collectors.toList());
+    public ResponseEntity<Page<User>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<User> users = userService.findPublicUsers(pageable);
+        
+        return ResponseEntity.ok(users);
     }
     
     @GetMapping("/{id}")
@@ -381,6 +387,51 @@ public class UserController {
                 .collect(Collectors.toList());
         
         return ResponseEntity.ok(admins);
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Получить всех пользователей (только для администратора)", 
+            description = "Возвращает список всех пользователей с пагинацией и сортировкой")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Список пользователей получен"),
+        @ApiResponse(responseCode = "403", description = "Доступ запрещен (только для ADMIN)")
+    })
+    public ResponseEntity<Page<UserDto>> getAllUsersPaginated(
+            @Parameter(description = "Номер страницы (начиная с 0)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            
+            @Parameter(description = "Размер страницы", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            
+            @Parameter(description = "Поле для сортировки", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            
+            @Parameter(description = "Направление сортировки (asc/desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String direction,
+            
+            @Parameter(description = "Поиск по username (опционально)", example = "john")
+            @RequestParam(required = false) String search) {
+        
+
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<User> users;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            users = userService.searchByUsername(search.trim(), pageable);
+        } else {
+            users = userService.findAll(pageable);
+        }
+        
+        Page<UserDto> userDtos = users.map(UserDto::new);
+                
+        return ResponseEntity.ok(userDtos);
     }
 
     @PostMapping("/role/bulk")
