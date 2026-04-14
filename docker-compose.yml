@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: artship_social
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
+      TZ: Europe/Moscow
+      PGTZ: Europe/Moscow
     ports:
       - "5432:5432"
     volumes:
@@ -43,10 +45,12 @@ services:
     ports:
       - "8081:8081"
     environment:
+      TZ: Europe/Moscow 
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/artship_social
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: root
+      
       
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/artship
       

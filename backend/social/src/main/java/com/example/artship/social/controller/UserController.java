@@ -1,10 +1,13 @@
 package com.example.artship.social.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,15 +17,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.artship.social.dto.RoleStatistics;
 import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.response.UserUpdateResponse;
 import com.example.artship.social.model.User;
+import com.example.artship.social.model.UserRole;
 import com.example.artship.social.security.JwtTokenUtil;
 import com.example.artship.social.service.UserService;
 
@@ -30,6 +36,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -160,19 +167,16 @@ public class UserController {
             System.out.println("DisplayName updated to: " + displayName);
         }
         
-        // 3. Обновляем bio
         if (bio != null) {
             existingUser.setBio(bio);
             System.out.println("Bio updated");
         }
         
-        // 4. Обновляем настройки приватности
         if (isPublic != null) {
             existingUser.setIsPublic(isPublic);
             System.out.println("IsPublic updated to: " + isPublic);
         }
         
-        // 5. Обновляем аватар (приоритет: файл > URL)
         try {
             handleAvatarUpdate(existingUser, avatarFile, avatarUrl);
         } catch (Exception e) {
@@ -180,25 +184,20 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
         
-        // Сохраняем обновленного пользователя
         User updatedUser = userService.save(existingUser);
         System.out.println("User saved successfully");
         
-        // Создаем DTO для ответа
         UserDto userDto = new UserDto(updatedUser);
         
-        // Если username был изменен, генерируем новый токен
         if (usernameChanged) {
             String newToken = jwtTokenUtil.generateAccessToken(updatedUser);
             System.out.println("New JWT token generated for user: " + updatedUser.getUsername());
             
-            // Обновляем SecurityContext с новым username для текущего запроса
             updateSecurityContext(newToken);
             
             return ResponseEntity.ok(new UserUpdateResponse(userDto, newToken));
         }
         
-        // Если username не менялся, возвращаем только обновленные данные
         return ResponseEntity.ok(new UserUpdateResponse(userDto));
     }
     
@@ -321,7 +320,86 @@ public class UserController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
+    @PutMapping("/{userId}/role")
+    @Operation(summary = "Изменить роль пользователя по ID")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto> changeUserRoleById(
+            @Parameter(description = "ID пользователя") @PathVariable Long userId,
+            @Parameter(description = "Новая роль") @RequestParam UserRole role) {
+        
+        User updatedUser = userService.changeUserRole(userId, role);
+        return ResponseEntity.ok(new UserDto(updatedUser));
+    }
+
+
+    @PutMapping("/username/{username}/role")
+    @Operation(summary = "Изменить роль пользователя по username")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto> changeUserRoleByUsername(
+            @Parameter(description = "Имя пользователя") @PathVariable String username,
+            @Parameter(description = "Новая роль") @RequestParam UserRole role) {
+        
+        User updatedUser = userService.changeUserRoleByUsername(username, role);
+        return ResponseEntity.ok(new UserDto(updatedUser));
+    }
+
+
+    @GetMapping("/role/{role}")
+    @Operation(summary = "Получить пользователей по роли")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<Page<UserDto>> getUsersByRole(
+            @Parameter(description = "Роль") @PathVariable UserRole role,
+            @Parameter(description = "Номер страницы") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") int size) {
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<User> users = userService.getUsersByRole(role, pageable);
+        Page<UserDto> userDtos = users.map(UserDto::new);
+        
+        return ResponseEntity.ok(userDtos);
+    }
+
+    @GetMapping("/role/statistics")
+    @Operation(summary = "Получить статистику по ролям")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RoleStatistics> getRoleStatistics() {
+        RoleStatistics statistics = userService.getRoleStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+
+    @GetMapping("/admins")
+    @Operation(summary = "Получить всех администраторов")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<List<UserDto>> getAdmins() {
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+        Page<User> adminsPage = userService.getUsersByRole(UserRole.ADMIN, pageable);
+        
+        List<UserDto> admins = adminsPage.getContent()
+                .stream()
+                .map(UserDto::new)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(admins);
+    }
+
+    @PostMapping("/role/bulk")
+    @Operation(summary = "Массовое изменение ролей")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> bulkChangeRole(
+            @RequestBody List<Long> userIds,
+            @RequestParam UserRole role) {
+        
+        int updatedCount = userService.bulkChangeUserRole(userIds, role);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Roles updated successfully");
+        response.put("updatedCount", updatedCount);
+        response.put("role", role);
+        
+        return ResponseEntity.ok(response);
+    }
+
     private void deleteOldAvatar(String oldAvatarUrl) {
         if (oldAvatarUrl != null && oldAvatarUrl.startsWith("/uploads/images/")) {
             try {

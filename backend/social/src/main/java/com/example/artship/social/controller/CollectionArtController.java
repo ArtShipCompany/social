@@ -41,7 +41,6 @@ public class CollectionArtController {
                 CollectionArtDto collectionArt = collectionArtService.addArtToCollection(collectionId, artId);
                 log.info("Successfully added art {} to collection {}", artId, collectionId);
                 
-                // Возвращаем 201 Created с Location header
                 URI location = URI.create("/api/collection-arts/collection/" + collectionId + "/art/" + artId);
                 return ResponseEntity.created(location).body(collectionArt);
                 

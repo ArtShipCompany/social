@@ -3,11 +3,13 @@ package com.example.artship.social.dto;
 import java.time.LocalDateTime;
 
 import com.example.artship.social.model.User;
+import com.example.artship.social.model.UserRole;
 
 public class UserDto {
     private Long id;
     private String username;
     private String email;
+    private UserRole userRole;
     private String displayName;
     private String avatarUrl;
     private String bio;
@@ -23,6 +25,7 @@ public class UserDto {
         this.id = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
+        this.userRole = user.getUserRole();
         this.displayName = user.getDisplayName();
         this.avatarUrl = user.getAvatarUrl();
         this.bio = user.getBio();
@@ -51,6 +54,7 @@ public class UserDto {
     public String getBio() { return bio; }
     public Boolean getIsPublic() { return isPublic; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public UserRole getUserRole(){return userRole; }
     
     public void setId(Long id) { this.id = id; }
     public void setUsername(String username) { this.username = username; }
@@ -60,4 +64,5 @@ public class UserDto {
     public void setBio(String bio) { this.bio = bio; }
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setUserRole(UserRole userRole) { this.userRole = userRole; }
 }
