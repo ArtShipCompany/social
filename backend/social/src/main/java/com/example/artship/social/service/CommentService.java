@@ -1,12 +1,10 @@
 package com.example.artship.social.service;
 
-import com.example.artship.social.dto.CommentDto;
-import com.example.artship.social.model.Art;
-import com.example.artship.social.model.Comment;
-import com.example.artship.social.model.User;
-import com.example.artship.social.repository.ArtRepository;
-import com.example.artship.social.repository.CommentRepository;
-import com.example.artship.social.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,10 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.example.artship.social.dto.CommentDto;
+import com.example.artship.social.model.Art;
+import com.example.artship.social.model.Comment;
+import com.example.artship.social.model.User;
+import com.example.artship.social.repository.ArtRepository;
+import com.example.artship.social.repository.CommentRepository;
+import com.example.artship.social.repository.UserRepository;
 
 @Service
 @Transactional
@@ -35,6 +36,10 @@ public class CommentService {
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.artRepository = artRepository;
+    }
+
+    public Optional<Comment> getCommentEntityById(Long id) {
+        return commentRepository.findById(id);
     }
     
     // Создание комментария
