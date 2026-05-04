@@ -1,9 +1,8 @@
 import { authApi, fetchWithErrorHandling } from './authApi';
 
 const API_URL = 'http://localhost:8081/api';
-const BASE_PATH = `${API_URL}/search`;
+const SEARCH_BASE = `${API_URL}/search`;
 
-// Запросы с авторизацией (для приватных эндпоинтов)
 const requestProtected = (url, options = {}) => 
   authApi.fetchProtected(url, {
     credentials: 'include',
@@ -11,7 +10,6 @@ const requestProtected = (url, options = {}) =>
     headers: { 'Content-Type': 'application/json', ...options.headers },
   });
 
-// Публичные запросы
 const requestPublic = (url, options = {}) =>
   fetchWithErrorHandling(url, {
     credentials: 'include',
@@ -19,14 +17,17 @@ const requestPublic = (url, options = {}) =>
     headers: { 'Content-Type': 'application/json', ...options.headers },
   });
 
+// Форматирование арта (адаптировано под ArtDto с бэка)
 const formatArt = (art) => {
   if (!art) return null;
   return {
     ...art,
     type: 'art',
-    imageUrl: art.imageUrl || art.image || '/default-art.jpg',
-    tags: Array.isArray(art.tags) ? art.tags.join(' ') : art.tags || '',
-    author: art.author || { id: art.authorId, username: art.authorName },
+    imageUrl: art.imageUrl || art.image || art.imagePath || '/default-art.jpg',
+    tags: Array.isArray(art.tags) 
+      ? art.tags.map(t => t?.name || t?.tagName || t).filter(Boolean).join(' ') 
+      : art.tags || '',
+    author: art.author || (art.authorId ? { id: art.authorId, username: art.authorName } : null),
   };
 };
 
@@ -35,107 +36,151 @@ const formatUser = (user) => {
   return {
     ...user,
     type: 'user',
-    displayName: user.displayName || user.username,
-    avatarUrl: user.avatarUrl || '/default-avatar.png',
+    displayName: user.displayName || user.username || user.login,
+    avatarUrl: user.avatarUrl || user.avatar || '/default-avatar.png',
   };
 };
 
-// Форматирование страницы результатов
-const formatSearchPage = (pageData, type = 'art') => {
-  if (!pageData?.content) return { content: [], totalElements: 0, last: true };
+// Адаптация SearchResult с бэка под фронт
+const adaptSearchResult = (result, type = 'all') => {
+  if (!result) return { arts: [], users: [], totalArts: 0, totalUsers: 0 };
   
-  const formatter = type === 'user' ? formatUser : formatArt;
+  // Объединяем арты по заголовку и тегам, если нужен общий список
+  const allArts = [
+    ...(result.artsByTitle || []),
+    ...(result.artsByTags || [])
+  ].filter((v, i, a) => a.findIndex(x => x.id === v.id) === i); // unique by id
+  
   return {
-    ...pageData,
-    content: pageData.content.map(item => formatter(item)),
+    arts: allArts.map(formatArt),
+    users: (result.usersByUsername || []).map(formatUser),
+    totalArts: (result.totalArtsByTitle || 0) + (result.totalArtsByTags || 0),
+    totalUsers: result.totalUsers || 0,
+    // сохраняем исходные поля для продвинутой логики
+    _raw: result,
   };
 };
 
 export const searchApi = {
   
-  // УНИВЕРСАЛЬНЫЙ ПОИСК (арты + юзеры)
-  async searchAll(query, params = {}) {
+  // УМНЫЙ ПОИСК (основной эндпоинт)
+  async smartSearch(query, limit = 20) {
+    const url = `${SEARCH_BASE}/smart?query=${encodeURIComponent(query)}&limit=${limit}`;
+    const data = await requestPublic(url);
+    return adaptSearchResult(data);
+  },
+
+  // УМНЫЙ ПОИСК С ПАГИНАЦИЕЙ
+  async smartSearchPaginated(query, params = {}) {
     const {
-      artsPage = 0, artsSize = 10, artsSort = 'createdAt,desc',
-      usersPage = 0, usersSize = 10, usersSort = 'createdAt,desc'
+      artsTitlePage = 0,
+      artsTagsPage = 0, 
+      usersPage = 0,
+      size = 20
     } = params;
     
-    const url = `${BASE_PATH}/all?query=${encodeURIComponent(query)}&artsPage=${artsPage}&artsSize=${artsSize}&usersPage=${usersPage}&usersSize=${usersSize}&artsSort=${artsSort}&usersSort=${usersSort}`;
+    const url = `${SEARCH_BASE}/smart/paginated?query=${encodeURIComponent(query)}&artsTitlePage=${artsTitlePage}&artsTagsPage=${artsTagsPage}&usersPage=${usersPage}&size=${size}`;
     const data = await requestPublic(url);
-    
+    return adaptSearchResult(data);
+  },
+
+  // ПОИСК ТОЛЬКО АРТОВ (по заголовку + тегам)
+  async searchArts(query, page = 0, size = 20) {
+    const result = await this.smartSearchPaginated(query, {
+      artsTitlePage: page,
+      artsTagsPage: page,
+      usersPage: 0,
+      size
+    });
     return {
-      arts: formatSearchPage(data?.arts, 'art'),
-      users: formatSearchPage(data?.users, 'user'),
-      totalArts: data?.totalArts || 0,
-      totalUsers: data?.totalUsers || 0,
+      content: result.arts,
+      totalElements: result.totalArts,
+      last: result.arts.length < size,
     };
   },
 
-  // БЫСТРЫЙ ПОИСК (для автокомплита)
+  // ПОИСК ТОЛЬКО ПОЛЬЗОВАТЕЛЕЙ
+  async searchUsers(query, page = 0, size = 20) {
+    const result = await this.smartSearchPaginated(query, {
+      artsTitlePage: 0,
+      artsTagsPage: 0,
+      usersPage: page,
+      size
+    });
+    return {
+      content: result.users,
+      totalElements: result.totalUsers,
+      last: result.users.length < size,
+    };
+  },
+
+  // БЫСТРЫЙ ПОИСК (для автокомплита) - через smart с маленьким лимитом
   async quickSearch(query) {
-    const data = await requestPublic(`${BASE_PATH}/quick?query=${encodeURIComponent(query)}`);
-    return {
-      arts: data?.arts?.content?.map(formatArt) || [],
-      users: data?.users?.content?.map(formatUser) || [],
-    };
+    return await this.smartSearch(query, 10);
   },
 
-  // СЧЁТЧИКИ результатов
+  // СЧЁТЧИКИ - эмулируем через smart с limit=0
   async getSearchCounts(query) {
-    const data = await requestPublic(`${BASE_PATH}/counts?query=${encodeURIComponent(query)}`);
+    const data = await requestPublic(`${SEARCH_BASE}/smart?query=${encodeURIComponent(query)}&limit=0`);
     return {
-      arts: data?.arts || 0,
-      users: data?.users || 0,
+      arts: (data?.totalArtsByTitle || 0) + (data?.totalArtsByTags || 0),
+      users: data?.totalUsers || 0,
     };
   },
 
-  // ПОИСК ПО ТЕГАМ (арты)
-  
-  // Один тег
-  async getByTag(tagName, page = 0, size = 20, sort = 'createdAt,desc') {
+  // ПОИСК ПО ТЕГАМ (арты) - через smart с #префиксом
+  async getByTag(tagName, page = 0, size = 20) {
     const clean = tagName.replace(/^#/, '');
-    const data = await requestPublic(`${BASE_PATH}/tag/${encodeURIComponent(clean)}?page=${page}&size=${size}&sort=${sort}`);
-    return formatSearchPage(data, 'art');
+    // Бэк понимает #теги в smartSearch
+    const result = await this.smartSearchPaginated(`#${clean}`, {
+      artsTitlePage: 0,
+      artsTagsPage: page,
+      usersPage: 0,
+      size
+    });
+    return {
+      content: result.arts,
+      totalElements: result.totalArts,
+      last: result.arts.length < size,
+    };
   },
 
-  // Несколько тегов: AND (все теги должны быть)
-  async getByTagsAnd(tags, page = 0, size = 20, sort = 'createdAt,desc') {
-    const tagsStr = Array.isArray(tags) ? tags.join(',') : tags;
-    const data = await requestPublic(`${BASE_PATH}/tags/and?tags=${encodeURIComponent(tagsStr)}&page=${page}&size=${size}&sort=${sort}`);
-    return formatSearchPage(data, 'art');
-  },
-
-  // Несколько тегов: OR (любой из тегов)
-  async getByTagsOr(tags, page = 0, size = 20, sort = 'createdAt,desc') {
-    const tagsStr = Array.isArray(tags) ? tags.join(',') : tags;
-    const data = await requestPublic(`${BASE_PATH}/tags/or?tags=${encodeURIComponent(tagsStr)}&page=${page}&size=${size}&sort=${sort}`);
-    return formatSearchPage(data, 'art');
-  },
-
-  // Гибкий поиск по тегам с выбором режима
-  async getByTags(tags, { mode = 'and', page = 0, size = 20, sort = 'createdAt,desc' } = {}) {
-    const tagsStr = Array.isArray(tags) ? tags.join(',') : tags;
-    const data = await requestPublic(`${BASE_PATH}/tags?tags=${encodeURIComponent(tagsStr)}&mode=${mode}&page=${page}&size=${size}&sort=${sort}`);
-    return formatSearchPage(data, 'art');
-  },
-
-  // ПОИСК ПОЛЬЗОВАТЕЛЕЙ (отдельно, если нужно)
-  async searchUsers(query, page = 0, size = 20, sort = 'createdAt,desc') {
-    // Используем универсальный поиск, но берём только users
-    const result = await this.searchAll(query, { usersPage: page, usersSize: size, usersSort: sort, artsSize: 0 });
-    return result.users;
-  },
-
-  // ПОИСК АРТОВ (отдельно, если нужно)
-  async searchArts(query, page = 0, size = 20, sort = 'createdAt,desc') {
-    const result = await this.searchAll(query, { artsPage: page, artsSize: size, artsSort: sort, usersSize: 0 });
-    return result.arts;
+  // Поиск по нескольким тегам (на фронте, т.к. бэк не поддерживает AND/OR из коробки)
+  async getByTags(tags, { mode = 'and', page = 0, size = 20 } = {}) {
+    // Эмуляция на фронте: делаем запрос по каждому тегу и объединяем
+    const results = await Promise.all(
+      tags.map(tag => this.getByTag(tag, page, size))
+    );
+    
+    if (mode === 'or') {
+      // OR: объединяем все результаты
+      const allArts = results.flatMap(r => r.content);
+      const unique = allArts.filter((v, i, a) => a.findIndex(x => x.id === v.id) === i);
+      return {
+        content: unique.slice(0, size),
+        totalElements: unique.length,
+        last: unique.length < size,
+      };
+    } else {
+      // AND: оставляем только арты, которые есть во всех результатах
+      const [first, ...rest] = results;
+      let filtered = first.content;
+      for (const r of rest) {
+        const ids = new Set(r.content.map(a => a.id));
+        filtered = filtered.filter(a => ids.has(a.id));
+      }
+      return {
+        content: filtered.slice(0, size),
+        totalElements: filtered.length,
+        last: filtered.length < size,
+      };
+    }
   },
 
   utils: {
     formatArt,
     formatUser,
-    formatSearchPage,
+    adaptSearchResult,
   }
 };
 

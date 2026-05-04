@@ -1,7 +1,9 @@
+// Follows.jsx (фрагменты с ключевыми изменениями)
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { followApi } from '../../api/followApi';
+import { searchApi } from '../../api/searchApi';
 
 import SearchBar from '../../components/SearchBar/SearchBar';
 import Switcher from '../../components/Switcher/Switcher';
@@ -9,9 +11,9 @@ import UserCard from '../../components/UserCard/UserCard';
 import styles from './Follows.module.css';
 
 export default function Follows() {
-    const { userId: profileUserId } = useParams(); // чей профиль смотрим
+    const { userId: profileUserId } = useParams();
     const [searchParams] = useSearchParams();
-    const [userSearchQuery, setUserSearchQuery] = useState('');
+    const [userSearchQuery, setUserSearchQuery] = useState(''); // чистый ник, без @
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, isAuthChecked } = useAuth();
     
@@ -39,7 +41,7 @@ export default function Follows() {
         { id: 'subscribers', label: 'Подписчики' }
     ];
 
-    const loadFollows = useCallback(async (pageNum = 0, reset = false, username = null) => {
+    const loadFollows = useCallback(async (pageNum = 0, reset = false, usernameFilter = null) => {
         if (!isAuthenticated || !currentUser?.id) return;
         
         setLoading(true);
@@ -48,37 +50,72 @@ export default function Follows() {
             const size = 20;
             
             let data;
+            if (usernameFilter?.trim()) {
+                const searchResult = await searchApi.searchUsers(usernameFilter.trim(), pageNum, size);
+                const userList = searchResult.content || [];
+                
+                const usersWithStatus = await Promise.all(
+                    userList.map(async (user) => {
+                        if (user.id === currentUser?.id) {
+                            return { ...user, isSubscribed: false };
+                        }
+                        try {
+                            const isSubscribed = await followApi.isFollowing(user.id);
+                            return { ...user, isSubscribed };
+                        } catch {
+                            return { ...user, isSubscribed: false };
+                        }
+                    })
+                );
+                
+                if (reset || pageNum === 0) {
+                    setUsers(usersWithStatus);
+                } else {
+                    setUsers(prev => {
+                        const existingIds = new Set(prev.map(u => u.id));
+                        const newUsers = usersWithStatus.filter(u => !existingIds.has(u.id));
+                        return [...prev, ...newUsers];
+                    });
+                }
+                setHasMore(searchResult.content?.length === size);
+                setPage(pageNum);
+                return;
+            }
+            
             if (activeTab === 'subscribers') {
                 data = profileUserId 
-                ? await followApi.getFollowers(targetUserId, pageNum, size, username)
-                : await followApi.getMyFollowers(pageNum, size, username);
+                    ? await followApi.getFollowers(targetUserId, pageNum, size)
+                    : await followApi.getMyFollowers(pageNum, size);
             } else {
                 data = profileUserId 
-                ? await followApi.getFollowing(targetUserId, pageNum, size, username)
-                : await followApi.getMyFollowing(pageNum, size, username);
+                    ? await followApi.getFollowing(targetUserId, pageNum, size)
+                    : await followApi.getMyFollowing(pageNum, size);
             }
             
             const userList = followApi.extractUsersFromPage(data, activeTab === 'subscribers' ? 'follower' : 'following');
             
-          
             const usersWithStatus = await Promise.all(
                 userList.map(async (user) => {
-                if (user.id === currentUser?.id) {
-                    return { ...user, isSubscribed: false };
-                }
-                try {
-                    const isSubscribed = await followApi.isFollowing(user.id);
-                    return { ...user, isSubscribed };
-                } catch {
-                    return { ...user, isSubscribed: false };
-                }
+                    if (user.id === currentUser?.id) {
+                        return { ...user, isSubscribed: false };
+                    }
+                    try {
+                        const isSubscribed = await followApi.isFollowing(user.id);
+                        return { ...user, isSubscribed };
+                    } catch {
+                        return { ...user, isSubscribed: false };
+                    }
                 })
             );
             
             if (reset || pageNum === 0) {
                 setUsers(usersWithStatus);
             } else {
-                setUsers(prev => [...prev, ...usersWithStatus]);
+                setUsers(prev => {
+                    const existingIds = new Set(prev.map(u => u.id));
+                    const newUsers = usersWithStatus.filter(u => !existingIds.has(u.id));
+                    return [...prev, ...newUsers];
+                });
             }
             
             setHasMore(data?.content?.length === size);
@@ -92,16 +129,14 @@ export default function Follows() {
     }, [activeTab, profileUserId, currentUser, isAuthenticated]);
 
     useEffect(() => {
-    if (isAuthenticated && currentUser) {
-        loadFollows(0, true, userSearchQuery);
-    }
+        if (isAuthenticated && currentUser) {
+            loadFollows(0, true, userSearchQuery);
+        }
     }, [activeTab, profileUserId, isAuthenticated, currentUser, userSearchQuery, loadFollows]);
 
     const handleToggleSubscribe = useCallback((userId, newIsSubscribed) => {
         setUsers(prev => prev.map(user => 
-            user.id === userId 
-                ? { ...user, isSubscribed: newIsSubscribed } 
-                : user
+            user.id === userId ? { ...user, isSubscribed: newIsSubscribed } : user
         ));
     }, []);
 
@@ -114,9 +149,15 @@ export default function Follows() {
 
     const handleLoadMore = () => {
         if (!loading && hasMore) {
-            loadFollows(page + 1, false);
+            loadFollows(page + 1, false, userSearchQuery);
         }
     };
+
+    const handleUserSearch = useCallback((query) => {
+        const clean = (query || '').replace(/^[@#]/, '').trim();
+        setUserSearchQuery(clean);
+        setPage(0);
+    }, []);
 
     if (!isAuthChecked) {
         return <div className={styles.loading}>Загрузка...</div>;
@@ -136,13 +177,10 @@ export default function Follows() {
             
             <SearchBar
                 searchType="username"  
-                onSearch={(username) => {
-                    const cleanUsername = username || null;
-                    setUserSearchQuery(cleanUsername);
-                    loadFollows(0, true, cleanUsername);
-                }}
-                placeholder="Поиск по никнейму, например: @user"
+                onSearch={handleUserSearch}
+                placeholder="Поиск по никнейму, например: @user или user"
                 className={styles.userSearch}
+                initialValue={userSearchQuery ? `@${userSearchQuery}` : ''}
             />            
 
             <div className={styles.list}>
@@ -160,13 +198,15 @@ export default function Follows() {
 
             {!loading && users.length === 0 && (
                 <div className={styles.empty}>
-                    {activeTab === 'subscribers' 
-                        ? 'Пока никто не подписан' 
-                        : 'Пока нет подписок'}
+                    {userSearchQuery 
+                        ? `Пользователь под ником "${userSearchQuery}" не найден`
+                        : activeTab === 'subscribers' 
+                            ? 'Пока никто не подписан' 
+                            : 'Пока нет подписок'}
                 </div>
             )}
 
-            {hasMore && !loading && (
+            {hasMore && !loading && users.length > 0 && (
                 <button onClick={handleLoadMore} className={styles.loadMore}>
                     Показать ещё
                 </button>

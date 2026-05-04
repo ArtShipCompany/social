@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import styles from './SearchBar.module.css';
 import SearchIcon from '../../assets/search-icon.svg';
 
-
 export default function SearchBar({ 
   onSearch, 
   placeholder = 'Поиск по тегу, например: #duo',
@@ -10,7 +9,7 @@ export default function SearchBar({
   className = '',
   autoFocus = false,
   disabled = false,
-  searchType = 'tag', // 'tag' | 'username'
+  searchType = 'tag', // 'tag' | 'username' | 'all'
 }) {
   const [inputValue, setInputValue] = useState(initialValue);
 
@@ -21,16 +20,19 @@ export default function SearchBar({
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const query = inputValue.trim();
+      const raw = inputValue.trim();
       
-      if (query) {
-        let formatted = query;
+      if (raw) {
+        let formatted = raw;
         
-        if (searchType === 'tag' && !query.startsWith('#')) {
-          formatted = `#${query}`;
+        if (searchType === 'tag') {
+          // Для тегов: добавляем # если нет, но принимаем и без
+          formatted = raw.startsWith('#') ? raw : `#${raw}`;
         } else if (searchType === 'username') {
-          formatted = query.replace(/^[@#]/, '');
+          // Для юзеров: убираем @ и #, бэк сам обработает
+          formatted = raw.replace(/^[@#]/, '');
         }
+        // searchType === 'all' — отправляем как есть, бэк умный
         
         onSearch?.(formatted);
       } else {
@@ -44,7 +46,6 @@ export default function SearchBar({
     onSearch?.('');
   }, [onSearch]);
 
-  // Синхронизация initialValue
   useEffect(() => {
     setInputValue(initialValue);
   }, [initialValue]);
