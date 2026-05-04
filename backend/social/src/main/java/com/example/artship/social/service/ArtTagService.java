@@ -26,8 +26,7 @@ public class ArtTagService {
     private final ArtTagRepository artTagRepository;
     private final ArtRepository artRepository;
     private final TagRepository tagRepository;
-    private final TagManagementService tagManagementService; // Используем TagManagementService
-    
+    private final TagManagementService tagManagementService; 
     public ArtTagService(ArtTagRepository artTagRepository,
                         ArtRepository artRepository,
                         TagRepository tagRepository,

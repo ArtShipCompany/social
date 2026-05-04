@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,6 +28,10 @@ public class User {
 
     @Column(name = "password_hash", nullable = false) 
     private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="user_role", nullable = false)
+    private UserRole userRole = UserRole.USER;
 
     @Column(name = "display_name", length = 100)
     private String displayName;
@@ -106,6 +112,14 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+    
+    public UserRole getUserRole(){
+        return userRole;
+    }
+
+    public void setUserRole(UserRole userRole){
+        this.userRole = userRole;
     }
 
     public String getDisplayName() {

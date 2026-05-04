@@ -1,19 +1,18 @@
 package com.example.artship.social.service;
 
 import com.example.artship.social.dto.ArtDto;
-import com.example.artship.social.dto.UnifiedSearchResult;
+import com.example.artship.social.dto.SearchResult;
 import com.example.artship.social.dto.UserDto;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,96 +33,165 @@ public class SearchService {
         this.artService = artService;
     }
     
-    /**
-     * Базовый поиск артов и пользователей
-     */
-    public UnifiedSearchResult search(String query, int limitArts, int limitUsers) {
-        logger.info("Searching for: {} (arts limit: {}, users limit: {})", query, limitArts, limitUsers);
+    
+     //Умный поиск: распознает #теги и @юзеров
+     
+    public SearchResult smartSearch(String query, int limit) {
+        logger.info("Smart search for: {}", query);
         
         if (query == null || query.trim().isEmpty()) {
-            return new UnifiedSearchResult(List.of(), List.of(), 0, 0);
+            return new SearchResult();
         }
         
-        String searchTerm = query.trim();
+        String trimmedQuery = query.trim();
+        Pageable pageable = PageRequest.of(0, limit);
         
-        // Поиск артов
-        List<ArtDto> arts = artRepository
-            .findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(searchTerm, Pageable.ofSize(limitArts))
-            .stream()
-            .map(artService::convertToDto)
-            .collect(Collectors.toList());
-        
-        // Поиск пользователей
-        List<UserDto> users = userRepository
-            .findByUsernameContainingIgnoreCase(searchTerm, Pageable.ofSize(limitUsers))
-            .stream()
-            .map(user -> {
-                UserDto dto = new UserDto(user);
-                dto.setEmail(null); // Скрываем email
-                return dto;
-            })
-            .collect(Collectors.toList());
-        
-        long totalArts = artRepository.countByTitleContainingIgnoreCaseAndIsPublicFlagTrue(searchTerm);
-        long totalUsers = userRepository.countByUsernameContainingIgnoreCase(searchTerm);
-        
-        return new UnifiedSearchResult(arts, users, totalArts, totalUsers);
-    }
-    
-    
-    
-    /**
-     * Поиск с пагинацией
-     */
-    public UnifiedSearchResult searchPaginated(String query, Pageable artsPageable, Pageable usersPageable) {
-        logger.info("Searching with pagination for: {}", query);
-        
-        if (query == null || query.trim().isEmpty()) {
-            return new UnifiedSearchResult(List.of(), List.of(), 0, 0);
+        if (trimmedQuery.startsWith("#")) {
+            String tagName = trimmedQuery.substring(1);
+            logger.info("Searching by tag: {}", tagName);
+            
+            SearchResult result = new SearchResult();
+            result.setSearchType("tag");
+            
+            var artsPage = artRepository.findByTagNameAndIsPublicFlagTrue(tagName, pageable);
+            List<ArtDto> arts = artsPage.getContent().stream()
+                    .map(artService::convertToDto)
+                    .collect(Collectors.toList());
+            
+            result.setArtsByTags(arts);
+            result.setTotalArtsByTags(artsPage.getTotalElements());
+            
+            return result;
         }
         
-        String searchTerm = query.trim();
+        if (trimmedQuery.startsWith("@")) {
+            String username = trimmedQuery.substring(1);
+            logger.info("Searching by username: {}", username);
+            
+            SearchResult result = new SearchResult();
+            result.setSearchType("user");
+            
+            var usersPage = userRepository.findByUsernameContainingIgnoreCase(username, pageable);
+            List<UserDto> users = usersPage.getContent().stream()
+                    .map(user -> {
+                        UserDto dto = new UserDto(user);
+                        dto.setEmail(null); // Скрываем email
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            
+            result.setUsersByUsername(users);
+            result.setTotalUsers(usersPage.getTotalElements());
+            
+            return result;
+        }
         
-        var artsPage = artRepository
-            .findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(searchTerm, artsPageable);
+        logger.info("General search: {}", trimmedQuery);
         
-        List<ArtDto> arts = artsPage.getContent().stream()
-            .map(artService::convertToDto)
-            .collect(Collectors.toList());
+        SearchResult result = new SearchResult();
+        result.setSearchType("general");
         
-        var usersPage = userRepository
-            .findByUsernameContainingIgnoreCase(searchTerm, usersPageable);
+        var artsByTitlePage = artRepository.findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(trimmedQuery, pageable);
+        List<ArtDto> artsByTitle = artsByTitlePage.getContent().stream()
+                .map(artService::convertToDto)
+                .collect(Collectors.toList());
         
+        var artsByTagsPage = artRepository.findByTagNameContainingIgnoreCaseAndIsPublicFlagTrue(trimmedQuery, pageable);
+        List<ArtDto> artsByTags = artsByTagsPage.getContent().stream()
+                .map(artService::convertToDto)
+                .collect(Collectors.toList());
+        
+        var usersPage = userRepository.findByUsernameContainingIgnoreCase(trimmedQuery, pageable);
         List<UserDto> users = usersPage.getContent().stream()
-            .map(user -> {
-                UserDto dto = new UserDto(user);
-                dto.setEmail(null);
-                return dto;
-            })
-            .collect(Collectors.toList());
+                .map(user -> {
+                    UserDto dto = new UserDto(user);
+                    dto.setEmail(null);
+                    return dto;
+                })
+                .collect(Collectors.toList());
         
-        return new UnifiedSearchResult(arts, users, artsPage.getTotalElements(), usersPage.getTotalElements());
+        result.setArtsByTitle(artsByTitle);
+        result.setArtsByTags(artsByTags);
+        result.setUsersByUsername(users);
+        result.setTotalArtsByTitle(artsByTitlePage.getTotalElements());
+        result.setTotalArtsByTags(artsByTagsPage.getTotalElements());
+        result.setTotalUsers(usersPage.getTotalElements());
+        
+        return result;
     }
-      
-
-
     
-
-    public Map<String, Long> getSearchCounts(String query) {
-        logger.info("Getting search counts for: {}", query);
-        
-        Map<String, Long> counts = new HashMap<>();
+    
+     //Умный поиск с пагинацией для каждого типа
+     
+    public SearchResult smartSearchPaginated(String query, 
+                                                   Pageable artsTitlePageable,
+                                                   Pageable artsTagsPageable,
+                                                   Pageable usersPageable) {
+        logger.info("Smart search with pagination for: {}", query);
         
         if (query == null || query.trim().isEmpty()) {
-            counts.put("arts", 0L);
-            counts.put("users", 0L);
-            return counts;
+            return new SearchResult();
         }
         
-        String searchTerm = query.trim();
-        counts.put("arts", artRepository.countByTitleContainingIgnoreCaseAndIsPublicFlagTrue(searchTerm));
-        counts.put("users", userRepository.countByUsernameContainingIgnoreCase(searchTerm));
+        String trimmedQuery = query.trim();
         
-        return counts;
+        if (trimmedQuery.startsWith("#")) {
+            String tagName = trimmedQuery.substring(1);
+            SearchResult result = new SearchResult();
+            result.setSearchType("tag");
+            
+            var artsPage = artRepository.findByTagNameAndIsPublicFlagTrue(tagName, artsTagsPageable);
+            result.setArtsByTags(artsPage.getContent().stream()
+                    .map(artService::convertToDto)
+                    .collect(Collectors.toList()));
+            result.setTotalArtsByTags(artsPage.getTotalElements());
+            
+            return result;
+        }
+        
+        if (trimmedQuery.startsWith("@")) {
+            String username = trimmedQuery.substring(1);
+            SearchResult result = new SearchResult();
+            result.setSearchType("user");
+            
+            var usersPage = userRepository.findByUsernameContainingIgnoreCase(username, usersPageable);
+            result.setUsersByUsername(usersPage.getContent().stream()
+                    .map(user -> {
+                        UserDto dto = new UserDto(user);
+                        dto.setEmail(null);
+                        return dto;
+                    })
+                    .collect(Collectors.toList()));
+            result.setTotalUsers(usersPage.getTotalElements());
+            
+            return result;
+        }
+        
+        SearchResult result = new SearchResult();
+        result.setSearchType("general");
+        
+        var artsByTitlePage = artRepository.findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(trimmedQuery, artsTitlePageable);
+        result.setArtsByTitle(artsByTitlePage.getContent().stream()
+                .map(artService::convertToDto)
+                .collect(Collectors.toList()));
+        result.setTotalArtsByTitle(artsByTitlePage.getTotalElements());
+        
+        var artsByTagsPage = artRepository.findByTagNameContainingIgnoreCaseAndIsPublicFlagTrue(trimmedQuery, artsTagsPageable);
+        result.setArtsByTags(artsByTagsPage.getContent().stream()
+                .map(artService::convertToDto)
+                .collect(Collectors.toList()));
+        result.setTotalArtsByTags(artsByTagsPage.getTotalElements());
+        
+        var usersPage = userRepository.findByUsernameContainingIgnoreCase(trimmedQuery, usersPageable);
+        result.setUsersByUsername(usersPage.getContent().stream()
+                .map(user -> {
+                    UserDto dto = new UserDto(user);
+                    dto.setEmail(null);
+                    return dto;
+                })
+                .collect(Collectors.toList()));
+        result.setTotalUsers(usersPage.getTotalElements());
+        
+        return result;
     }
 }

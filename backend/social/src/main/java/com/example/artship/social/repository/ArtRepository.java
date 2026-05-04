@@ -27,8 +27,6 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
            "LOWER(a.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     Page<Art> findByTitleContainingIgnoreCaseAndIsPublicFlagTrue(@Param("title") String title, Pageable pageable);
     
-    @Query("SELECT a FROM Art a JOIN a.tags t WHERE t.name = :tagName AND a.isPublicFlag = true")
-    Page<Art> findByTagNameAndIsPublicFlagTrue(@Param("tagName") String tagName, Pageable pageable);
     
     @Query("SELECT a FROM Art a WHERE a.author.id IN " +
            "(SELECT f.following.id FROM Follow f WHERE f.follower.id = :userId) " +
@@ -49,4 +47,16 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
     
     @Query("SELECT COUNT(DISTINCT a) FROM Art a JOIN a.tags t WHERE LOWER(t.name) = LOWER(:tagName) AND a.isPublicFlag = true")
     long countByTagName(@Param("tagName") String tagName);
+
+    /**
+ * Поиск артов по тегу с частичным совпадением
+ */
+@Query("SELECT DISTINCT a FROM Art a JOIN a.tags t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :tagName, '%')) AND a.isPublicFlag = true")
+Page<Art> findByTagNameContainingIgnoreCaseAndIsPublicFlagTrue(@Param("tagName") String tagName, Pageable pageable);
+
+/**
+ * Поиск артов по точному совпадению тега
+ */
+@Query("SELECT DISTINCT a FROM Art a JOIN a.tags t WHERE LOWER(t.name) = LOWER(:tagName) AND a.isPublicFlag = true")
+Page<Art> findByTagNameAndIsPublicFlagTrue(@Param("tagName") String tagName, Pageable pageable);
 }
