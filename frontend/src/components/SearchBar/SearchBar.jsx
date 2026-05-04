@@ -10,7 +10,7 @@ export default function SearchBar({
   className = '',
   autoFocus = false,
   disabled = false,
-  searchType = 'tag', // 'tag' | 'username' | 'text'
+  searchType = 'tag', // 'tag' | 'username'
 }) {
   const [inputValue, setInputValue] = useState(initialValue);
 

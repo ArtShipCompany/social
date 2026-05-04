@@ -73,7 +73,7 @@ export const tagApi = {
     return Array.isArray(data) ? data.map(formatTag) : [];
   },
   
-  // 🌐 ПУБЛИЧНЫЕ ОПЕРАЦИИ
+  //  ПУБЛИЧНЫЕ ОПЕРАЦИИ
   
   async getAllTags(page = 0, size = 50, sortBy = 'name', direction = 'asc') {
     const url = `${API_URL}/tags?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;

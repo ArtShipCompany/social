@@ -1,4 +1,3 @@
-// src/pages/Follows/Follows.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
