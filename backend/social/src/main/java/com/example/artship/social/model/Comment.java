@@ -30,6 +30,9 @@ public class Comment {
     private Comment parentComment;
     
 
+    @Column(name = "is_hidden")
+    private boolean hidden = false;
+
     public Comment() {
     }
     
@@ -61,4 +64,7 @@ public class Comment {
     
     public Comment getParentComment() { return parentComment; }
     public void setParentComment(Comment parentComment) { this.parentComment = parentComment; }
+
+    public boolean isHidden() { return hidden; }
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
 }

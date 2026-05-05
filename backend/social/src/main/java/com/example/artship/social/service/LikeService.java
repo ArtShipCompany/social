@@ -107,4 +107,11 @@ public class LikeService {
     public Long getLikeCountByUserId(Long userId) {
         return likeRepository.countByUserId(userId);
     }
+
+    @Transactional
+    public void deleteAllUserLikes(Long userId) {
+        
+        likeRepository.deleteByUserId(userId);
+        
+    }
 }

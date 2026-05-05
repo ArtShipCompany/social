@@ -207,10 +207,47 @@ public class CommentService {
         log.debug("Getting comment count for user ID: {}", userId);
         return commentRepository.countByUserId(userId);
     }
-    
+
+    @Transactional
+    public void deleteAllCommentsByArtId(Long artId) {
+        commentRepository.deleteByArtId(artId);
+        
+    }
+
+    @Transactional
+    public void deleteAllUserComments(Long userId) {
+        commentRepository.anonymizeUserComments(userId);
+        
+    }
+        
     // Дополнительный метод для подсчета ответов
     @Transactional(readOnly = true)
     public Long getReplyCountByCommentId(Long commentId) {
         return commentRepository.countByParentCommentId(commentId);
     }
+
+    @Transactional
+    public void hideComment(Long commentId) {
+        
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+        
+        comment.setText("[Hidden by moderators]");
+        comment.setHidden(true);
+        
+        commentRepository.save(comment);
+    }
+
+    @Transactional
+    public void unhideComment(Long commentId) {
+        
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+        
+        comment.setHidden(false);
+        
+        commentRepository.save(comment);
+    }
+
+
 }
