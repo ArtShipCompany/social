@@ -173,6 +173,27 @@
     font-size: 14px;
 }
 
+.menu {
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+}
+
+.menuButtons {
+    padding-right: 20px;
+}
+
+.switcher {
+    background-color: #dbefff;
+    padding: 10px 20px;
+    border-radius: 30px;
+}
+
+
 .feed {
     margin-top: 20px;
     columns: 200px;

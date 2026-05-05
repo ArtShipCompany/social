@@ -1,24 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 import styles from './ProfileOptionsMenu.module.css';
-import privacyIcon from '../../assets/private-edit.svg';
-import deleteIcon from '../../assets/delete-icon.svg';
 import ellipsisIcon from '../../assets/ellipsis-icon.svg';
-import createIcon from '../../assets/create-icon.svg'
 
 export default function ProfileOptionsMenu({ 
   isOpen, 
   onToggle, 
-  onPrivacyClick, 
-  onDeleteClick,
-  onCreateClick 
+  options = [] 
 }) {
   const menuRef = useRef(null);
 
-  
-
   return (
-    <div ref={menuRef} style={{ position: 'relative' }}>
+    <div ref={menuRef} className={styles.container} style={{ position: 'relative' }}>
       <button
         className={styles.ellipsisBtn}
         onClick={onToggle}
@@ -30,26 +22,27 @@ export default function ProfileOptionsMenu({
 
       {isOpen && (
         <div className={styles.menu}>
-          <button
-            className={styles.menuItem}
-            onClick={onPrivacyClick}
-          >
-            <img src={privacyIcon} alt="Приватность" className={styles.icon} />
-          </button>
-
-          <button
-            className={styles.menuItem}
-            onClick={onDeleteClick}
-          >
-            <img src={deleteIcon} alt="Удалить" className={styles.icon} />
-          </button>
-          
-          <button
-            className={styles.menuItem}
-            onClick={onCreateClick} 
-          >
-            <img src={createIcon} alt="Добавить" className={`${styles.icon} ${styles.createIcon}`} />
-          </button>
+          {options.map((option, index) => (
+            <button
+              key={option.key || index}
+              className={`${styles.menuItem} ${option.className || ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                option.onClick?.();
+                if (option.closeOnClick !== false) {
+                  onToggle();
+                }
+              }}
+              title={option.title}
+              disabled={option.disabled}
+            >
+              <img 
+                src={option.icon} 
+                alt={option.alt || option.title} 
+                className={styles.icon}
+              />
+            </button>
+          ))}
         </div>
       )}
     </div>

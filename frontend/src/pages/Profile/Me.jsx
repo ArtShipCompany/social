@@ -10,6 +10,10 @@ import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-profile-icon.svg';
 import createIcon from '../../assets/create-icon.svg';
+import privacyIcon from '../../assets/private-edit.svg';
+import deleteIcon from '../../assets/delete-icon.svg';
+import settingsIcon from '../../assets/settings.svg';
+import logoutIcon from '../../assets/logout.svg';
 import ProfileOptionsMenu from '../../components/ProfileOptionsMenu/ProfileOptionsMenu';
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import ArtCard from '../../components/ArtCard/ArtCard';
@@ -17,7 +21,7 @@ import ProfileStats from '../../components/ProfileStats/ProfileStats';
 
 export default function Me() {
     const navigate = useNavigate();
-    const { user: currentUser, isAuthenticated, setUser: updateAuthUser } = useAuth();
+    const { user: currentUser, isAuthenticated, logout } = useAuth();
     const notification = useNotification();
     
     const [userArts, setUserArts] = useState([]);
@@ -26,6 +30,7 @@ export default function Me() {
     const [showDeleteIcons, setShowDeleteIcons] = useState(false);
     const [showPrivacyIcons, setShowPrivacyIcons] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isHeadMenuOpen, setIsHeadMenuOpen] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [modalArtId, setModalArtId] = useState(null);
     const [deletingArtId, setDeletingArtId] = useState(null);
@@ -46,12 +51,10 @@ export default function Me() {
         if (!isAuthenticated || !currentUser?.id) return;
 
         try {
-            // Загрузка артов
             const artsData = await artApi.getMyArts(0, 20);
             const artsList = artsData?.content || artsData || [];
             setUserArts(Array.isArray(artsList) ? artsList : []);
             
-            // Загрузка счётчиков подписок
             const counts = await followApi.getFollowCounts(currentUser.id);
             setFollowerCount(counts?.followers ?? 0);
             setFollowingCount(counts?.following ?? 0);
@@ -78,28 +81,6 @@ export default function Me() {
         loadUserData();
     }, [isAuthenticated, currentUser, navigate, loadUserData]);
 
-    useEffect(() => {
-        const refreshUserData = async () => {
-            if (!isAuthenticated || !currentUser?.id) return;
-            
-            try {
-                // Перезагружаем текущего пользователя из API
-                const freshUser = await userApi.getCurrentUser();
-                if (freshUser) {
-                    setUser(freshUser);
-                    localStorage.setItem('user', JSON.stringify(freshUser));
-                }
-                
-                // Перезагружаем арты
-                await loadUserData();
-            } catch (err) {
-                console.error('[Me] Ошибка обновления:', err);
-            }
-        };
-        
-        refreshUserData();
-    }, [isAuthenticated, currentUser?.id]);
-
     const closeMenuAndResetModes = useCallback(() => {
         setShowDeleteIcons(false);
         setShowPrivacyIcons(false);
@@ -110,10 +91,27 @@ export default function Me() {
         isMenuOpen ? closeMenuAndResetModes() : setIsMenuOpen(true);
     }, [isMenuOpen, closeMenuAndResetModes]);
 
+    const toggleHeadMenu = useCallback(() => {
+        setIsHeadMenuOpen(prev => !prev);
+    }, []);
+
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
         navigate('/create');
     }, [navigate]);
+
+    const handleSettingsClick = useCallback(() => {
+        notification.info('Настройки скоро будут доступны', 3000);
+    }, [notification]);
+
+    const handleLogoutClick = useCallback(async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            notification.error('Ошибка при выходе', 3000);
+        }
+    }, [logout, navigate, notification]);
 
     const openConfirmModal = useCallback((id) => {
         setModalArtId(id);
@@ -184,6 +182,50 @@ export default function Me() {
     const validArts = userArts.filter(isValidArt);
     const displayName = currentUser?.displayName || currentUser?.username;
 
+    // Конфигурация меню для шапки профиля
+    const headMenuOptions = [
+        {
+            key: 'settings',
+            icon: settingsIcon,
+            alt: 'Настройки',
+            title: 'Настройки',
+            onClick: handleSettingsClick
+        },
+        {
+            key: 'logout',
+            icon: logoutIcon,
+            alt: 'Выйти',
+            title: 'Выйти',
+            onClick: handleLogoutClick
+        }
+    ];
+
+    // Конфигурация меню для управления артами
+    const artsMenuOptions = [
+        {
+            key: 'privacy',
+            icon: privacyIcon,
+            alt: 'Приватность',
+            title: 'Изменить приватность',
+            onClick: () => setShowPrivacyIcons(prev => !prev)
+        },
+        {
+            key: 'delete',
+            icon: deleteIcon,
+            alt: 'Удалить',
+            title: 'Удалить арт',
+            onClick: () => setShowDeleteIcons(prev => !prev)
+        },
+        {
+            key: 'create',
+            icon: createIcon,
+            alt: 'Создать',
+            title: 'Создать арт',
+            onClick: handleCreateClick,
+            className: styles.createIcon
+        }
+    ];
+
     return (
         <>
             <div className={styles.headContent}>
@@ -219,17 +261,29 @@ export default function Me() {
                         
                         <div className={styles.buttonsCover}>
                             <ProfileOptionsMenu 
-                                isOpen={isMenuOpen}
-                                onToggle={toggleMenu}
-                                onDeleteClick={() => setShowDeleteIcons(prev => !prev)}
-                                onPrivacyClick={() => setShowPrivacyIcons(prev => !prev)}
-                                onCreateClick={handleCreateClick}
+                                isOpen={isHeadMenuOpen}
+                                onToggle={toggleHeadMenu}
+                                options={headMenuOptions}
                             />
                         </div>  
                     </div>
                 </div>
             </div>
             
+            <div className={styles.menu}>
+                <div className={styles.switcher}> 
+                    <span>Арты / Коллекции</span>
+                </div>
+                
+                <div className={styles.menuButtons}>
+                    <ProfileOptionsMenu 
+                        isOpen={isMenuOpen}
+                        onToggle={toggleMenu}
+                        options={artsMenuOptions}
+                    />
+                </div>  
+            </div>
+
             <div className={styles.feed}>
                 {validArts.length > 0 ? (
                     validArts.map(art => (
