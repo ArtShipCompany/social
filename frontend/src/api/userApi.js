@@ -1,29 +1,26 @@
 import { authApi, fetchWithErrorHandling } from './authApi';
 
 const API_URL = 'http://localhost:8081/api';
+const USERS_BASE = `${API_URL}/users`;
 
-// Вспомогательная функция для запросов (использует authApi.fetchWithErrorHandling)
-async function request(url, options = {}) {
-  return fetchWithErrorHandling(url, {
+// Стандартный JSON-запрос с авторизацией
+const requestJson = (url, options = {}) => 
+  authApi.fetchProtected(url, {
     credentials: 'include',
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
-}
 
-// Для FormData-запросов (без Content-Type, чтобы браузер сам выставил boundary)
-async function requestMultipart(url, options = {}) {
+// Multipart запрос (для аватарок) — Content-Type ставит браузер
+const requestMultipart = async (url, options = {}) => {
   const token = localStorage.getItem('accessToken');
   
   const response = await fetch(url, {
     credentials: 'include',
-    ...options,
+    method: options.method || 'POST',
+    body: options.body,
     headers: {
       ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
     },
   });
   
@@ -33,156 +30,274 @@ async function requestMultipart(url, options = {}) {
   }
   
   return response.json();
-}
+};
+
+// Форматирование UserDto с бэка
+const formatUser = (user) => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName || user.username,
+    email: user.email,
+    bio: user.bio || '',
+    avatarUrl: userApi.getAvatarUrl(user), // используем хелпер ниже
+    isPublic: user.isPublic !== false,
+    userRole: user.userRole,
+    createdAt: user.createdAt,
+  };
+};
+
+// Адаптация Page<UserDto> с бэка
+const formatUserPage = (pageData) => {
+  if (!pageData) return { content: [], totalElements: 0, totalPages: 0, last: true };
+  return {
+    content: (pageData.content || []).map(formatUser),
+    totalElements: pageData.totalElements || 0,
+    totalPages: pageData.totalPages || 0,
+    number: pageData.number || 0,
+    size: pageData.size || 20,
+    last: pageData.last ?? true,
+  };
+};
 
 export const userApi = {
-  // PUBLIC
   
+  // === PUBLIC ENDPOINTS ===
+  
+  // Публичный профиль по ID (без авторизации)
   async getPublicUser(id) {
-    const response = await fetch(`${API_URL}/users/public/${id}`, { credentials: 'include' });
+    const response = await fetch(`${USERS_BASE}/public/${id}`, { credentials: 'include' });
     if (!response.ok) {
-      if (response.status === 404) throw new Error('Пользователь не найден');
+      if (response.status === 404) throw new Error('Пользователь не найден или приватен');
       throw new Error(`HTTP ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    return formatUser(data);
   },
-
-  // PRIVATE
-
+  
+  // === PRIVATE ENDPOINTS (требуют авторизации) ===
+  
+  // Текущий пользователь
   async getCurrentUser() {
-    const userData = await authApi.fetchProtected(`${API_URL}/users/me`);
-    return this.formatUser(userData);
+    const data = await requestJson(`${USERS_BASE}/me`);
+    return formatUser(data);
   },
-
+  
+  // Пользователь по ID (доступен если публичный или это текущий юзер)
   async getUserById(id) {
-    const userData = await authApi.fetchProtected(`${API_URL}/users/${id}`);
-    return userData;
-  },
-
-  async updateProfile(userData) {
-    const formData = new FormData();
-    
-    if (userData.username) formData.append('username', userData.username);
-    if (userData.displayName) formData.append('displayName', userData.displayName);
-    if (userData.bio) formData.append('bio', userData.bio);
-    if (userData.isPublic !== undefined) {
-      formData.append('isPublic', userData.isPublic.toString());
-    }
-    
-    const result = await requestMultipart(`${API_URL}/users/me`, {
-      method: 'PUT',
-      body: formData,
-    });
-    
-    return this.formatUser(result.user || result);
-  },
-
-  async updateProfileWithAvatar(formData) {
-    const result = await requestMultipart(`${API_URL}/users/me`, {
-      method: 'PUT',
-      body: formData,
-    });
-    return this.formatUser(result.user || result);
-  },
-
-  async uploadAvatar(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    return requestMultipart(`${API_URL}/users/me/avatar`, {
-      method: 'POST',
-      body: formData,
-    });
-  },
-
-  async deleteAvatar() {
-    return authApi.fetchProtected(`${API_URL}/users/me/avatar`, {
-      method: 'DELETE'
-    });
+    const data = await requestJson(`${USERS_BASE}/${id}`);
+    return formatUser(data);
   },
   
-  async getAllUsers() {
-    const usersData = await authApi.fetchProtected(`${API_URL}/users`);
-    return Array.isArray(usersData) ? usersData.map(user => this.formatUser(user)) : [];
-  },
-
+  // Пользователь по username
   async getUserByUsername(username) {
-    const userData = await authApi.fetchProtected(`${API_URL}/users/username/${username}`);
-    return this.formatUser(userData);
+    const cleanName = username.replace(/^[@#]/, '');
+    const data = await requestJson(`${USERS_BASE}/username/${encodeURIComponent(cleanName)}`);
+    return formatUser(data);
   },
   
+  // Универсальный getter: пробует приватный → публичный
   async getUser(userId, isAuthenticated = false) {
     try {
       if (isAuthenticated) {
         try {
-          const userData = await this.getUserById(userId);
-          return this.formatUser(userData);
-        } catch {
-          const publicData = await this.getPublicUser(userId);
-          return this.formatUser(publicData);
+          return await this.getUserById(userId);
+        } catch (err) {
+          if (err.message?.includes('404') || err.message?.includes('401')) {
+            return await this.getPublicUser(userId);
+          }
+          throw err;
         }
-      } else {
-        return this.formatUser(await this.getPublicUser(userId));
       }
+      return await this.getPublicUser(userId);
     } catch (error) {
       console.error('[User API] Error getting user:', error);
       throw error;
     }
   },
   
-  createProfileFormData(data) {
+  // === UPDATE PROFILE ===
+  
+  // Обновление профиля (multipart: текст + файл)
+  async updateProfile({ username, displayName, bio, isPublic, avatarFile, avatarUrl }) {
+      const formData = new FormData();
+      
+      if (username !== undefined) formData.append('username', username);
+      if (displayName !== undefined) formData.append('displayName', displayName);
+      if (bio !== undefined) formData.append('bio', bio);
+      if (isPublic !== undefined) formData.append('isPublic', String(isPublic));
+      if (avatarUrl !== undefined) formData.append('avatarUrl', avatarUrl);
+      if (avatarFile instanceof File) formData.append('avatarFile', avatarFile);
+      
+      console.log(' userApi.updateProfile — FormData:');
+      for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}:`, value instanceof File ? `File(${value.name})` : value);
+      }
+      
+      const result = await requestMultipart(`${USERS_BASE}/me`, {
+          method: 'PUT',
+          body: formData,
+      });
+       
+      return {
+          user: formatUser(result.user || result),
+          newToken: result.newToken,
+      };
+  },
+  
+  // Хелпер для создания FormData
+  createProfileFormData({ username, displayName, bio, isPublic, avatarFile, avatarUrl }) {
     const formData = new FormData();
-    if (data.avatarFile) formData.append('avatarFile', data.avatarFile);
-    if (data.username) formData.append('username', data.username);
-    if (data.displayName !== undefined) formData.append('displayName', data.displayName);
-    if (data.bio !== undefined) formData.append('bio', data.bio);
-    if (data.isPublic !== undefined) formData.append('isPublic', data.isPublic.toString());
+    if (username !== undefined) formData.append('username', username);
+    if (displayName !== undefined) formData.append('displayName', displayName);
+    if (bio !== undefined) formData.append('bio', bio);
+    if (isPublic !== undefined) formData.append('isPublic', String(isPublic));
+    if (avatarUrl !== undefined) formData.append('avatarUrl', avatarUrl);
+    if (avatarFile instanceof File) formData.append('avatarFile', avatarFile);
     return formData;
   },
   
+  // Удаление аватарки
+  async deleteAvatar() {
+    await requestJson(`${USERS_BASE}/me/avatar`, { method: 'DELETE' });
+    return true;
+  },
+  
+  // === USER LIST & SEARCH ===
+  
+  // Все публичные пользователи (пагинация)
+  async getAllPublicUsers({ page = 0, size = 20, sortBy = 'createdAt', direction = 'desc' } = {}) {
+    const url = `${USERS_BASE}?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+    const data = await requestJson(url);
+    return formatUserPage(data);
+  },
+  
+  // Поиск по username (для админов, но можно использовать и публично если бэк разрешит)
+  async searchUsersByUsername(query, { page = 0, size = 20, sortBy = 'createdAt', direction = 'desc' } = {}) {
+    const url = `${USERS_BASE}/all?search=${encodeURIComponent(query)}&page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+    const data = await requestJson(url);
+    return formatUserPage(data);
+  },
+  
+  // === ADMIN / MODERATOR ENDPOINTS ===
+  
+  // Пользователи по роли
+  async getUsersByRole(role, { page = 0, size = 20 } = {}) {
+    const url = `${USERS_BASE}/role/${role}?page=${page}&size=${size}`;
+    const data = await requestJson(url);
+    return formatUserPage(data);
+  },
+  
+  // Статистика по ролям
+  async getRoleStatistics() {
+    return await requestJson(`${USERS_BASE}/role/statistics`);
+  },
+  
+  // Все админы
+  async getAdmins() {
+    const data = await requestJson(`${USERS_BASE}/admins`);
+    return Array.isArray(data) ? data.map(formatUser) : [];
+  },
+  
+  // Все пользователи (только ADMIN) с поиском
+  async getAllUsersAdmin({ page = 0, size = 20, sortBy = 'createdAt', direction = 'desc', search = '' } = {}) {
+    let url = `${USERS_BASE}/all?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`;
+    if (search?.trim()) {
+      url += `&search=${encodeURIComponent(search.trim())}`;
+    }
+    const data = await requestJson(url);
+    return formatUserPage(data);
+  },
+  
+  // Изменение роли пользователя по ID
+  async changeUserRole(userId, newRole) {
+    const data = await requestJson(`${USERS_BASE}/${userId}/role?role=${newRole}`, { method: 'PUT' });
+    return formatUser(data);
+  },
+  
+  // Изменение роли по username
+  async changeUserRoleByUsername(username, newRole) {
+    const cleanName = username.replace(/^[@#]/, '');
+    const data = await requestJson(`${USERS_BASE}/username/${encodeURIComponent(cleanName)}/role?role=${newRole}`, { method: 'PUT' });
+    return formatUser(data);
+  },
+  
+  // Массовое изменение ролей
+  async bulkChangeRole(userIds, newRole) {
+    const data = await requestJson(`${USERS_BASE}/role/bulk?role=${newRole}`, {
+      method: 'POST',
+      body: JSON.stringify(userIds),
+    });
+    return data; // { updatedCount, role, message }
+  },
+  
+  // === ACCOUNT MANAGEMENT ===
+  
+  // Удаление аккаунта
+  async deleteAccount() {
+    await requestJson(`${USERS_BASE}/me`, { method: 'DELETE' });
+    return true;
+  },
+  
+  // === UTILS ===
+  
+  // Получение URL аватарки с нормализацией путей
   getAvatarUrl(user) {
     if (!user) return '/default-avatar.png';
     const avatarUrl = user.avatarUrl || user.pfp || user.avatar;
     if (!avatarUrl) return '/default-avatar.png';
-    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) return avatarUrl;
-    if (avatarUrl.startsWith('/uploads/images/') || avatarUrl.startsWith('/api/files/images/')) return avatarUrl;
-    if (avatarUrl.includes('.')) return `/uploads/images/${avatarUrl}`;
+    
+    // Абсолютные URL возвращаем как есть
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      return avatarUrl;
+    }
+    
+    // Пути с бэка: /uploads/images/... или /api/files/images/...
+    if (avatarUrl.startsWith('/uploads/') || avatarUrl.startsWith('/api/files/')) {
+      return `http://localhost:8081${avatarUrl}`;
+    }
+    
+    // Если просто имя файла — добавляем префикс
+    if (avatarUrl.includes('.')) {
+      return `http://localhost:8081/uploads/images/${avatarUrl}`;
+    }
+    
     return '/default-avatar.png';
   },
   
+  // Полная сборка URL для любых путей с бэка
   getFullUrl(path) {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    let finalPath = path;
+    
+    const BASE = 'http://localhost:8081';
+    
     if (path.startsWith('/api/files/images/')) {
       const filename = path.split('/').pop();
-      finalPath = `/uploads/images/${filename}`;
-    } else if (path.startsWith('/uploads/')) {
-      finalPath = path;
-    } else if (path.startsWith('uploads/')) {
-      finalPath = `/${path}`;
-    } else if (!path.includes('/')) {
-      finalPath = `/uploads/images/${path}`;
+      return `${BASE}/uploads/images/${filename}`;
     }
-    return `http://localhost:8081${finalPath}`;
+    if (path.startsWith('/uploads/')) {
+      return `${BASE}${path}`;
+    }
+    if (path.startsWith('uploads/')) {
+      return `${BASE}/${path}`;
+    }
+    if (!path.includes('/')) {
+      return `${BASE}/uploads/images/${path}`;
+    }
+    
+    return `${BASE}${path}`;
   },
   
-  formatUser(user) {
-    if (!user) return null;
-    const formattedUser = {
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName || user.username,
-      email: user.email,
-      bio: user.bio || '',
-      avatarUrl: this.getAvatarUrl(user),
-      isPublic: user.isPublic !== false,
-      createdAt: user.createdAt
-    };
-    if (formattedUser.avatarUrl && !formattedUser.avatarUrl.startsWith('http')) {
-      formattedUser.avatarUrl = this.getFullUrl(formattedUser.avatarUrl);
-    }
-    return formattedUser;
+  formatUser,
+  formatUserPage,
+  
+  utils: {
+    formatUser,
+    formatUserPage,
+    getAvatarUrl: (user) => userApi.getAvatarUrl(user),
+    getFullUrl: (path) => userApi.getFullUrl(path),
   }
 };
 

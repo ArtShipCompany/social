@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getAuthToken } from '../../api/authApi';
 import { userApi } from '../../api/userApi';
 import styles from './Edit.module.css';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
@@ -17,17 +18,15 @@ export default function Edit() {
     const [displayName, setDisplayName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState(blankPfp);
     const [avatarFile, setAvatarFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
-    const getAvatarUrl = useCallback((user) => {
-        return userApi.utils?.getAvatarUrl?.(user) || blankPfp;
-    }, []);
-
-    // Загрузка данных текущего пользователя
+    // Загрузка данных
     useEffect(() => {
-        if (!isAuthenticated || !currentUser) {
+        const token = getAuthToken();
+        if (!token) {
             navigate('/login');
             return;
         }
@@ -40,7 +39,7 @@ export default function Edit() {
                     setUsername(userData.username || '');
                     setDisplayName(userData.displayName || userData.username || '');
                     setBio(userData.bio || '');
-                    setAvatarUrl(getAvatarUrl(userData));
+                    setAvatarUrl(userData.avatarUrl ? userApi.getFullUrl(userData.avatarUrl) : blankPfp);
                 }
             } catch (err) {
                 console.error('Ошибка загрузки данных пользователя:', err);
@@ -49,51 +48,63 @@ export default function Edit() {
         };
 
         loadUserData();
-    }, [currentUser, isAuthenticated, navigate, getAvatarUrl]);
+    }, [navigate]);
+
+    // Очистка preview при размонтировании
+    useEffect(() => {
+        return () => {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+        };
+    }, [previewUrl]);
 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                setError('Файл слишком большой. Максимальный размер: 5MB');
-                return;
-            }
-            
-            if (!file.type.startsWith('image/')) {
-                setError('Пожалуйста, выберите изображение');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAvatarUrl(reader.result);
-                setAvatarFile(file);
-                setError(null);
-            };
-            reader.onerror = () => {
-                setError('Ошибка при чтении файла');
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Файл больше 5МБ');
+            return;
         }
+        if (!file.type.startsWith('image/')) {
+            setError('Только изображения');
+            return;
+        }
+
+        // Создаём preview
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setAvatarUrl(url);
+        setAvatarFile(file);
+        setError(null);
     };
 
-    const updateUserInContext = useCallback((updatedUserData) => {
-        if (!currentUser) return;
+    const updateUserInContext = useCallback((updatedUserData, newToken) => {
+        if (!currentUser && !updatedUserData) return;
         
-        const newUserData = {
-            ...currentUser,
+        const baseData = currentUser || {};
+        
+        const merged = {
+            ...baseData,
             ...updatedUserData,
-            username: updatedUserData.username || currentUser.username
+            username: updatedUserData.username || baseData.username
         };
         
-        setUser(newUserData);
-        localStorage.setItem('user', JSON.stringify(newUserData));
+        if (newToken) {
+            localStorage.setItem('accessToken', newToken);
+        }
+        
+        setUser(merged);
+        localStorage.setItem('user', JSON.stringify(merged));
+        
+        console.log('User context updated:', merged);
     }, [currentUser, setUser]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!isAuthenticated || !currentUser) {
+        const token = getAuthToken();
+        if (!token) {
             navigate('/login');
             return;
         }
@@ -104,183 +115,152 @@ export default function Edit() {
             setSuccess(false);
 
             const updateData = {};
-
-            if (username !== currentUser.username && username.trim() !== '') {
+            
+            if (username.trim() !== '') {
                 updateData.username = username.trim();
             }
-
-            if (displayName !== currentUser.displayName) {
+            if (displayName.trim() !== '') {
                 updateData.displayName = displayName;
             }
-            
-            if (bio !== currentUser.bio) {
+            if (bio !== undefined) {
                 updateData.bio = bio;
             }
 
-            let updatedUserData = null;
+            let result;
 
             if (avatarFile) {
-                const formData = userApi.createProfileFormData({
-                    ...updateData,
-                    avatarFile: avatarFile
+                const formData = new FormData();
+                Object.keys(updateData).forEach(key => {
+                    formData.append(key, updateData[key]);
                 });
+                formData.append('avatarFile', avatarFile);
                 
-                updatedUserData = await userApi.updateProfileWithAvatar(formData);
+                for (let [key, value] of formData.entries()) {
+                    console.log(`  ${key}:`, value instanceof File ? `File(${value.name})` : value);
+                }
+                
+                result = await userApi.updateProfile({
+                    ...updateData,
+                    avatarFile,
+                });
             } else if (Object.keys(updateData).length > 0) {
-                updatedUserData = await userApi.updateProfile(updateData);
+                result = await userApi.updateProfile(updateData);
             } else {
                 navigate('/me');
                 return;
             }
 
-            if (updatedUserData) {
-                updateUserInContext(updatedUserData);
+            // Обновляем контекст ПЕРЕД редиректом
+            if (result?.user) {
+                // Принудительно обновляем localStorage
+                localStorage.setItem('user', JSON.stringify(result.user));
+                
+                // Обновляем контекст
+                setUser(result.user);
+                
+                if (result.newToken) {
+                    localStorage.setItem('accessToken', result.newToken);
+                }
             }
 
             setSuccess(true);
 
             setTimeout(() => {
                 navigate('/me');
-            }, 2000);
+            }, 500);
 
         } catch (err) {
             console.error('Ошибка обновления профиля:', err);
-            setError(err.message || 'Не удалось обновить профиль. Попробуйте снова.');
+            setError(err.message || 'Не удалось обновить профиль');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCancel = () => {
-        navigate('/me');
-    };
-
     if (!isAuthenticated || !currentUser) {
-        return (
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <span>Перенаправление на страницу входа...</span>
-            </div>
-        );
+        return <div className={styles.loading}>Перенаправление...</div>;
     }
 
     return (
-        <>
-            <form className={styles.form} onSubmit={handleSubmit}>
-                {/* загрузка фото */}
-                <div className={styles.pfp}>
-                    <label htmlFor="avatarUpload" className={styles.avatarLabel}>
-                        <img 
-                            src={avatarUrl} 
-                            alt="profile-photo" 
-                            className={styles.avatarImg} 
-                            onError={(e) => {
-                                e.target.src = blankPfp;
-                            }}
-                        />
-                        <img src={PhotoIcon} alt="edit-photo" className={styles.photoIcon}/>
-                    </label>
-                    <input
-                        id="avatarUpload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        style={{ display: 'none' }}
-                        disabled={loading}
+        <form className={styles.form} onSubmit={handleSubmit}>
+            {/* Аватар */}
+            <div className={styles.pfp}>
+                <label htmlFor="avatarUpload" className={styles.avatarLabel}>
+                    <img 
+                        src={avatarUrl} 
+                        alt="avatar" 
+                        className={styles.avatarImg}
+                        onError={(e) => { e.target.src = blankPfp; }}
                     />
-                </div>
-                <span className={styles.changePhotoText}>Изменить фото</span>
+                    <img src={PhotoIcon} alt="edit" className={styles.photoIcon}/>
+                </label>
+                <input
+                    id="avatarUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    style={{ display: 'none' }}
+                    disabled={loading}
+                />
+            </div>
+            <span className={styles.changePhotoText}>Изменить фото</span>
 
-                <div className={styles.inputGroup}>
-                    <div className={styles.nameInput}>
-                        <label htmlFor="username">Никнейм:</label>
-                        <div className={styles.usernameWrapper}>
-                            <span className={styles.prefix}>@</span>
-                            <input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={(e) => {
-                                    let value = e.target.value.toLowerCase();
-                                    if (value.length <= 20) {
-                                        setUsername(value);
-                                    }
-                                }}
-                                placeholder="Ваш никнейм"
-                                className={styles.usernameInput}
-                                disabled={loading}
-                            />
-                        </div>
-                    </div>
-                    <div className={styles.nameInput}>
-                        <label htmlFor="displayName">Имя:</label>
+            {/* Поля */}
+            <div className={styles.inputGroup}>
+                <div className={styles.nameInput}>
+                    <label>Никнейм:</label>
+                    <div className={styles.usernameWrapper}>
+                        <span className={styles.prefix}>@</span>
                         <input
-                            id="displayName"
                             type="text"
-                            value={displayName}
+                            value={username}
                             onChange={(e) => {
-                                let value = e.target.value;
-                                if (value.length <= MAX_LENGTH) {
-                                    setDisplayName(value);
-                                }
+                                const val = e.target.value.toLowerCase();
+                                if (val.length <= 20) setUsername(val);
                             }}
-                            placeholder="Ваше имя"
+                            placeholder="никнейм"
+                            className={styles.usernameInput}
                             disabled={loading}
                         />
-                    </div>
-                    
-                    <div className={styles.textareaWrapper}>
-                        <label htmlFor="bio">Описание профиля:</label>
-                        <textarea
-                            id="bio"
-                            value={bio}
-                            onChange={(e) => {
-                                if (e.target.value.length <= MAX_LENGTH) {
-                                    setBio(e.target.value);
-                                }
-                            }}
-                            maxLength={MAX_LENGTH}
-                            placeholder="Расскажите о себе..."
-                            className={styles.bioTextarea}
-                            disabled={loading}
-                        />
-                        <div className={styles.charCount}>
-                            {bio.length}/{MAX_LENGTH}
-                        </div>
                     </div>
                 </div>
-
-                {error && (
-                    <div className={styles.errorMessage}>
-                        {error}
-                    </div>
-                )}
                 
-                {success && (
-                    <div className={styles.successMessage}>
-                        Профиль успешно обновлен! Перенаправление...
-                    </div>
-                )}
-
-                {/* Кнопки действий */}
-                <div className={styles.buttons}>
-                    <DefaultBtn 
-                        type="button"
-                        text="Отмена" 
-                        className={styles.cancelBtn}
-                        onClick={handleCancel}
-                        disabled={loading}
-                    />
-                    
-                    <DefaultBtn 
-                        type="submit"
-                        text={loading ? "Сохранение..." : "Сохранить"} 
-                        className={styles.saveBtn} 
+                <div className={styles.nameInput}>
+                    <label>Имя:</label>
+                    <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.length <= MAX_LENGTH) setDisplayName(val);
+                        }}
+                        placeholder="Ваше имя"
                         disabled={loading}
                     />
                 </div>
+                
+                <div className={styles.textareaWrapper}>
+                    <label>О себе:</label>
+                    <textarea
+                        value={bio}
+                        onChange={(e) => {
+                            if (e.target.value.length <= MAX_LENGTH) setBio(e.target.value);
+                        }}
+                        maxLength={MAX_LENGTH}
+                        placeholder="Расскажите о себе..."
+                        className={styles.bioTextarea}
+                        disabled={loading}
+                    />
+                    <div className={styles.charCount}>{bio.length}/{MAX_LENGTH}</div>
+                </div>
+            </div>
 
-            </form>
-        </>
+            {error && <div className={styles.errorMessage}>{error}</div>}
+
+            <div className={styles.buttons}>
+                <DefaultBtn type="button" text="Отмена" onClick={() => navigate('/me')} disabled={loading} />
+                <DefaultBtn type="submit" text={loading ? 'Сохранение...' : 'Сохранить'} disabled={loading} />
+            </div>
+        </form>
     );
 }
