@@ -14,13 +14,22 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.artship.social.dto.RoleStatistics;
 import com.example.artship.social.model.User;
 import com.example.artship.social.model.UserRole;
+import com.example.artship.social.repository.RefreshTokenRepository;
 import com.example.artship.social.repository.UserRepository;
+import com.example.artship.social.repository.mongo.VerificationTokenRepository;
 
 @Service
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;  // ← Добавить
+    
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;  // ← Добавить для MongoDB
     
     
     public Optional<User> findById(Long id) {
@@ -54,14 +63,17 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User changeUserRole(Long userId, UserRole newRole) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         user.setUserRole(newRole);
         User updatedUser = userRepository.save(user);
         return updatedUser;
     }
+    
     @Transactional(readOnly = true)
     public User changeUserRoleByUsername(String username, UserRole newRole) {
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
         user.setUserRole(newRole);
         User updatedUser = userRepository.save(user);
         return updatedUser;
@@ -123,4 +135,15 @@ public class UserService {
                 .orElse(false);
     }
 
+    @Transactional
+    public void revokeAllTokens(Long userId) {
+        logger.info("Revoking all tokens for user ID: {}", userId);
+        refreshTokenRepository.deleteByUserId(userId);  // ← Прямое использование
+    }
+
+    @Transactional
+    public void deleteVerificationTokens(Long userId) {
+        logger.info("Deleting verification tokens for user ID: {}", userId);
+        verificationTokenRepository.deleteByUserId(userId);
+    }
 }

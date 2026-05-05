@@ -28,7 +28,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
     Page<Collection> searchPublicCollections(@Param("query") String query, Pageable pageable);
     
     // Методы без пагинации (для обратной совместимости, если нужны)
-    List<Collection> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Collection> findByUserId(Long userId);
     
     List<Collection> findByUserIdAndIsPublicTrueOrderByCreatedAtDesc(Long userId);
     
@@ -44,4 +44,6 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
     Long countArtsByCollectionId(@Param("collectionId") Long collectionId);
     
     boolean existsByUserIdAndTitle(Long userId, String title);
+
+    void deleteByUserId(Long userId);
 }

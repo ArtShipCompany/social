@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +81,8 @@ public class CollectionService {
         
         return collectionRepository.findById(id)
                 .map(collection -> {
-                    List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
+                    // Используем метод без пагинации для получения всех артов
+                    List<ArtDto> arts = collectionArtService.getAllArtsByCollectionId(collection.getId());
 
                     CollectionDto dto = new CollectionDto();
                     dto.setId(collection.getId());
@@ -210,7 +212,7 @@ public class CollectionService {
     // СТАРЫЕ МЕТОДЫ (ОСТАВЛЯЕМ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ)
     @Transactional(readOnly = true)
     public List<CollectionDto> getCollectionsByUserId(Long userId) {
-        return collectionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        return collectionRepository.findByUserId(userId).stream()
                 .map(this::convertToDtoWithoutArts)
                 .collect(Collectors.toList());
     }
@@ -241,11 +243,12 @@ public class CollectionService {
     public List<CollectionDto> getCollectionsWithArtsByUserId(Long userId) {
         log.debug("Getting collections with arts for user {}", userId);
         
-        List<Collection> collections = collectionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Collection> collections = collectionRepository.findByUserId(userId);
         
         return collections.stream()
                 .map(collection -> {
-                    List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
+                    // Используем метод без пагинации
+                    List<ArtDto> arts = collectionArtService.getAllArtsByCollectionId(collection.getId());
                     
                     CollectionDto dto = new CollectionDto();
                     dto.setId(collection.getId());
@@ -271,6 +274,25 @@ public class CollectionService {
                 .map(collection -> collection.getUser().getId().equals(userId))
                 .orElse(false);
     }
+
+    @Transactional
+    public void deleteAllUserCollections(Long userId) {
+        List<Collection> userCollections = collectionRepository.findByUserId(userId);
+        
+        if (userCollections.isEmpty()) {
+            log.info("No collections found for user ID: {}", userId);
+            return;
+        }
+        
+        for (Collection collection : userCollections) {
+            collectionArtService.removeAllArtsFromCollection(collection.getId());
+            log.debug("Removed all arts from collection ID: {}", collection.getId());
+        }
+        
+        collectionRepository.deleteByUserId(userId);
+        
+        log.info("Successfully deleted {} collections for user ID: {}", userCollections.size(), userId);
+    }
     
     private CollectionDto convertToDtoWithoutArts(Collection collection) {
         CollectionDto dto = new CollectionDto();
@@ -293,7 +315,8 @@ public class CollectionService {
     private CollectionDto convertToDtoWithArts(Collection collection) {
         log.debug("Converting collection {} to DTO with arts", collection.getId());
 
-        List<ArtDto> arts = collectionArtService.getArtsByCollectionId(collection.getId());
+        // Используем метод без пагинации для получения всех артов
+        List<ArtDto> arts = collectionArtService.getAllArtsByCollectionId(collection.getId());
  
         CollectionDto dto = new CollectionDto();
         dto.setId(collection.getId());

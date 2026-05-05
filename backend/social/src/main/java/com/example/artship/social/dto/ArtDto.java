@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.artship.social.model.Art;
+import com.example.artship.social.model.enumclass.ArtStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ArtDto {
@@ -14,6 +15,7 @@ public class ArtDto {
     private String projectDataUrl;
     
     private boolean publicFlag;
+    private ArtStatus status;  // ← поле есть
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt; 
@@ -29,6 +31,7 @@ public class ArtDto {
         this.image = art.getImageUrl();
         this.projectDataUrl = art.getProjectDataUrl();
         this.publicFlag = art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true;
+        this.status = art.getStatus();  
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
 
@@ -46,6 +49,7 @@ public class ArtDto {
         this.image = art.getImageUrl();
         this.projectDataUrl = art.getProjectDataUrl();
         this.publicFlag = art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true;
+        this.status = art.getStatus();  
         this.createdAt = art.getCreatedAt();
         this.updatedAt = art.getUpdatedAt();
         
@@ -82,7 +86,14 @@ public class ArtDto {
         this.publicFlag = publicFlag;
     }
     
-
+    public ArtStatus getStatus() {
+        return status;
+    }
+    
+    public void setStatus(ArtStatus status) {
+        this.status = status;
+    }
+    
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     

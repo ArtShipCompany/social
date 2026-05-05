@@ -17,6 +17,9 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
     Optional<Follow> findByFollowerIdAndFollowingId(Long followerId, Long followingId);
     
     boolean existsByFollowerIdAndFollowingId(Long followerId, Long followingId);
+
+    void deleteByFollowerId(Long followerId);
+    void deleteByFollowingId(Long followingId);
     
     // Получение всех подписчиков пользователя (кто подписан на userId)
     List<Follow> findByFollowingId(Long followingId);
@@ -55,4 +58,6 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
     Long countByFollowerIdAndFollowingUsernameContainingIgnoreCase(
             @Param("userId") Long userId, 
             @Param("username") String username);
+
+
 }

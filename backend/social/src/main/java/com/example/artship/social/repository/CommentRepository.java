@@ -4,6 +4,7 @@ import com.example.artship.social.model.Comment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,4 +34,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.user.id = :userId")
     Long countByUserId(@Param("userId") Long userId);
+
+    void deleteByUserId(Long userId);
+
+    @Modifying
+    @Query("UPDATE Comment c SET c.text = '[Deleted comment]', c.user = null WHERE c.user.id = :userId")
+    void anonymizeUserComments(@Param("userId") Long userId);
+
+    void deleteByArtId(Long artId);
 }

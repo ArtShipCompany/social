@@ -235,4 +235,14 @@ public class FollowService {
         }
         return followRepository.countByFollowerIdAndFollowingUsernameContainingIgnoreCase(userId, usernameSearch);
     }
+
+
+    @Transactional
+    public void deleteAllUserFollows(Long userId) {
+        
+        followRepository.deleteByFollowerId(userId);
+        
+        followRepository.deleteByFollowingId(userId);
+        
+    }
 }

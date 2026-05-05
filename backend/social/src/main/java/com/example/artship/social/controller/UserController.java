@@ -13,7 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,21 +44,41 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Size;
 
+import com.example.artship.social.service.ArtService;
+import com.example.artship.social.service.CollectionService;
+import com.example.artship.social.service.CommentService;
+import com.example.artship.social.service.FollowService;
+import com.example.artship.social.service.LikeService;
 import com.example.artship.social.service.LocalFileStorageService;
 
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "User Controller", description = "Endpoints for managing user profiles")
 public class UserController {
-    
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ArtService artService;
+
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
+    private LikeService likeService;
+
+    @Autowired
+    private CollectionService collectionService;
+
+    @Autowired
+    private FollowService followService;
     
     @Autowired
     private LocalFileStorageService fileStorageService;
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
     
     @GetMapping("/public/{id}")
     @Operation(summary = "Get public user by ID", description = "Returns user profile if it's public")
@@ -449,6 +471,67 @@ public class UserController {
         response.put("role", role);
         
         return ResponseEntity.ok(response);
+    }
+
+
+    @DeleteMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Delete current user account", 
+            description = "Permanently deletes the authenticated user's account and all associated data")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Account deleted successfully"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<Void> deleteAccount(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        User user = userOpt.get();
+        Long userId = user.getId();
+        String username = user.getUsername();
+        
+        
+        try {
+            if (user.getAvatarUrl() != null) {
+                try {
+                    fileStorageService.deleteFile(user.getAvatarUrl());
+                } catch (Exception e) {
+                }
+            }
+            
+            userService.revokeAllTokens(userId);
+            
+            artService.deleteAllUserArts(userId);
+            
+            commentService.deleteAllUserComments(userId);
+            
+            followService.deleteAllUserFollows(userId);
+            
+            likeService.deleteAllUserLikes(userId);
+            
+            collectionService.deleteAllUserCollections(userId);
+            
+            userService.deleteVerificationTokens(userId);
+            
+            userService.deleteById(userId);
+            
+            SecurityContextHolder.clearContext();
+            
+            return ResponseEntity.noContent().build();
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     private void deleteOldAvatar(String oldAvatarUrl) {

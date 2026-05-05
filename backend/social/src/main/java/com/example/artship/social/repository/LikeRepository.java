@@ -47,4 +47,6 @@ public interface LikeRepository extends JpaRepository<Like, Like.LikeId> {
     void deleteByArtId(@Param("artId") Long artId);
     
     boolean existsByUserIdAndArtId(Long userId, Long artId);
+
+    void deleteByUserId(Long userId);
 }

@@ -52,8 +52,9 @@ public class ArtController {
         this.fileStorageService = fileStorageService;
         this.permissionService = permissionService;
     }
-        
-    // Создание нового арта
+    
+    // ==================== CREATE ====================
+    
     @Operation(
         summary = "Создать новый арт",
         description = "Создает арт с загрузкой изображения. Формат запроса: multipart/form-data"
@@ -69,7 +70,6 @@ public class ArtController {
             @Parameter(description = "Данные арта и файл изображения", required = true)
             @ModelAttribute CreateArtRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
         
         if (userDetails == null) {
             logger.error("Пользователь не авторизован");
@@ -123,8 +123,8 @@ public class ArtController {
         return new ResponseEntity<>(createdArt, HttpStatus.CREATED);
     }
     
+    // ==================== UPDATE ====================
     
-    // Обновление арта
     @Operation(summary = "Обновить арт")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Арт успешно обновлен"),
@@ -184,7 +184,6 @@ public class ArtController {
         }
         
         if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
-            // Проверка формата
             String contentType = request.getImageFile().getContentType();
             if (!isValidImageFormat(contentType)) {
                 return ResponseEntity.badRequest().build();
@@ -216,7 +215,6 @@ public class ArtController {
         return ResponseEntity.ok(updatedArt);
     }
     
-    // Изменение приватности арта
     @Operation(summary = "Изменение приватности арта")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Приватность арта успешно изменена",
@@ -230,7 +228,6 @@ public class ArtController {
     public ResponseEntity<ArtDto> updateArtPrivacy(
             @Parameter(description = "ID арта", required = true) 
             @PathVariable Long id,
-            
             @Parameter(
                 description = "Данные для изменения приватности",
                 required = true,
@@ -240,7 +237,6 @@ public class ArtController {
                 )
             )
             @ModelAttribute PrivacyUpdateRequest privacyRequest,
-            
             @AuthenticationPrincipal UserDetails userDetails) {  
         
         logger.info("=== ИЗМЕНЕНИЕ ПРИВАТНОСТИ АРТА ID: {} ===", id);
@@ -289,8 +285,8 @@ public class ArtController {
         return ResponseEntity.ok(result);
     }
     
+    // ==================== DELETE ====================
     
-    // Удаление арта
     @Operation(summary = "Удалить арт")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Арт успешно удален"),
@@ -317,7 +313,6 @@ public class ArtController {
         
         User currentUser = userOpt.get();
         
-        // Получение арта
         Optional<Art> artOpt = artService.getArtById(id);
         if (artOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -344,8 +339,8 @@ public class ArtController {
         return ResponseEntity.noContent().build();
     }
     
+    // ==================== GET ====================
     
-    // Получение арта по ID
     @Operation(summary = "Получить арт по ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Арт найден"),
@@ -384,7 +379,6 @@ public class ArtController {
         return ResponseEntity.ok(artDto);
     }
     
-    // Получение публичных артов с пагинацией
     @Operation(summary = "Получить публичные арты с пагинацией")
     @GetMapping("/public")
     public ResponseEntity<Page<ArtDto>> getPublicArts(
@@ -395,7 +389,8 @@ public class ArtController {
             @Parameter(description = "Поле для сортировки", example = "createdAt") 
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Направление сортировки", example = "desc") 
-            @RequestParam(defaultValue = "desc") String direction) {
+            @RequestParam(defaultValue = "desc") String direction,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
         logger.info("Получение публичных артов. Страница: {}, Размер: {}", page, size);
         
@@ -405,13 +400,19 @@ public class ArtController {
         
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<ArtDto> arts = artService.getPublicArtsDtos(pageable);
+        // Получаем текущего пользователя (может быть null)
+        User currentUser = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUser = userOpt.orElse(null);
+        }
+        
+        Page<ArtDto> arts = artService.getPublicArtsDtos(pageable, currentUser);
         
         logger.info("Найдено {} публичных артов", arts.getTotalElements());
         return ResponseEntity.ok(arts);
     }
     
-    // Получение ленты пользователя (подписки + рекомендации)
     @Operation(summary = "Получить ленту пользователя")
     @GetMapping("/feed")
     public ResponseEntity<Page<ArtDto>> getUserFeed(
@@ -436,20 +437,20 @@ public class ArtController {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         
-        Page<ArtDto> feed = artService.getUserFeedDtos(currentUser.getId(), pageable);
+        Page<ArtDto> feed = artService.getUserFeedDtos(currentUser.getId(), pageable, currentUser);
         
         logger.info("Лента пользователя {} содержит {} артов", 
                    currentUser.getUsername(), feed.getTotalElements());
         return ResponseEntity.ok(feed);
     }
     
-    // Получение публичных артов пользователя по ID
     @Operation(summary = "Получить публичные арты пользователя")
     @GetMapping("/author/{userId}")
     public ResponseEntity<Page<ArtDto>> getPublicArtsByAuthor(
             @Parameter(description = "ID пользователя", required = true) 
             @PathVariable Long userId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
         logger.info("Получение публичных артов пользователя ID: {}", userId);
         
@@ -459,7 +460,14 @@ public class ArtController {
             return ResponseEntity.notFound().build();
         }
         
-        Page<ArtDto> arts = artService.getPublicArtDtosByAuthor(author.get(), pageable);
+        // Получаем текущего пользователя для проверки прав
+        User currentUser = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUser = userOpt.orElse(null);
+        }
+        
+        Page<ArtDto> arts = artService.getPublicArtDtosByAuthor(author.get(), pageable, currentUser);
         
         logger.info("Найдено {} публичных артов пользователя {}", 
                 arts.getTotalElements(), author.get().getUsername());
@@ -467,7 +475,6 @@ public class ArtController {
         return ResponseEntity.ok(arts);
     }
     
-    // Получение всех артов текущего пользователя (включая приватные)
     @Operation(summary = "Получить все арты текущего пользователя")
     @GetMapping("/my-arts")
     public ResponseEntity<Page<ArtDto>> getMyArts(
@@ -487,7 +494,7 @@ public class ArtController {
         
         User currentUser = userOpt.get();
         
-        Page<ArtDto> arts = artService.getAllArtDtosByAuthor(currentUser, pageable);
+        Page<ArtDto> arts = artService.getAllArtDtosByAuthor(currentUser, pageable, currentUser);
         
         logger.info("Найдено {} артов пользователя {}", 
                 arts.getTotalElements(), currentUser.getUsername());
@@ -495,7 +502,6 @@ public class ArtController {
         return ResponseEntity.ok(arts);
     }
     
-    // Проверка доступа к арту
     @Operation(summary = "Проверить доступ к арту")
     @GetMapping("/{id}/access")
     public ResponseEntity<Boolean> checkArtAccess(
