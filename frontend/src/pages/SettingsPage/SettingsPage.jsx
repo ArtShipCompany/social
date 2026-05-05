@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAuthToken } from '../../api/authApi';
 import { userApi } from '../../api/userApi';
-import styles from './Edit.module.css';
+import styles from './SettingsPage.module.css'
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import PhotoIcon from '../../assets/edit-pfp.svg';
 import blankPfp from '../../assets/blank-pfp.svg';
 
-export default function Edit() {
+export default function SettingsPage() {
     const MAX_LENGTH = 100;
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, setUser } = useAuth();
@@ -19,6 +19,9 @@ export default function Edit() {
     const [avatarUrl, setAvatarUrl] = useState(blankPfp);
     const [avatarFile, setAvatarFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+
+    
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);

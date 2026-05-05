@@ -101,8 +101,10 @@ export default function Me() {
     }, [navigate]);
 
     const handleSettingsClick = useCallback(() => {
-        notification.info('Настройки скоро будут доступны', 3000);
-    }, [notification]);
+        setIsMenuOpen(false);
+        navigate('/settings');
+    }, [navigate]);
+
 
     const handleLogoutClick = useCallback(async () => {
         try {
@@ -237,11 +239,6 @@ export default function Me() {
                         onError={(e) => { e.target.src = PFP; }}
                     />
                 </div>
-
-                <Link to="/edit" className={styles.edit}>
-                    <img src={editIcon} alt="edit" />
-                    <span>Редактировать</span>
-                </Link>
 
                 <div className={styles.contentWrapper}>
                     <div className={styles.headBg}></div>
