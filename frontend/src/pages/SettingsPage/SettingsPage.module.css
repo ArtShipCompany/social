@@ -199,6 +199,14 @@ input, textarea {
     margin-top: 20px;
 }
 
+.errorMessage {
+    text-align: center;
+    width: 90%;
+    font-size: 12px;
+    padding-bottom: 5px;
+    color: var(--text-color);
+}
+
 .linksList {
     width: 90%;
     display: flex;
@@ -273,17 +281,21 @@ input, textarea {
 }
 
 .linkInfo {
-    background-color: var(--input-bg-color);
-    border-radius: 15px;
-    border: 0;
-    padding: 12px;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
 }
 
 
 .linkDetails {
     display: flex;
     flex-direction: row;
+    background-color: var(--input-bg-color);
+    border-radius: 15px;
+    border: 0;
+    padding: 12px;
+    box-sizing: border-box;
 }
 
 .linkUrl {

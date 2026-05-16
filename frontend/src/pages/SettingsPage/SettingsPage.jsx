@@ -13,8 +13,22 @@ import SeeIcon from '../../assets/see-pass.svg';
 import HideIcon from '../../assets/hide-pass.svg';
 import EditIcon from '../../assets/edit-icon.svg'
 
+import vkIcon from '../../assets/vk.svg';
+import telegramIcon from '../../assets/telegram.svg';
+import youtubeIcon from '../../assets/youtube.svg';
+import twitterIcon from '../../assets/twitter.svg';
+import tiktokIcon from '../../assets/tiktok.svg';
+import defaultLinkIcon from '../../assets/link.svg';
+
 export default function SettingsPage() {
     const MAX_LENGTH = 100;
+    const PLATFORM_ICONS = {
+        TELEGRAM: telegramIcon,
+        VKONTAKTE: vkIcon,
+        YOUTUBE: youtubeIcon,
+        TWITTER: twitterIcon,
+        TIKTOK: tiktokIcon,
+    };
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, setUser } = useAuth();
     
@@ -26,6 +40,10 @@ export default function SettingsPage() {
     const [previewUrl, setPreviewUrl] = useState(null);
 
     // === LINKS STATES ===
+    const getPlatformIconSrc = (platform) => {
+        if (!platform) return defaultLinkIcon;
+        return PLATFORM_ICONS[platform] || defaultLinkIcon;
+    };
     const [links, setLinks] = useState([]);
     const [linksLoading, setLinksLoading] = useState(false);
     const [linksError, setLinksError] = useState(null);
@@ -41,6 +59,17 @@ export default function SettingsPage() {
     const [editingLinkVisible, setEditingLinkVisible] = useState(true);
 
     const [availablePlatforms, setAvailablePlatforms] = useState([]);
+    const detectPlatformByUrl = (url) => {
+        if (!url) return null;
+        const urlLower = url.toLowerCase();
+        if (urlLower.includes('vk.com') || urlLower.includes('vk.ru') || urlLower.includes('m.vk.com')) {return 'VKONTAKTE';}
+        if (urlLower.includes('t.me/') || urlLower.includes('telegram.me/') || urlLower.includes('telegram.dog/')) {return 'TELEGRAM';}
+        if (urlLower.includes('youtube.com/') || urlLower.includes('youtu.be/') || urlLower.includes('m.youtube.com')) {return 'YOUTUBE';}
+        if (urlLower.includes('twitter.com/') || urlLower.includes('x.com/')) {return 'TWITTER';}
+        if (urlLower.includes('tiktok.com/@') || urlLower.includes('tiktok.com/')) {return 'TIKTOK';}
+        return null;
+    };
+
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -268,26 +297,45 @@ export default function SettingsPage() {
             return;
         }
 
+        // === АВТООПРЕДЕЛЕНИЕ ПЛАТФОРМЫ ===
+        const detectedPlatform = detectPlatformByUrl(url);
+        
+        if (!detectedPlatform) {
+            setLinksError('Не удалось определить платформу. Добавьте ссылку на VK, Telegram, YouTube, Twitter или TikTok');
+            return;
+        }
+
+        // Проверяем, не существует ли уже ссылка на эту платформу (для новых ссылок)
+        if (!editingLinkId) {
+            const existingLink = links.find(l => l.platform === detectedPlatform);
+            if (existingLink) {
+                setLinksError(`Ссылка на ${detectedPlatform} уже существует`);
+                return;
+            }
+        }
+
         try {
             setLinksLoading(true);
             setLinksError(null);
 
-            // Форматируем URL через хелпер из API
-            const formattedUrl = linksApi.utils.formatFullUrl('TELEGRAM', url); // platform пока заглушка
+            // Форматируем URL через хелпер из API с ОПРЕДЕЛЁННОЙ платформой
+            const formattedUrl = linksApi.utils.formatFullUrl(detectedPlatform, url);
             
             let result;
             if (editingLinkId) {
-                result = await linksApi.updateLink(editingLinkId, 'TELEGRAM', formattedUrl, {
-                    visible: links.find(l => l.id === editingLinkId)?.visible ?? true,
-                    displayOrder: links.find(l => l.id === editingLinkId)?.displayOrder ?? 0
+                // При редактировании сохраняем существующую платформу
+                const existingLink = links.find(l => l.id === editingLinkId);
+                result = await linksApi.updateLink(editingLinkId, existingLink.platform, formattedUrl, {
+                    visible: existingLink.visible ?? true,
+                    displayOrder: existingLink.displayOrder ?? 0
                 });
                 setLinks(prev => prev.map(l => l.id === editingLinkId ? result : l));
             } else {
-                // Добавление новой — используем newLinkVisible
+                // Добавление новой
                 const nextOrder = links.length > 0 
                     ? Math.max(...links.map(l => l.displayOrder ?? 0)) + 1 
                     : 0;
-                result = await linksApi.addLink('TELEGRAM', formattedUrl, {
+                result = await linksApi.addLink(detectedPlatform, formattedUrl, {
                     visible: newLinkVisible,
                     displayOrder: nextOrder
                 });
@@ -414,11 +462,7 @@ export default function SettingsPage() {
         </form>
 
         <div className={styles.linksSection}>
-            <h2 className={styles.sectionTitle}>Социальные сети</h2>
-            
-            {/* Сообщения */}
-            {linksError && <div className={styles.errorMessage}>{linksError}</div>}
-            
+            <h2 className={styles.sectionTitle}>Социальные сети</h2>    
             {/* Список существующих ссылок */}
             <div className={styles.linksList}>
                 {linksLoading && links.length === 0 ? (
@@ -465,9 +509,14 @@ export default function SettingsPage() {
                                     // === РЕЖИМ ПРОСМОТРА ===
                                     <>
                                         <div className={styles.linkInfo}>
-                                            <span className={styles.linkIcon}>{formatted?.icon}</span>
+                                            <img 
+                                                src={getPlatformIconSrc(link.platform)} 
+                                                alt={formatted?.platformLabel}
+                                                className={styles.linkIcon}
+                                                width={24}
+                                                height={24}
+                                            />
                                             <div className={styles.linkDetails}>
-                                                <span className={styles.linkPlatform}>{formatted?.platformLabel}</span>
                                                 <a 
                                                     href={formatted?.fullUrl} 
                                                     target="_blank" 
@@ -521,6 +570,8 @@ export default function SettingsPage() {
                     })
                 )}
             </div>
+
+            {linksError && <div className={styles.errorMessage}>{linksError}</div>}
 
             <form onSubmit={handleSaveLink} className={styles.linkForm}>
                 <input

@@ -8,7 +8,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 
 export default function ForgotPassword() {
     const navigate = useNavigate();
-    const { forgotPassword } = useAuth();
+    const { user, isAuthenticated, forgotPassword } = useAuth();
     const notification = useNotification();
     
     const [email, setEmail] = useState('');
@@ -36,6 +36,12 @@ export default function ForgotPassword() {
         const error = validateEmail(email);
         setErrors(prev => ({ ...prev, email: error }));
     };
+
+    useEffect(() => {
+        if (isAuthenticated && user?.email && !email) {
+            setEmail(user.email);
+        }
+    }, [isAuthenticated, user?.email]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -138,10 +144,25 @@ export default function ForgotPassword() {
                         />
                         
                         <p className={styles.footerText}>
-                            Вспомнили пароль?{' '}
-                            <Link to="/login" className={styles.link}>
-                                Войти
-                            </Link>
+                            {isAuthenticated ? (
+                                <>
+                                    Не сейчас?{' '}
+                                    <button 
+                                        type="button" 
+                                        className={styles.link} 
+                                        onClick={() => navigate(-1)}
+                                    >
+                                        Назад
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    Вспомнили пароль?{' '}
+                                    <Link to="/login" className={styles.link}>
+                                        Войти
+                                    </Link>
+                                </>
+                            )}
                         </p>
                     </div>
                 </form>
