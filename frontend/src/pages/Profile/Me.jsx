@@ -8,7 +8,7 @@ import { artApi } from '../../api/artApi';
 import { useNotification } from '../../contexts/NotificationContext';
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
-import editIcon from '../../assets/edit-profile-icon.svg';
+import editIcon from '../../assets/edit-icon.svg';
 import createIcon from '../../assets/create-icon.svg';
 import privacyIcon from '../../assets/private-edit.svg';
 import deleteIcon from '../../assets/delete-icon.svg';

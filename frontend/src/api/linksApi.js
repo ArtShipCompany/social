@@ -35,13 +35,13 @@ const formatLinksList = (data) => {
 // Получение иконки платформы (можно расширить)
 const getPlatformIcon = (platform) => {
   const icons = {
-    TELEGRAM: '📱',
-    VKONTAKTE: '💬',
-    YOUTUBE: '🎬',
-    TWITTER: '🐦',
-    TIKTOK: '🎵',
+    TELEGRAM: 'TG',
+    VKONTAKTE: 'VK',
+    YOUTUBE: 'YT',
+    TWITTER: 'X',
+    TIKTOK: 'TT',
   };
-  return icons[platform] || '🔗';
+  return icons[platform] || 'link';
 };
 
 // Получение базового URL платформы
@@ -68,6 +68,15 @@ const formatFullUrl = (platform, input) => {
     return `${baseUrl}${username}`;
   }
   return input;
+};
+
+const extractUsername = (platform, fullUrl) => {
+    if (!fullUrl) return '';
+    const baseUrl = getPlatformBaseUrl(platform);
+    if (baseUrl && fullUrl.startsWith(baseUrl)) {
+      return fullUrl.replace(baseUrl, '').replace(/^@/, '');
+    }
+    return fullUrl;
 };
 
 export const linksApi = {
@@ -209,14 +218,7 @@ export const linksApi = {
   },
   
   // Парсинг юзернейма из полного URL (обратная операция)
-  extractUsername(platform, fullUrl) {
-    if (!fullUrl) return '';
-    const baseUrl = getPlatformBaseUrl(platform);
-    if (baseUrl && fullUrl.startsWith(baseUrl)) {
-      return fullUrl.replace(baseUrl, '').replace(/^@/, '');
-    }
-    return fullUrl;
-  },
+
   
   // === EXPORT UTILS ===
   

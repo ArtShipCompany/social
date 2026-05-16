@@ -9,7 +9,7 @@ import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
 import CreateIcon from '../../assets/create.svg';
-import editIcon from '../../assets/edit-profile-icon.svg';
+import editIcon from '../../assets/edit-icon.svg';
 import lockIcon from '../../assets/private-icon.svg'
 import PFP from '../../assets/WA.jpg';
 import { artApi } from '../../api/artApi';
