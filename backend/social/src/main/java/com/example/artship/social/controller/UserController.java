@@ -46,6 +46,7 @@ import jakarta.validation.constraints.Size;
 
 import com.example.artship.social.service.ArtService;
 import com.example.artship.social.service.CollectionService;
+import com.example.artship.social.service.CommentLikeService;
 import com.example.artship.social.service.CommentService;
 import com.example.artship.social.service.FollowService;
 import com.example.artship.social.service.LikeService;
@@ -78,6 +79,9 @@ public class UserController {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private CommentLikeService commentLikeService;
 
     
     @GetMapping("/public/{id}")
@@ -498,7 +502,6 @@ public class UserController {
         
         User user = userOpt.get();
         Long userId = user.getId();
-        String username = user.getUsername();
         
         
         try {
@@ -520,6 +523,8 @@ public class UserController {
             likeService.deleteAllUserLikes(userId);
             
             collectionService.deleteAllUserCollections(userId);
+
+            commentLikeService.deleteAllLikesByUserId(userId);
             
             userService.deleteVerificationTokens(userId);
             

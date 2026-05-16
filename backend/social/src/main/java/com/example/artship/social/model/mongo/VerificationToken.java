@@ -21,7 +21,7 @@ public class VerificationToken {
     
     private LocalDateTime createdAt;
     
-    @Indexed(expireAfterSeconds = 0)
+    @Indexed()
     private LocalDateTime expiryDate;
     
     private boolean used;

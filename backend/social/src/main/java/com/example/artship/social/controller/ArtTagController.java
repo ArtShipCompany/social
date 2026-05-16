@@ -28,14 +28,11 @@ public class ArtTagController {
     
     private final ArtTagService artTagService;
     private final TagManagementService tagManagementService; 
-    private final TagService tagService;
-    
     public ArtTagController(ArtTagService artTagService, 
                            TagManagementService tagManagementService,
                            TagService tagService) {
         this.artTagService = artTagService;
         this.tagManagementService = tagManagementService;
-        this.tagService = tagService;
     }
     
     

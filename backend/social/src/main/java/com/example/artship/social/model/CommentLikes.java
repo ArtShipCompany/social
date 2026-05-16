@@ -1,13 +1,12 @@
 package com.example.artship.social.model;
 
-
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+
 @Entity
-@Table(name = "likes")
-@IdClass(Like.LikeId.class)
-public class Like {
+@Table(name = "comment_likes")
+public class CommentLikes {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -15,17 +14,17 @@ public class Like {
     
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "art_id", nullable = false)
-    private Art art;
+    @JoinColumn(name = "comment_id", nullable = false)
+    private Comment comment;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
-    public Like() {}
+    public CommentLikes() {}
     
-    public Like(User user, Art art) {
+    public CommentLikes(User user, Comment comment) {
         this.user = user;
-        this.art = art;
+        this.comment = comment;
     }
     
     @PrePersist
@@ -35,29 +34,29 @@ public class Like {
     
     
     public User getUser() { return user; }
-    public Art getArt() { return art; }
+    public Comment getComment() { return comment; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     
     public void setUser(User user) { this.user = user; }
-    public void setArt(Art art) { this.art = art; }
+    public void setSomment(Comment comment) { this.comment = comment; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Like like)) return false;
-        return user != null && user.equals(like.user) && art != null && art.equals(like.art);
+        if (!(o instanceof CommentLikes like)) return false;
+        return user != null && user.equals(like.user) && comment != null && comment.equals(like.comment);
     }
     
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(user, art);
+        return java.util.Objects.hash(user, comment);
     }
     
     @Override
     public String toString() {
         return "Like{user=" + (user != null ? user.getUsername() : "null") + 
-               ", art=" + (art != null ? art.getId() : "null") + "}";
+               ", comment =" + (comment != null ? comment.getId() : "null") + "}";
     }
 
     public static class LikeId implements java.io.Serializable {
@@ -91,4 +90,3 @@ public class Like {
         }
     }
 }
-

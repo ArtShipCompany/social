@@ -2,7 +2,7 @@ package com.example.artship.social.service;
 
 import com.example.artship.social.dto.LikeDto;
 import com.example.artship.social.model.Art;
-import com.example.artship.social.model.Like;
+import com.example.artship.social.model.ArtLikes;
 import com.example.artship.social.model.User;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.LikeRepository;
@@ -41,8 +41,8 @@ public class LikeService {
             throw new RuntimeException("Like already exists");
         }
         
-        Like like = new Like(user, art);
-        Like savedLike = likeRepository.save(like);
+        ArtLikes like = new ArtLikes(user, art);
+        ArtLikes savedLike = likeRepository.save(like);
         return new LikeDto(savedLike);
     }
     
@@ -60,7 +60,7 @@ public class LikeService {
     // Получение лайков арта (с пагинацией)
     @Transactional(readOnly = true)
     public Page<LikeDto> getLikesByArtId(Long artId, Pageable pageable) {
-        Page<Like> likesPage = likeRepository.findByArtId(artId, pageable);
+        Page<ArtLikes> likesPage = likeRepository.findByArtId(artId, pageable);
         
         List<LikeDto> dtos = likesPage.getContent().stream()
                 .map(LikeDto::new)
@@ -72,7 +72,7 @@ public class LikeService {
 
     @Transactional(readOnly = true)
     public Page<LikeDto> getLikesByUserId(Long userId, Pageable pageable) {
-        Page<Like> likesPage = likeRepository.findByUserId(userId, pageable);
+        Page<ArtLikes> likesPage = likeRepository.findByUserId(userId, pageable);
         
         List<LikeDto> dtos = likesPage.getContent().stream()
                 .map(LikeDto::new)
