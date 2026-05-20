@@ -4,13 +4,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userApi } from '../../api/userApi';
 import { followApi } from '../../api/followApi';
 import { artApi } from '../../api/artApi';
+import { linksApi } from '../../api/linksApi';
 import { useNotification } from '../../contexts/NotificationContext';
+
 import styles from './Profile.module.css';
+
 import PFP from '../../assets/WA.jpg';
 import sms from '../../assets/message-icon.svg';
+
 import ArtCard from '../../components/ArtCard/ArtCard';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
 import ProfileStats from '../../components/ProfileStats/ProfileStats';
+import SocialLinks from '../../components/SocialLinks/SocialLinks';
 
 export default function Profile() {
     const { userId } = useParams();
@@ -25,6 +30,7 @@ export default function Profile() {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
+    const [socialLinks, setSocialLinks] = useState([]);
 
     const getImageUrl = useCallback((imagePath) => {
         return artApi.utils?.getImageUrl?.(imagePath) || userApi.getFullUrl(imagePath) || PFP;
@@ -39,7 +45,6 @@ export default function Profile() {
             setLoading(true);
             setError(null);
             
-            // Пробуем приватный → публичный
             let userData;
             if (isAuthenticated) {
                 try {
@@ -72,6 +77,13 @@ export default function Profile() {
             } catch {
                 setFollowerCount(0);
                 setFollowingCount(0);
+            }
+            
+            try {
+                const linksData = await linksApi.getUserLinks(userId, true);
+                setSocialLinks(linksData.links || []);
+            } catch {
+                setSocialLinks([]);
             }
             
             // Проверка подписки
@@ -168,6 +180,8 @@ export default function Profile() {
                             followingCount={followingCount}
                         />
                         {user.bio && <div className={styles.bio}><span>{user.bio}</span></div>}
+
+                        <SocialLinks links={socialLinks} />
 
                         <div className={styles.buttonsCover}>
                             <button 

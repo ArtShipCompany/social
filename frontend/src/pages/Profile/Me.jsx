@@ -6,6 +6,9 @@ import { userApi } from '../../api/userApi';
 import { followApi } from '../../api/followApi';
 import { artApi } from '../../api/artApi';
 import { useNotification } from '../../contexts/NotificationContext';
+import SocialLinks from '../../components/SocialLinks/SocialLinks';
+import { linksApi } from '../../api/linksApi';
+
 import styles from './Me.module.css';
 import PFP from '../../assets/WA.jpg';
 import editIcon from '../../assets/edit-icon.svg';
@@ -23,6 +26,9 @@ export default function Me() {
     const navigate = useNavigate();
     const { user: currentUser, isAuthenticated, logout } = useAuth();
     const notification = useNotification();
+
+    // ссыли соц сети
+    const [socialLinks, setSocialLinks] = useState([]);
     
     const [userArts, setUserArts] = useState([]);
     const [followerCount, setFollowerCount] = useState(0);
@@ -58,6 +64,10 @@ export default function Me() {
             const counts = await followApi.getFollowCounts(currentUser.id);
             setFollowerCount(counts?.followers ?? 0);
             setFollowingCount(counts?.following ?? 0);
+
+            const linksData = await linksApi.getMyLinks(true);
+            setSocialLinks(linksData.links || []);
+            
         } catch (err) {
             console.error('[Me] Ошибка загрузки:', err);
             notification.error('Не удалось загрузить данные профиля');
@@ -256,6 +266,8 @@ export default function Me() {
                         />
                         {currentUser?.bio && <div className={styles.bio}><span>{currentUser.bio}</span></div>}
                         
+                        <SocialLinks links={socialLinks} />
+
                         <div className={styles.buttonsCover}>
                             <ProfileOptionsMenu 
                                 isOpen={isHeadMenuOpen}
