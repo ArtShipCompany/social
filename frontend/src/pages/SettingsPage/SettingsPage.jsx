@@ -4,8 +4,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getAuthToken } from '../../api/authApi';
 import { userApi } from '../../api/userApi';
 import { linksApi } from '../../api/linksApi';
+import { useNotification } from '../../contexts/NotificationContext';
+
 import styles from './SettingsPage.module.css'
+
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import DefaultBtn from '../../components/DefaultBtn/DefaultBtn';
+
 import PhotoIcon from '../../assets/edit-pfp.svg';
 import deleteIcon from '../../assets/delete-icon.svg';
 import blankPfp from '../../assets/blank-pfp.svg';
@@ -21,6 +26,7 @@ import tiktokIcon from '../../assets/tiktok.svg';
 import defaultLinkIcon from '../../assets/link.svg';
 
 export default function SettingsPage() {
+    const notification = useNotification();
     const MAX_LENGTH = 100;
     const PLATFORM_ICONS = {
         TELEGRAM: telegramIcon,
@@ -70,6 +76,7 @@ export default function SettingsPage() {
         return null;
     };
 
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -242,11 +249,7 @@ export default function SettingsPage() {
             }
 
             setSuccess(true);
-
-            setTimeout(() => {
-                navigate('/me');
-            }, 500);
-
+            notification.success('Профиль обновлен', 3000);
         } catch (err) {
             console.error('Ошибка обновления профиля:', err);
             setError(err.message || 'Не удалось обновить профиль');
@@ -370,6 +373,27 @@ export default function SettingsPage() {
             // Откат при ошибке
             setLinks(prev => prev.map(l => l.id === link.id ? { ...l, visible: link.visible } : l));
             setLinksError('Ошибка обновления видимости');
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        try {
+            setLoading(true);
+            await userApi.deleteAccount();
+            
+            // Очищаем всё
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            setUser(null);
+            
+            // Перенаправляем на главную
+            navigate('/');
+        } catch (err) {
+            console.error('Ошибка удаления аккаунта:', err);
+            setError(err.message || 'Не удалось удалить аккаунт');
+        } finally {
+            setLoading(false);
+            setIsDeleteModalOpen(false);
         }
     };
 
@@ -619,10 +643,18 @@ export default function SettingsPage() {
                 <DefaultBtn
                     type="button"
                     text="Удалить"
-                    onClick={() => navigate('/')}
+                    onClick={() => setIsDeleteModalOpen(true)}
                 />
             </div>
         </div>
+
+        <ConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDeleteAccount}
+            title="Удалить аккаунт?"
+            message="Это действие необратимо. Все ваши данные будут удалены."
+        />
         </>
     );
 }
