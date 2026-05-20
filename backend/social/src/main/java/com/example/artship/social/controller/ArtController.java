@@ -53,7 +53,6 @@ public class ArtController {
         this.permissionService = permissionService;
     }
     
-    // ==================== CREATE ====================
     
     @Operation(
         summary = "Создать новый арт",
@@ -122,9 +121,7 @@ public class ArtController {
         
         return new ResponseEntity<>(createdArt, HttpStatus.CREATED);
     }
-    
-    // ==================== UPDATE ====================
-    
+        
     @Operation(summary = "Обновить арт")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Арт успешно обновлен"),
@@ -338,8 +335,7 @@ public class ArtController {
         
         return ResponseEntity.noContent().build();
     }
-    
-    // ==================== GET ====================
+
     
     @Operation(summary = "Получить арт по ID")
     @ApiResponses({

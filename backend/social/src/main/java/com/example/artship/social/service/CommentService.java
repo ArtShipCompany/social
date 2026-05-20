@@ -31,11 +31,16 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final ArtRepository artRepository;
+    private final CommentLikeService commentLikeService;  // ← Добавить
     
-    public CommentService(CommentRepository commentRepository, UserRepository userRepository, ArtRepository artRepository) {
+    public CommentService(CommentRepository commentRepository, 
+                         UserRepository userRepository, 
+                         ArtRepository artRepository,
+                         CommentLikeService commentLikeService) {  // ← Добавить
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.artRepository = artRepository;
+        this.commentLikeService = commentLikeService;
     }
 
     public Optional<Comment> getCommentEntityById(Long id) {
@@ -50,12 +55,10 @@ public class CommentService {
         if (text == null || text.trim().isEmpty()) {
             throw new IllegalArgumentException("Comment text cannot be empty");
         }
-        
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
-   
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
 
@@ -65,9 +68,8 @@ public class CommentService {
         comment.setArt(art);
         comment.setCreatedAt(LocalDateTime.now());
         
-        Comment parentComment = null;
         if (parentCommentId != null && parentCommentId > 0) {
-            parentComment = commentRepository.findById(parentCommentId)
+            Comment parentComment = commentRepository.findById(parentCommentId)
                     .orElseThrow(() -> new RuntimeException("Parent comment not found with id: " + parentCommentId));
             
             if (!parentComment.getArt().getId().equals(artId)) {
@@ -80,25 +82,26 @@ public class CommentService {
         Comment savedComment = commentRepository.save(comment);
         log.info("Comment created successfully with ID: {}", savedComment.getId());
         
-        return new CommentDto(savedComment, parentCommentId);
+        return convertToDto(savedComment, null);
     }
     
-    // Получение комментария по ID
+    // Получение комментария по ID (с лайками)
     @Transactional(readOnly = true)
-    public Optional<CommentDto> getCommentById(Long id) {
+    public Optional<CommentDto> getCommentById(Long id, Long currentUserId) {
         log.debug("Getting comment by ID: {}", id);
         
         return commentRepository.findById(id)
-                .map(comment -> {
-                    Long parentId = comment.getParentComment() != null 
-                            ? comment.getParentComment().getId() 
-                            : null;
-                    return new CommentDto(comment, parentId);
-                });
+                .map(comment -> convertToDto(comment, currentUserId));
+    }
+    
+    // Получение комментария по ID (без лайков - для обратной совместимости)
+    @Transactional(readOnly = true)
+    public Optional<CommentDto> getCommentById(Long id) {
+        return getCommentById(id, null);
     }
     
     // Обновление комментария
-    public CommentDto updateComment(Long id, String text) {
+    public CommentDto updateComment(Long id, String text, Long currentUserId) {
         log.info("Updating comment {} with text: {}", id, text);
         
         if (text == null || text.trim().isEmpty()) {
@@ -108,15 +111,16 @@ public class CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
         
+        // Проверка прав: только автор может редактировать
+        if (!comment.getUser().getId().equals(currentUserId)) {
+            throw new RuntimeException("You don't have permission to edit this comment");
+        }
+        
         comment.setText(text.trim());
         Comment updatedComment = commentRepository.save(comment);
         
-        Long parentId = updatedComment.getParentComment() != null 
-                ? updatedComment.getParentComment().getId() 
-                : null;
-        
         log.info("Comment {} updated successfully", id);
-        return new CommentDto(updatedComment, parentId);
+        return convertToDto(updatedComment, currentUserId);
     }
     
     // Удаление комментария
@@ -127,13 +131,16 @@ public class CommentService {
             throw new RuntimeException("Comment not found with id: " + id);
         }
         
+        // Удаляем лайки комментария
+        commentLikeService.deleteAllLikesByCommentId(id);
+        
         commentRepository.deleteById(id);
         log.info("Comment {} deleted successfully", id);
     }
     
     // Получение корневых комментариев арта с ответами (с пагинацией)
     @Transactional(readOnly = true)
-    public Page<CommentDto> getRootCommentsWithReplies(Long artId, Pageable pageable) {
+    public Page<CommentDto> getRootCommentsWithReplies(Long artId, Pageable pageable, Long currentUserId) {
         log.debug("Getting root comments with replies for art ID: {} with pagination: page={}, size={}", 
                  artId, pageable.getPageNumber(), pageable.getPageSize());
         
@@ -141,16 +148,13 @@ public class CommentService {
         
         List<CommentDto> dtos = rootCommentsPage.getContent().stream()
                 .map(rootComment -> {
-                    Long parentId = rootComment.getParentComment() != null 
-                            ? rootComment.getParentComment().getId() 
-                            : null;
-                    CommentDto dto = new CommentDto(rootComment, parentId);
+                    CommentDto dto = convertToDto(rootComment, currentUserId);
                     
-                    // Получаем ТОЛЬКО ПЕРВЫЕ НЕСКОЛЬКО ответов для предпросмотра
-                    Pageable repliesPageable = PageRequest.of(0, 3); // Показываем только первые 3 ответа
-                    Page<CommentDto> replies = getRepliesByCommentId(rootComment.getId(), repliesPageable);
+                    Pageable repliesPageable = PageRequest.of(0, 3); 
+                    Page<CommentDto> replies = getRepliesByCommentId(rootComment.getId(), repliesPageable, currentUserId);
                     dto.setReplies(replies.getContent());
                     dto.setTotalReplies(commentRepository.countByParentCommentId(rootComment.getId()));
+                    dto.setReplyCount(replies.getContent().size());
                     
                     return dto;
                 })
@@ -161,14 +165,14 @@ public class CommentService {
     
     // Получение ответов на комментарий (с пагинацией)
     @Transactional(readOnly = true)
-    public Page<CommentDto> getRepliesByCommentId(Long commentId, Pageable pageable) {
+    public Page<CommentDto> getRepliesByCommentId(Long commentId, Pageable pageable, Long currentUserId) {
         log.debug("Getting replies for comment ID: {} with pagination: page={}, size={}", 
                  commentId, pageable.getPageNumber(), pageable.getPageSize());
         
         Page<Comment> repliesPage = commentRepository.findRepliesByParentCommentId(commentId, pageable);
         
         List<CommentDto> dtos = repliesPage.getContent().stream()
-                .map(reply -> new CommentDto(reply, commentId))
+                .map(reply -> convertToDto(reply, currentUserId))
                 .collect(Collectors.toList());
         
         return new PageImpl<>(dtos, pageable, repliesPage.getTotalElements());
@@ -176,32 +180,25 @@ public class CommentService {
     
     // Получение комментариев пользователя (с пагинацией)
     @Transactional(readOnly = true)
-    public Page<CommentDto> getCommentsByUserId(Long userId, Pageable pageable) {
+    public Page<CommentDto> getCommentsByUserId(Long userId, Pageable pageable, Long currentUserId) {
         log.debug("Getting comments for user ID: {} with pagination: page={}, size={}", 
                  userId, pageable.getPageNumber(), pageable.getPageSize());
         
         Page<Comment> commentsPage = commentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         
         List<CommentDto> dtos = commentsPage.getContent().stream()
-                .map(comment -> {
-                    Long parentId = comment.getParentComment() != null 
-                            ? comment.getParentComment().getId() 
-                            : null;
-                    return new CommentDto(comment, parentId);
-                })
+                .map(comment -> convertToDto(comment, currentUserId))
                 .collect(Collectors.toList());
         
         return new PageImpl<>(dtos, pageable, commentsPage.getTotalElements());
     }
     
-    // Количество комментариев арта
     @Transactional(readOnly = true)
     public Long getCommentCountByArtId(Long artId) {
         log.debug("Getting comment count for art ID: {}", artId);
         return commentRepository.countByArtId(artId);
     }
     
-    // Количество комментариев пользователя
     @Transactional(readOnly = true)
     public Long getCommentCountByUserId(Long userId) {
         log.debug("Getting comment count for user ID: {}", userId);
@@ -210,14 +207,23 @@ public class CommentService {
 
     @Transactional
     public void deleteAllCommentsByArtId(Long artId) {
-        commentRepository.deleteByArtId(artId);
+        List<Comment> comments = commentRepository.findByArtId(artId);
         
+        for (Comment comment : comments) {
+            commentLikeService.deleteAllLikesByCommentId(comment.getId());
+        }
+        
+        commentRepository.deleteByArtId(artId);
     }
 
     @Transactional
     public void deleteAllUserComments(Long userId) {
-        commentRepository.anonymizeUserComments(userId);
-        
+        // Сначала удаляем лайки комментариев пользователя
+        List<Comment> comments = commentRepository.findByUserId(userId);
+        for (Comment comment : comments) {
+            commentLikeService.deleteAllLikesByCommentId(comment.getId());
+        }
+        commentRepository.deleteByUserId(userId);
     }
         
     // Дополнительный метод для подсчета ответов
@@ -228,7 +234,6 @@ public class CommentService {
 
     @Transactional
     public void hideComment(Long commentId) {
-        
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
         
@@ -240,7 +245,6 @@ public class CommentService {
 
     @Transactional
     public void unhideComment(Long commentId) {
-        
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
         
@@ -248,6 +252,22 @@ public class CommentService {
         
         commentRepository.save(comment);
     }
-
-
+    
+    // Конвертация Comment в CommentDto с информацией о лайках
+    private CommentDto convertToDto(Comment comment, Long currentUserId) {
+        long likesCount = commentLikeService.getLikesCount(comment.getId());
+        boolean isLiked = currentUserId != null && 
+                          commentLikeService.isLikedByUser(currentUserId, comment.getId());
+        
+        CommentDto dto = new CommentDto(comment);
+        dto.setLikesCount(likesCount);
+        dto.setLikedByCurrentUser(isLiked);
+        
+        Long parentId = comment.getParentComment() != null 
+                ? comment.getParentComment().getId() 
+                : null;
+        dto.setParentCommentId(parentId);
+        
+        return dto;
+    }
 }

@@ -45,7 +45,7 @@ public class CommentController {
         this.permissionService = permissionService;
     }
     
-    // Создание комментария (с проверкой авторизации)
+    // Создание комментария
     @Operation(summary = "Создать комментарий")
     @PostMapping
     public ResponseEntity<?> createComment(
@@ -54,12 +54,10 @@ public class CommentController {
         
         logger.info("=== СОЗДАНИЕ КОММЕНТАРИЯ ===");
         
-        // Проверка авторизации
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // Получение пользователя
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -88,45 +86,110 @@ public class CommentController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+    
+    // Обновление комментария
+    @Operation(summary = "Обновить комментарий")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateComment(
+            @PathVariable Long id,
+            @RequestBody CommentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
+        logger.info("=== ОБНОВЛЕНИЕ КОММЕНТАРИЯ ID: {} ===", id);
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        User currentUser = userOpt.get();
+        
+        try {
+            CommentDto updatedComment = commentService.updateComment(id, request.getText(), currentUser.getId());
+            return ResponseEntity.ok(updatedComment);
+        } catch (RuntimeException e) {
+            logger.error("Ошибка обновления комментария: {}", e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+    
     // Получение комментария по ID
     @Operation(summary = "Получить комментарий по ID")
     @GetMapping("/{id}")
-    public ResponseEntity<CommentDto> getComment(@PathVariable Long id) {
+    public ResponseEntity<CommentDto> getComment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
         logger.debug("Получение комментария по ID: {}", id);
         
-        Optional<CommentDto> comment = commentService.getCommentById(id);
+        Long currentUserId = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUserId = userOpt.map(User::getId).orElse(null);
+        }
+        
+        Optional<CommentDto> comment = commentService.getCommentById(id, currentUserId);
         return comment.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
     }
     
-    // Корневые комментарии арта с ответами (с пагинацией)
+    // Корневые комментарии арта с ответами
     @Operation(summary = "Получить корневые комментарии арта с ответами")
     @GetMapping("/art/{artId}/root")
     public ResponseEntity<Page<CommentDto>> getRootCommentsWithReplies(
             @PathVariable Long artId,
-            @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommentDto> comments = commentService.getRootCommentsWithReplies(artId, pageable);
+            @PageableDefault(size = 10) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        Long currentUserId = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUserId = userOpt.map(User::getId).orElse(null);
+        }
+        
+        Page<CommentDto> comments = commentService.getRootCommentsWithReplies(artId, pageable, currentUserId);
         return ResponseEntity.ok(comments);
     }
     
-    // Ответы на комментарий (с пагинацией)
+    // Ответы на комментарий
     @Operation(summary = "Получить ответы на комментарий")
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<Page<CommentDto>> getReplies(
             @PathVariable Long commentId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        Page<CommentDto> replies = commentService.getRepliesByCommentId(commentId, pageable);
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        Long currentUserId = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUserId = userOpt.map(User::getId).orElse(null);
+        }
+        
+        Page<CommentDto> replies = commentService.getRepliesByCommentId(commentId, pageable, currentUserId);
         return ResponseEntity.ok(replies);
     }
     
-    // Комментарии пользователя (с пагинацией)
+    // Комментарии пользователя
     @Operation(summary = "Получить комментарии пользователя")
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<CommentDto>> getCommentsByUser(
             @PathVariable Long userId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        Page<CommentDto> comments = commentService.getCommentsByUserId(userId, pageable);
+            @PageableDefault(size = 20) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        Long currentUserId = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUserId = userOpt.map(User::getId).orElse(null);
+        }
+        
+        Page<CommentDto> comments = commentService.getCommentsByUserId(userId, pageable, currentUserId);
         return ResponseEntity.ok(comments);
     }
     
@@ -145,10 +208,8 @@ public class CommentController {
         Long count = commentService.getCommentCountByUserId(userId);
         return ResponseEntity.ok(count);
     }
-
     
-    
-    // Удаление комментария 
+    // Удаление комментария
     @Operation(summary = "Удалить комментарий (автор, модератор или администратор)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(

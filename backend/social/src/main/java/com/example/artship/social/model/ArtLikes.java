@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "likes")
-@IdClass(Like.LikeId.class)
-public class Like {
+@Table(name = "art_likes")
+@IdClass(ArtLikes.LikeId.class)
+public class ArtLikes {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -21,9 +21,9 @@ public class Like {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
-    public Like() {}
+    public ArtLikes() {}
     
-    public Like(User user, Art art) {
+    public ArtLikes(User user, Art art) {
         this.user = user;
         this.art = art;
     }
@@ -45,7 +45,7 @@ public class Like {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Like like)) return false;
+        if (!(o instanceof ArtLikes like)) return false;
         return user != null && user.equals(like.user) && art != null && art.equals(like.art);
     }
     

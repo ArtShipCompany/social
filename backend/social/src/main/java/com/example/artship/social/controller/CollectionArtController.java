@@ -2,6 +2,8 @@ package com.example.artship.social.controller;
 
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.dto.CollectionArtDto;
+import com.example.artship.social.requests.CopyArtRequest;
+import com.example.artship.social.requests.MoveArtRequest;
 import com.example.artship.social.service.CollectionArtService;
 
 import org.springframework.data.domain.Page;
@@ -12,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -132,23 +133,4 @@ public class CollectionArtController {
         }
     }
     
-    // DTO для перемещения арта
-    public static class MoveArtRequest {
-        private Long fromCollectionId;
-        private Long toCollectionId;
-        
-        public Long getFromCollectionId() { return fromCollectionId; }
-        public void setFromCollectionId(Long fromCollectionId) { this.fromCollectionId = fromCollectionId; }
-        
-        public Long getToCollectionId() { return toCollectionId; }
-        public void setToCollectionId(Long toCollectionId) { this.toCollectionId = toCollectionId; }
-    }
-    
-    // DTO для копирования арта
-    public static class CopyArtRequest {
-        private Long collectionId;
-        
-        public Long getCollectionId() { return collectionId; }
-        public void setCollectionId(Long collectionId) { this.collectionId = collectionId; }
-    }
 }

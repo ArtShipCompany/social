@@ -3,6 +3,7 @@ package com.example.artship.social.repository;
 import com.example.artship.social.model.Collection;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,4 +47,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
     boolean existsByUserIdAndTitle(Long userId, String title);
 
     void deleteByUserId(Long userId);
+
+
+    Optional<Collection> findByUserIdAndTitle(Long userId, String title);
 }

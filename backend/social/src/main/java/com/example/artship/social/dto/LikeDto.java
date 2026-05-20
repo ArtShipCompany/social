@@ -1,6 +1,6 @@
 package com.example.artship.social.dto;
 
-import com.example.artship.social.model.Like;
+import com.example.artship.social.model.ArtLikes;
 import java.time.LocalDateTime;
 
 public class LikeDto {
@@ -12,7 +12,7 @@ public class LikeDto {
 
     public LikeDto() {}
 
-    public LikeDto(Like like) {
+    public LikeDto(ArtLikes like) {
         this.userId = like.getUser() != null ? like.getUser().getId() : null;
         this.username = like.getUser() != null ? like.getUser().getUsername() : null;
         this.artId = like.getArt() != null ? like.getArt().getId() : null;

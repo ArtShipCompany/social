@@ -43,7 +43,6 @@ public interface CollectionArtRepository extends JpaRepository<CollectionArt, Lo
     @Modifying
     void deleteByArtId(Long artId);
     
-    // ==================== НОВЫЕ МЕТОДЫ С УЧЕТОМ СТАТУСА ====================
     
     /**
      * Получение артов коллекции с фильтром по статусу арта (с пагинацией)

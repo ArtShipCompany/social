@@ -67,14 +67,6 @@ public class LikeController {
         return ResponseEntity.ok(likes);
     }
     
-    // Лайки пользователя (с пагинацией)
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<LikeDto>> getLikesByUser(
-            @PathVariable Long userId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        Page<LikeDto> likes = likeService.getLikesByUserId(userId, pageable);
-        return ResponseEntity.ok(likes);
-    }
     
     // Количество лайков арта
     @GetMapping("/art/{artId}/count")
@@ -83,10 +75,5 @@ public class LikeController {
         return ResponseEntity.ok(count);
     }
     
-    // Количество лайков пользователя
-    @GetMapping("/user/{userId}/count")
-    public ResponseEntity<Long> getLikeCountByUser(@PathVariable Long userId) {
-        Long count = likeService.getLikeCountByUserId(userId);
-        return ResponseEntity.ok(count);
-    }
+
 }
