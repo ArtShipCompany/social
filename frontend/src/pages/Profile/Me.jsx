@@ -219,14 +219,16 @@ export default function Me() {
             icon: privacyIcon,
             alt: 'Приватность',
             title: 'Изменить приватность',
-            onClick: () => setShowPrivacyIcons(prev => !prev)
+            onClick: () => setShowPrivacyIcons(prev => !prev),
+            closeOnClick: false
         },
         {
             key: 'delete',
             icon: deleteIcon,
             alt: 'Удалить',
             title: 'Удалить арт',
-            onClick: () => setShowDeleteIcons(prev => !prev)
+            onClick: () => setShowDeleteIcons(prev => !prev),
+            closeOnClick: false
         },
         {
             key: 'create',
@@ -234,7 +236,8 @@ export default function Me() {
             alt: 'Создать',
             title: 'Создать арт',
             onClick: handleCreateClick,
-            className: styles.createIcon
+            className: styles.createIcon,
+            closeOnClick: false
         }
     ];
 
