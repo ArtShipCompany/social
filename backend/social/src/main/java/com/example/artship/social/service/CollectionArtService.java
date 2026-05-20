@@ -5,7 +5,6 @@ import com.example.artship.social.dto.CollectionArtDto;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.Collection;
 import com.example.artship.social.model.CollectionArt;
-import com.example.artship.social.model.User;
 import com.example.artship.social.model.enumclass.ArtStatus;
 import com.example.artship.social.repository.ArtRepository;
 import com.example.artship.social.repository.CollectionArtRepository;
@@ -13,8 +12,8 @@ import com.example.artship.social.repository.CollectionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,51 +42,39 @@ public class CollectionArtService {
         this.artService = artService;
     }
     
-    // Добавление арта в коллекцию
     public CollectionArtDto addArtToCollection(Long collectionId, Long artId) {
         log.info("Adding art {} to collection {}", artId, collectionId);
         
         Collection collection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> {
-                    log.error("Collection not found with id: {}", collectionId);
-                    return new RuntimeException("Collection not found with id: " + collectionId);
-                });
+                .orElseThrow(() -> new RuntimeException("Collection not found with id: " + collectionId));
         
         Art art = artRepository.findById(artId)
-                .orElseThrow(() -> {
-                    log.error("Art not found with id: {}", artId);
-                    return new RuntimeException("Art not found with id: " + artId);
-                });
+                .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
         
-        // Проверка: можно добавить только публичный арт или свой приватный
         if (!art.getIsPublicFlag() && !art.getAuthor().getId().equals(collection.getUser().getId())) {
-            String error = "Cannot add private art to collection. Art author: " + 
-                          art.getAuthor().getId() + ", Collection owner: " + collection.getUser().getId();
-            log.error(error);
-            throw new RuntimeException(error);
+            throw new RuntimeException("Cannot add private art to collection");
         }
         
-        // Проверка статуса арта (нельзя добавлять скрытые/удаленные/забаненные арты)
         if (art.getStatus() != ArtStatus.ACTIVE) {
-            String error = "Cannot add art with status: " + art.getStatus();
-            log.error(error);
-            throw new RuntimeException(error);
+            throw new RuntimeException("Cannot add art with status: " + art.getStatus());
         }
         
         if (collectionArtRepository.existsByCollectionIdAndArtId(collectionId, artId)) {
-            String error = "Art " + artId + " already exists in collection " + collectionId;
-            log.error(error);
-            throw new RuntimeException(error);
+            throw new RuntimeException("Art already exists in collection");
         }
         
         CollectionArt collectionArt = new CollectionArt(collection, art);
         CollectionArt savedCollectionArt = collectionArtRepository.save(collectionArt);
         
-        log.info("Successfully added art {} to collection {}", artId, collectionId);
+        if (collection.getCoverImageUrl() == null || collection.getCoverImageUrl().isEmpty()) {
+            collection.setCoverImageUrl(art.getImageUrl());
+            collectionRepository.save(collection);
+            log.info("Set cover image for collection {} from art {}", collectionId, artId);
+        }
+        
         return new CollectionArtDto(savedCollectionArt);
     }
     
-    // Удаление арта из коллекции
     public void removeArtFromCollection(Long collectionId, Long artId) {
         log.info("Removing art {} from collection {}", artId, collectionId);
         
@@ -97,44 +84,64 @@ public class CollectionArtService {
         }
         
         collectionArtRepository.deleteByCollectionIdAndArtId(collectionId, artId);
-        log.info("Successfully removed art {} from collection {}", artId, collectionId);
+        updateCollectionCoverIfNeeded(collectionId);
     }
     
-    // Удаление всех артов из коллекции
     public void removeAllArtsFromCollection(Long collectionId) {
         log.info("Removing all arts from collection {}", collectionId);
         
         Long count = collectionArtRepository.countByCollectionId(collectionId);
         collectionArtRepository.deleteByCollectionId(collectionId);
         
+        Collection collection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new RuntimeException("Collection not found with id: " + collectionId));
+        
+        collection.setCoverImageUrl(null);
+        collectionRepository.save(collection);
+        
         log.info("Removed {} arts from collection {}", count, collectionId);
     }
     
-    // Получение артов коллекции (с пагинацией) - без проверки прав, только активные
+    private void updateCollectionCoverIfNeeded(Long collectionId) {
+        Collection collection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new RuntimeException("Collection not found with id: " + collectionId));
+        
+        if (collection.getCoverImageUrl() == null) {
+            return;
+        }
+        
+        List<CollectionArt> arts = collectionArtRepository.findByCollectionId(collectionId);
+        
+        if (arts.isEmpty()) {
+            collection.setCoverImageUrl(null);
+            collectionRepository.save(collection);
+            log.info("Reset cover image for collection {}", collectionId);
+        } else {
+            String newCoverUrl = arts.get(0).getArt().getImageUrl();
+            if (!newCoverUrl.equals(collection.getCoverImageUrl())) {
+                collection.setCoverImageUrl(newCoverUrl);
+                collectionRepository.save(collection);
+                log.info("Updated cover image for collection {}", collectionId);
+            }
+        }
+    }
+    
     @Transactional(readOnly = true)
     public Page<ArtDto> getArtsByCollectionId(Long collectionId, Pageable pageable) {
-        log.debug("Getting arts for collection {} with pagination: page={}, size={}", 
-                 collectionId, pageable.getPageNumber(), pageable.getPageSize());
-        
-        // Получаем только ACTIVE арты
         Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByCollectionIdAndArtStatus(
             collectionId, ArtStatus.ACTIVE, pageable);
         
         List<ArtDto> artDtos = collectionArtsPage.getContent().stream()
                 .map(CollectionArt::getArt)
                 .filter(art -> art != null)
-                .map(art -> artService.convertToDto(art))  //直接用 convertToDto
+                .map(art -> artService.convertToDto(art))
                 .collect(Collectors.toList());
         
         return new PageImpl<>(artDtos, pageable, collectionArtsPage.getTotalElements());
     }
     
-    // Получение коллекций арта (с пагинацией)
     @Transactional(readOnly = true)
     public Page<CollectionArtDto> getCollectionsByArtId(Long artId, Pageable pageable) {
-        log.debug("Getting collections for art {} with pagination: page={}, size={}", 
-                 artId, pageable.getPageNumber(), pageable.getPageSize());
-        
         Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByArtId(artId, pageable);
         
         List<CollectionArtDto> dtos = collectionArtsPage.getContent().stream()
@@ -144,12 +151,8 @@ public class CollectionArtService {
         return new PageImpl<>(dtos, pageable, collectionArtsPage.getTotalElements());
     }
     
-    // Получение CollectionArtDto для коллекции (с пагинацией)
     @Transactional(readOnly = true)
     public Page<CollectionArtDto> getCollectionArtDtosByCollectionId(Long collectionId, Pageable pageable) {
-        log.debug("Getting CollectionArtDto for collection {} with pagination: page={}, size={}", 
-                 collectionId, pageable.getPageNumber(), pageable.getPageSize());
-        
         Page<CollectionArt> collectionArtsPage = collectionArtRepository.findByCollectionId(collectionId, pageable);
         
         List<CollectionArtDto> dtos = collectionArtsPage.getContent().stream()
@@ -159,11 +162,8 @@ public class CollectionArtService {
         return new PageImpl<>(dtos, pageable, collectionArtsPage.getTotalElements());
     }
     
-    // Получение всех артов коллекции (без пагинации) - для внутреннего использования
     @Transactional(readOnly = true)
     public List<ArtDto> getAllArtsByCollectionId(Long collectionId) {
-        log.debug("Getting all arts for collection {} (without pagination)", collectionId);
-        
         List<CollectionArt> collectionArts = collectionArtRepository.findByCollectionId(collectionId);
         
         if (collectionArts == null || collectionArts.isEmpty()) {
@@ -179,51 +179,31 @@ public class CollectionArtService {
     
     @Transactional(readOnly = true)
     public List<CollectionArtDto> getCollectionsByArtId(Long artId) {
-        log.debug("Getting all collections for art {} (without pagination)", artId);
-        
         List<CollectionArt> collectionArts = collectionArtRepository.findByArtId(artId);
-        List<CollectionArtDto> result = collectionArts.stream()
+        return collectionArts.stream()
                 .map(CollectionArtDto::new)
                 .collect(Collectors.toList());
-        
-        log.debug("Found {} collections for art {}", result.size(), artId);
-        return result;
     }
     
     @Transactional(readOnly = true)
     public List<CollectionArtDto> getCollectionArtDtosByCollectionId(Long collectionId) {
-        log.debug("Getting all CollectionArtDto for collection {} (without pagination)", collectionId);
-        
         List<CollectionArt> collectionArts = collectionArtRepository.findByCollectionId(collectionId);
-        List<CollectionArtDto> result = collectionArts.stream()
+        return collectionArts.stream()
                 .map(CollectionArtDto::new)
                 .collect(Collectors.toList());
-        
-        log.debug("Found {} CollectionArtDto for collection {}", result.size(), collectionId);
-        return result;
     }
     
-    // Количество артов в коллекции (только ACTIVE)
     @Transactional(readOnly = true)
     public Long getArtCountByCollectionId(Long collectionId) {
-        log.debug("Getting art count for collection {}", collectionId);
-        
-        Long count = collectionArtRepository.countByCollectionIdAndArtStatus(collectionId, ArtStatus.ACTIVE);
-        log.debug("Collection {} has {} active arts", collectionId, count);
-        return count;
+        return collectionArtRepository.countByCollectionIdAndArtStatus(collectionId, ArtStatus.ACTIVE);
     }
     
-    // Проверка существования связи
     @Transactional(readOnly = true)
     public boolean existsByCollectionIdAndArtId(Long collectionId, Long artId) {
         return collectionArtRepository.existsByCollectionIdAndArtId(collectionId, artId);
     }
     
-    // Перемещение арта между коллекциями
     public void moveArtBetweenCollections(Long artId, Long fromCollectionId, Long toCollectionId) {
-        log.info("Moving art {} from collection {} to collection {}", 
-                 artId, fromCollectionId, toCollectionId);
-        
         if (fromCollectionId.equals(toCollectionId)) {
             throw new RuntimeException("Source and target collections are the same");
         }
@@ -237,15 +217,11 @@ public class CollectionArtService {
         }
         
         collectionArtRepository.deleteByCollectionIdAndArtId(fromCollectionId, artId);
+        updateCollectionCoverIfNeeded(fromCollectionId);
         addArtToCollection(toCollectionId, artId);
-        
-        log.info("Successfully moved art {} from collection {} to collection {}", 
-                 artId, fromCollectionId, toCollectionId);
     }
     
-    // Копирование арта в коллекцию
     public CollectionArtDto copyArtToCollection(Long artId, Long collectionId) {
-        log.info("Copying art {} to collection {}", artId, collectionId);
         return addArtToCollection(collectionId, artId);
     }
 }

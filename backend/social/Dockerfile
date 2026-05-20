@@ -5,16 +5,15 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-
 COPY src ./src
-
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+# Обновляем репозитории перед установкой curl
+RUN apk update --no-cache && apk add --no-cache curl
 
 COPY --from=builder /app/target/*.jar app.jar
 

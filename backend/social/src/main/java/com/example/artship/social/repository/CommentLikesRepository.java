@@ -1,7 +1,6 @@
 package com.example.artship.social.repository;
 
-import java.util.Optional;
-
+import com.example.artship.social.model.CommentLikes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,21 +9,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.example.artship.social.model.CommentLikes;
-
 @Repository
-public interface CommentLikesRepository extends JpaRepository<CommentLikes, CommentLikes.LikeId> {
+public interface CommentLikesRepository extends JpaRepository<CommentLikes, CommentLikes.CommentLikeId> {
 
     boolean existsByUserIdAndCommentId(Long userId, Long commentId);
-
-    Optional <CommentLikes> findByUserIdAndCommentId(Long userId, Long commentId);
-
+    
+    @Query("SELECT cl FROM CommentLikes cl WHERE cl.user.id = :userId AND cl.comment.id = :commentId")
+    Page<CommentLikes> findByUserIdAndCommentId(@Param("userId") Long userId, @Param("commentId") Long commentId, Pageable pageable);
+    
     Page<CommentLikes> findByCommentId(Long commentId, Pageable pageable);
-
+    
     Page<CommentLikes> findByUserId(Long userId, Pageable pageable);
-
-    @Query("SELECT COUNT(cl) FROM CommentLikes cl WHERE cl.comment.id = :commentId")
-    long countByCommentId(@Param("commentId") Long commentId);
 
     @Modifying
     void deleteByUserIdAndCommentId(Long userId, Long commentId);
@@ -35,5 +30,6 @@ public interface CommentLikesRepository extends JpaRepository<CommentLikes, Comm
     @Modifying
     void deleteByUserId(Long userId);
     
-
+    @Query("SELECT COUNT(cl) FROM CommentLikes cl WHERE cl.comment.id = :commentId")
+    long countByCommentId(@Param("commentId") Long commentId);
 }

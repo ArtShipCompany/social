@@ -61,8 +61,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("UPDATE Comment c SET c.text = '[Deleted comment]', c.user = null WHERE c.user.id = :userId")
     void anonymizeUserComments(@Param("userId") Long userId);
     
-    // Скрытие комментариев пользователя (при бане)
+    // Скрытие комментариев пользователя (при бане) - ИСПРАВЛЕНО: c.hidden вместо c.isHidden
     @Modifying
-    @Query("UPDATE Comment c SET c.text = '[Hidden by moderator]', c.isHidden = true WHERE c.user.id = :userId")
+    @Query("UPDATE Comment c SET c.text = '[Hidden by moderator]', c.hidden = true WHERE c.user.id = :userId")
     void hideUserComments(@Param("userId") Long userId);
 }
