@@ -13,7 +13,7 @@ const CollectionCard = memo(function CollectionCard({
     coverImageUrl,
     artCount = 0,
     isPublic = true,
-    isLikedCollection = false, // пропс оставляем для обратной совместимости
+    isLikedCollection = false,
     showDeleteIcon = false,
     showPrivacyIcon = false,
     initialIsPrivate = false,
@@ -21,13 +21,10 @@ const CollectionCard = memo(function CollectionCard({
     onTogglePrivacy,
     onClick,
 }) {
-    const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
+    const isPrivate = !isPublic;
+    
     const [imgSrc, setImgSrc] = useState(null);
     const [imgError, setImgError] = useState(false);
-
-    useEffect(() => {
-        setIsPrivate(initialIsPrivate);
-    }, [initialIsPrivate]);
 
     useEffect(() => {
         if (coverImageUrl) {
@@ -60,8 +57,8 @@ const CollectionCard = memo(function CollectionCard({
         if (isSystemLikedCollection) {
             return;
         }
+
         onTogglePrivacy?.(id);
-        setIsPrivate(prev => !prev);
     }, [id, onTogglePrivacy, isSystemLikedCollection]);
 
     const handleImageError = useCallback(() => {
@@ -91,7 +88,7 @@ const CollectionCard = memo(function CollectionCard({
                     <img
                         src={imgSrc}
                         alt={title}
-                        className={styles.coverImage}
+                        className={`${styles.coverImage} ${isPrivate ? styles.privateCover : ''}`}
                         onError={handleImageError}
                     />
                 )}
@@ -107,14 +104,12 @@ const CollectionCard = memo(function CollectionCard({
                     </div>
                 </div>
 
-                {/* ✅ Бейдж для лайкнутой коллекции */}
                 {isSystemLikedCollection && (
                     <div className={styles.likedBadge}>
                         ❤️ Лайки
                     </div>
                 )}
 
-                {/* ✅ Кнопки только для обычных коллекций */}
                 {showDeleteIcon && !isSystemLikedCollection && (
                     <button
                         type="button"

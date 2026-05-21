@@ -213,9 +213,8 @@ export default function Me() {
         
         const { type, id, onConfirm } = confirmAction;
         
-        // ✅ ПРОВЕРКА ЗДЕСЬ ТОЖЕ
         if (type === 'collection' && isSystemCollection(id)) {
-            console.warn('🚫 Блокировка удаления системной коллекции в handleConfirmDelete');
+            console.warn('Блокировка удаления системной коллекции в handleConfirmDelete');
             notification.warning('Коллекцию "Мне понравилось" удалить нельзя', 4000);
             closeConfirmModal();
             return;
@@ -260,14 +259,14 @@ export default function Me() {
     }, []);
 
     const openConfirmDeleteCollection = useCallback((collection) => {
-        console.log('🔍 Проверка коллекции перед удалением:', {
+        console.log('Проверка коллекции перед удалением:', {
             collectionId: collection.id,
             title: collection.title,
             isSystem: isSystemCollection(collection)
         });
         
         if (isSystemCollection(collection)) {
-            console.warn('🚫 Блокировка удаления системной коллекции');
+            console.warn('Блокировка удаления системной коллекции');
             notification.warning('Коллекцию "Мне понравилось" удалить нельзя', 4000);
             return;
         }
@@ -291,20 +290,26 @@ export default function Me() {
     }, [userArts, notification]);
 
     const toggleCollectionPrivacy = useCallback(async (collectionId) => {
-        if (isSystemCollection(collectionId)) {
+        if (isSystemCollection({ id: collectionId })) {
             notification.warning('Приватность системной коллекции нельзя изменить');
             return;
         }
+        
         const collection = userCollections.find(c => c.id === collectionId);
         if (!collection) return;
+        
         const newIsPublic = !collection.isPublic;
+        
         try {
             await collectionsApi.updateCollection(collectionId, { isPublic: newIsPublic });
+
             setUserCollections(prev => prev.map(c => 
                 c.id === collectionId ? { ...c, isPublic: newIsPublic } : c
             ));
+            
             notification.info(`Коллекция теперь ${newIsPublic ? 'публичная' : 'приватная'}`, 3000);
         } catch (error) {
+            console.error('Ошибка обновления приватности:', error);
             notification.error('Не удалось изменить приватность', 3000);
         }
     }, [userCollections, notification, isSystemCollection]);
@@ -516,7 +521,7 @@ export default function Me() {
                                     showPrivacyIcon={showPrivacyIcons && !isSystemCollection(collection)}
                                     initialIsPrivate={!collection.isPublic}
                                     onDelete={() => openConfirmDeleteCollection(collection)}
-                                    onTogglePrivacy={() => toggleCollectionPrivacy(collection)}
+                                    onTogglePrivacy={() => toggleCollectionPrivacy(collection.id)}
                                     onClick={() => handleCollectionClick(collection)}
                                 />
                             ))

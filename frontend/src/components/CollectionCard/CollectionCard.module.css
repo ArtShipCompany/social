@@ -166,3 +166,8 @@
   cursor: not-allowed;
   transform: none;
 }
+
+.privateCover {
+  filter: grayscale(80%) brightness(85%);
+  transition: filter 0.3s ease;
+}
