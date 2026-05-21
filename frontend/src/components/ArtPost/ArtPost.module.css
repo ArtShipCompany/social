@@ -427,11 +427,11 @@
     padding: 5px 8px;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: transform 0.2s ease;
 }
 
 .actionsBtn:hover {
-    text-decoration: underline;
+    transform: translateY(1px);
 }
 
 .arrow {
@@ -478,6 +478,3 @@
 .dropdownItem:active {
     background: #e8f4fc;
 }
-
-/* Убираем старый .menu если он больше не нужен */
-/* .menu { ... } можно закомментировать */
