@@ -39,30 +39,31 @@ function AdminReports() {
         loadReports();
     }, [page, size, statusFilter]);
     
-    const handleResolve = async (reportId, deleteContent = true) => {
+    const handleResolve = async (reportId, deleteContent) => {
         try {
-            setProcessing(reportId);
-            await reportsApi.resolveReport(reportId, 'Жалоба подтверждена, контент удалён', deleteContent);
-            notification.success('Жалоба обработана');
-            loadReports();
-        } catch (error) {
-            notification.error('Ошибка обработки жалобы');
-        } finally {
-            setProcessing(null);
-        }
-    };
-    
-    const handleReject = async (reportId) => {
-        try {
-            setProcessing(reportId);
-            await reportsApi.rejectReport(reportId, 'Жалоба отклонена');
-            notification.success('Жалоба отклонена');
+            const resolutionNote = deleteContent 
+                ? 'Жалоба подтверждена, контент удалён' 
+                : 'Жалоба подтверждена, контент скрыт';
+            
+            await reportsApi.resolveReport(reportId, resolutionNote, deleteContent);
+            notification.success(deleteContent ? 'Контент удалён' : 'Контент скрыт');
             loadReports();
             loadStatistics();
         } catch (error) {
-            notification.error('Ошибка отклонения жалобы');
-        } finally {
-            setProcessing(null);
+            console.error('Error resolving report:', error);
+            notification.error('Ошибка обработки жалобы');
+        }
+    };
+    
+    
+    const handleReject = async (reportId, resolutionNote) => {
+        try {
+            await reportsApi.rejectReport(reportId, resolutionNote);
+            notification.success('Жалоба отклонена');
+            loadReports(); // Перезагружаем список жалоб
+        } catch (error) {
+            console.error('Error rejecting report:', error);
+            notification.error('Ошибка при отклонении жалобы');
         }
     };
     

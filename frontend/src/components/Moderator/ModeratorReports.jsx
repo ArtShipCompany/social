@@ -37,25 +37,30 @@ function ModeratorReports({ isAdmin }) {
         loadReports();
     }, [page, size, statusFilter]);
     
-    const handleResolve = async (reportId) => {
+    const handleResolve = async (reportId, deleteContent) => {
         try {
-            await reportsApi.resolveReport(reportId, 'Жалоба подтверждена, контент удалён', true);
-            notification.success('Жалоба обработана');
+            const resolutionNote = deleteContent 
+                ? 'Жалоба подтверждена, контент удалён' 
+                : 'Жалоба подтверждена, контент скрыт';
+            
+            await reportsApi.resolveReport(reportId, resolutionNote, deleteContent);
+            notification.success(deleteContent ? 'Контент удалён' : 'Контент скрыт');
             loadReports();
             loadStatistics();
         } catch (error) {
+            console.error('Error resolving report:', error);
             notification.error('Ошибка обработки жалобы');
         }
     };
     
-    const handleReject = async (reportId) => {
+    const handleReject = async (reportId, resolutionNote) => {
         try {
-            await reportsApi.rejectReport(reportId, 'Жалоба отклонена');
+            await reportsApi.rejectReport(reportId, resolutionNote);
             notification.success('Жалоба отклонена');
-            loadReports();
-            loadStatistics();
+            loadReports(); // Перезагружаем список жалоб
         } catch (error) {
-            notification.error('Ошибка отклонения жалобы');
+            console.error('Error rejecting report:', error);
+            notification.error('Ошибка при отклонении жалобы');
         }
     };
     

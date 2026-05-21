@@ -46,6 +46,8 @@ export default function ArtPost({
   const [imageError, setImageError] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [artDetails, setArtDetails] = useState(null);
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const actionsMenuRef = useRef(null);
   
   // Для автодополнения тегов
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -123,6 +125,37 @@ export default function ArtPost({
       setLoading(false);
     }
   };
+
+  // ========ACTIONS MENU==========
+  const toggleActionsMenu = useCallback(() => {
+      setIsActionsMenuOpen(prev => !prev);
+  }, []);
+
+  // Обработчики пунктов меню
+  const handleAddToCollection = useCallback(() => {
+      setIsActionsMenuOpen(false);
+      notification.info('Коллекции в разработке', 3000);
+  }, [notification]);
+
+  const handleReport = useCallback(() => {
+    setIsActionsMenuOpen(false);
+    console.log('Переход на страницу жалобы, artId:', artId);
+    navigate(`/report/art/${artId}`);
+  }, [navigate, artId]);
+  // Закрытие меню при клике вне
+  useEffect(() => {
+      const handleClickOutside = (e) => {
+          if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target)) {
+              setIsActionsMenuOpen(false);
+          }
+      };
+      
+      if (isActionsMenuOpen) {
+          document.addEventListener('mousedown', handleClickOutside);
+      }
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isActionsMenuOpen]);
+
 
   // Обработчик загрузки изображения
   const handleImageUpload = (e) => {
@@ -558,7 +591,7 @@ export default function ArtPost({
           </div>
 
           {/* Кнопка редактирования для владельца */}
-          {isOwner && (
+          {isOwner ? (
             <>
               <Link to={`/art/${artId}/edit`} className={styles.edit}>
                 <img src={editIcon} alt="Редактировать" />
@@ -571,6 +604,37 @@ export default function ArtPost({
                 </span>
               )}
             </>
+          ) : (
+            <div className={styles.actionsWrapper} ref={actionsMenuRef}>
+              <button 
+                className={styles.actionsBtn} 
+                onClick={toggleActionsMenu}
+                aria-expanded={isActionsMenuOpen}
+                aria-haspopup="menu"
+              >
+                <span>Действия</span>
+                <svg className={`${styles.arrow} ${isActionsMenuOpen ? styles.open : ''}`} width="12" height="8" viewBox="0 0 12 8" fill="none">
+                  <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+              
+              {isActionsMenuOpen && (
+                <div className={styles.actionsDropdown}>
+                  <button 
+                    className={styles.dropdownItem}
+                    onClick={handleAddToCollection}
+                  >
+                    Добавить в коллекцию
+                  </button>
+                  <button 
+                    className={styles.dropdownItem}
+                    onClick={handleReport}
+                  >
+                    Пожаловаться
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </>
       )}

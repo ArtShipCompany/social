@@ -9,7 +9,6 @@ function Admin() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('users');
     
-    // Проверяем, является ли пользователь админом
     const isAdmin = user?.userRole === 'ADMIN';
     
     if (!user || user.userRole !== 'ADMIN') {

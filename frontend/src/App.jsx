@@ -28,6 +28,7 @@ import AdminReports from './pages/Admin/AdminReports';
 import Moderator from './pages/Moderator/Moderator';
 
 import './App.css'
+import Report from './pages/Report/Report';
 
 function App() {
   return (
@@ -56,9 +57,13 @@ function App() {
             
             <Route path="/art/:id/edit" element={<EditArt />} />
             <Route path="/create" element={<CreateArt />} />
-            <Route path="/admin" element={<Admin />} />
 
+            <Route path="/admin" element={<Admin />} />
             <Route path='/moderator' element={<Moderator />} />
+
+            <Route path="/report/art/:artId" element={<Report />} />
+
+
           </Routes>
         </div>
         <Footer />
