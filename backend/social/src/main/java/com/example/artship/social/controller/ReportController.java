@@ -26,7 +26,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reports")
-@Tag(name = "Reports", description = "API для управления жалобами")
+@Tag(name = "Report Controller", description = "API для управления жалобами")
 public class ReportController {
     
     private static final Logger logger = LoggerFactory.getLogger(ReportController.class);

@@ -2,16 +2,11 @@ package com.example.artship.social.controller;
 
 import com.example.artship.social.dto.CollectionDto;
 import com.example.artship.social.model.User;
-import com.example.artship.social.requests.CollectionRequest;
-import com.example.artship.social.requests.CollectionUpdateRequest;
 import com.example.artship.social.service.CollectionService;
 import com.example.artship.social.service.LocalFileStorageService;
 import com.example.artship.social.service.PermissionService;
 import com.example.artship.social.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
