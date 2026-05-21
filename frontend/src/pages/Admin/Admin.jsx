@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import ModerateArts from '../../components/Moderator/ModeratorArts';
 import ChangeUserRole from './ChangeUserRole';
 import AdminReports from './AdminReports';
 import styles from './Admin.module.css';
@@ -7,6 +8,9 @@ import styles from './Admin.module.css';
 function Admin() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('users');
+    
+    // Проверяем, является ли пользователь админом
+    const isAdmin = user?.userRole === 'ADMIN';
     
     if (!user || user.userRole !== 'ADMIN') {
         return (
@@ -18,7 +22,6 @@ function Admin() {
     
     return (
         <div className={styles.adminPage}>
-            {/* Sidebar */}
             <div className={styles.sidebar}>
                 <nav className={styles.nav}>
                     <button
@@ -26,6 +29,12 @@ function Admin() {
                         className={`${styles.navBtn} ${activeTab === 'users' ? styles.active : ''}`}
                     >
                         <span className={styles.navText}>Управление пользователями</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('arts')}
+                        className={`${styles.navBtn} ${activeTab === 'arts' ? styles.active : ''}`}
+                    >
+                        <span className={styles.navText}>Модерация артов</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('reports')}
@@ -36,9 +45,9 @@ function Admin() {
                 </nav>
             </div>
             
-            {/* Content */}
             <div className={styles.content}>
                 {activeTab === 'users' && <ChangeUserRole />}
+                {activeTab === 'arts' && <ModerateArts isAdmin={isAdmin} />}
                 {activeTab === 'reports' && <AdminReports />}
             </div>
         </div>

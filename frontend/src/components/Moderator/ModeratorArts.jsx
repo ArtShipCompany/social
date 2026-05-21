@@ -46,9 +46,9 @@ function ModeratorArts({ isAdmin }) {
         }
     };
     
-    const handleUnhide = async (artId) => {
+    const handleRestore = async (artId) => {
         try {
-            await artApi.unhideArt(artId);
+            await artApi.unhideArt(artId); 
             notification.success('Арт восстановлен');
             loadArts();
         } catch (error) {
@@ -86,7 +86,7 @@ function ModeratorArts({ isAdmin }) {
                 loading={loading}
                 isAdmin={isAdmin}
                 onHide={handleHide}
-                onUnhide={handleUnhide}
+                onRestore={handleRestore}  
                 onBan={handleBan}
             />
             

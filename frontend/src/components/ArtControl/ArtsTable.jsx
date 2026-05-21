@@ -1,6 +1,6 @@
 import styles from './ArtsTable.module.css';
 
-function ArtsTable({ arts, loading, isAdmin, onHide, onUnhide, onBan }) {
+function ArtsTable({ arts, loading, isAdmin, onHide, onRestore, onBan }) {
     const getStatusBadge = (status) => {
         switch(status) {
             case 'ACTIVE': return { className: styles.statusActive, text: 'Активен' };
@@ -83,18 +83,10 @@ function ArtsTable({ arts, loading, isAdmin, onHide, onUnhide, onBan }) {
                                             className={styles.hideBtn}
                                             title="Скрыть арт"
                                         >
-                                            👁️ Скрыть
+                                            Скрыть
                                         </button>
                                     )}
-                                    {art.status === 'HIDDEN' && (
-                                        <button 
-                                            onClick={() => onUnhide(art.id)} 
-                                            className={styles.unhideBtn}
-                                            title="Восстановить арт"
-                                        >
-                                            Восстановить
-                                        </button>
-                                    )}
+                                    
                                     {isAdmin && art.status !== 'BANNED' && (
                                         <button 
                                             onClick={() => onBan(art.id)} 
@@ -102,6 +94,16 @@ function ArtsTable({ arts, loading, isAdmin, onHide, onUnhide, onBan }) {
                                             title="Забанить арт"
                                         >
                                             Забанить
+                                        </button>
+                                    )}
+                                    
+                                    {(art.status === 'HIDDEN' || art.status === 'BANNED') && (
+                                        <button 
+                                            onClick={() => onRestore(art.id)} 
+                                            className={art.status === 'BANNED' ? styles.unbanBtn : styles.unhideBtn}
+                                            title={art.status === 'BANNED' ? "Разбанить арт" : "Восстановить арт"}
+                                        >
+                                            {art.status === 'BANNED' ? 'Разбанить' : 'Восстановить'}
                                         </button>
                                     )}
                                 </td>

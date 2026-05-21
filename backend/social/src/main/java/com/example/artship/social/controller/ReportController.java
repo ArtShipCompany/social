@@ -98,10 +98,10 @@ public class ReportController {
     }
         
     /**
-     * Получение всех жалоб (только для администратора)
+     * Получение всех жалоб (доступно для администратора и модератора)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     @Operation(summary = "Получить все жалобы (только админ)", 
                description = "Возвращает список всех жалоб с пагинацией и фильтрацией")
     public ResponseEntity<Page<Report>> getAllReports(
@@ -135,10 +135,10 @@ public class ReportController {
     }
     
     /**
-     * Получение жалоб по статусу (только для администратора)
+     * Получение жалоб по статусу (только для администратора и модератора)
      */
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     @Operation(summary = "Получить жалобы по статусу (только админ)")
     public ResponseEntity<Page<Report>> getReportsByStatus(
             @Parameter(description = "Статус жалобы", required = true)
@@ -188,8 +188,8 @@ public class ReportController {
      * Получение конкретной жалобы по ID (только для администратора)
      */
     @GetMapping("/{reportId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить жалобу по ID (только админ)")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @Operation(summary = "Получить жалобу по ID (только админ или модератор)")
     public ResponseEntity<?> getReportById(@PathVariable String reportId) {
         
         logger.info("Администратор запрашивает жалобу с ID: {}", reportId);

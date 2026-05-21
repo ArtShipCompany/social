@@ -33,18 +33,8 @@ function ModeratorReports({ isAdmin }) {
         }
     };
     
-    const loadStatistics = async () => {
-        try {
-            const data = await reportsApi.getStatistics();
-            setStats(data);
-        } catch (error) {
-            console.error('Error loading statistics:', error);
-        }
-    };
-    
     useEffect(() => {
         loadReports();
-        loadStatistics();
     }, [page, size, statusFilter]);
     
     const handleResolve = async (reportId) => {

@@ -8,6 +8,7 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 800px;
+    background-color: #f8f9fa;
 }
 
 .artsTable th {
@@ -75,18 +76,18 @@
 }
 
 .statusActive {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: #227ac2;
+    color: #ffffff;
 }
 
 .statusHidden {
-    background-color: #fff3cd;
-    color: #856404;
+    background-color: #1c6cad;
+    color: #ffffff;
 }
 
 .statusBanned {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: #104978;
+    color: #ffffff;
 }
 
 .actionsCell {
@@ -105,32 +106,32 @@
 }
 
 .hideBtn {
-    background-color: #ffc107;
-    color: #333;
+    background-color: #1c6cad;
+    color: #ffffff;
 }
 
 .hideBtn:hover {
-    background-color: #e0a800;
+    background-color: #1e75bd;
     transform: translateY(-1px);
 }
 
 .unhideBtn {
-    background-color: #28a745;
-    color: white;
+    background-color: #227ac2;
+    color: #ffffff;
 }
 
 .unhideBtn:hover {
-    background-color: #218838;
+    background-color: #2480cc;
     transform: translateY(-1px);
 }
 
 .banBtn {
-    background-color: #dc3545;
+    background-color: #104978;
     color: white;
 }
 
 .banBtn:hover {
-    background-color: #c82333;
+    background-color: #104978;
     transform: translateY(-1px);
 }
 
@@ -162,6 +163,7 @@
 
 .emptyState p {
     color: #6c757d;
+    
 }
 
 @keyframes spin {

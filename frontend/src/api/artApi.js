@@ -303,6 +303,37 @@ export const artApi = {
     await requestProtected(`${API_URL}/arts/${artId}`, { method: 'DELETE' });
     return true;
   },
+  
+  async getArtsByStatus(status, page = 0, size = 20) {
+    let url = `${API_URL}/arts/admin/by-status?page=${page}&size=${size}`;
+    if (status && status !== '') {
+      url += `&status=${status}`;
+    }
+    const data = await requestProtected(url);
+    return formatPage(data);
+  },
+
+  async hideArt(artId) {
+    const data = await requestProtected(`${API_URL}/arts/${artId}/hide`, {
+      method: 'PATCH',
+    });
+    return formatArt(data);
+  },
+
+  async unhideArt(artId) {
+    const data = await requestProtected(`${API_URL}/arts/${artId}/unhide`, {
+      method: 'PATCH',
+    });
+    return formatArt(data);
+  },
+
+  async banArt(artId) {
+    const data = await requestProtected(`${API_URL}/arts/${artId}/ban`, {
+      method: 'PATCH',
+    });
+    return formatArt(data);
+  },
+
 
   utils: {
     getImageUrl,
