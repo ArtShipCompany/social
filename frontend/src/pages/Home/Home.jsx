@@ -116,7 +116,7 @@ export default function Home() {
         }
     }, [isAuthenticated, searchQuery, authLoading, isAuthChecked, activeTab]);
 
-    // 🔁 Перезагрузка при смене запроса/таба
+    // Перезагрузка при смене запроса/таба
     useEffect(() => {
         if (!isAuthChecked || authLoading) return;
         loadArts(0, true);

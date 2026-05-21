@@ -1,0 +1,111 @@
+.tableWrapper {
+    background: white;
+    border-radius: 20px;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.userTable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.userTable th {
+    text-align: left;
+    padding: 16px;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 14px;
+    color: #104978;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 2px solid #dbefff;
+}
+
+.userTable th:hover {
+    background-color: #e9ecef;
+}
+
+.userTable td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #dbefff;
+    color: #104978;
+    font-size: 14px;
+}
+
+.username {
+    font-weight: 600;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badgeAdmin {
+    background-color: #104978;
+    color: white;
+}
+
+.badgeModerator {
+    background-color: #1c6cad;
+    color: white;
+}
+
+.badgeUser {
+    background-color: #227ac2;
+    color: white;
+}
+
+.roleSelect {
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid #dbefff;
+    background-color: #dbefff;
+    color: #104978;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.roleSelect:hover {
+    background-color: #c7e8ff;
+}
+
+.roleSelect:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #104978;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #dbefff;
+    border-top: 3px solid #104978;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.emptyState {
+    text-align: center;
+    padding: 40px;
+    color: #104978a7;
+    font-size: 14px;
+}

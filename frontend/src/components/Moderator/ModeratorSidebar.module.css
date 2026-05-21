@@ -1,0 +1,139 @@
+.sidebar {
+    width: 280px;
+    background: white;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    padding: 24px 20px;
+    border-bottom: 2px solid #dbefff;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logoIcon {
+    font-size: 28px;
+}
+
+.logo h2 {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #104978 0%, #2c7cb6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 16px;
+    flex: 1;
+    margin-top: 8px;
+}
+
+.navBtn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: #104978;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    position: relative;
+}
+
+.navBtn:hover {
+    background-color: #dbefff;
+    transform: translateX(4px);
+}
+
+.navBtn.active {
+    background: linear-gradient(135deg, #104978 0%, #1e6291 100%);
+    color: white;
+    box-shadow: 0 4px 10px rgba(16, 73, 120, 0.2);
+}
+
+.navIcon {
+    font-size: 20px;
+}
+
+.navText {
+    flex: 1;
+}
+
+
+
+.adminBadge {
+    margin: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #856404;
+}
+
+.adminIcon {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+    }
+    
+    .logo {
+        padding: 0;
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .logo h2 {
+        display: none;
+    }
+    
+    .nav {
+        flex-direction: row;
+        gap: 8px;
+        padding: 0;
+    }
+    
+    .navBtn {
+        padding: 8px 12px;
+        width: auto;
+    }
+    
+    .navText {
+        display: none;
+    }
+    
+    .adminBadge {
+        margin: 0;
+        padding: 6px 10px;
+    }
+}

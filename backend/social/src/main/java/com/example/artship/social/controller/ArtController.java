@@ -1,6 +1,7 @@
 package com.example.artship.social.controller;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
+import com.example.artship.social.model.enumclass.ArtStatus;
 import com.example.artship.social.requests.CreateArtRequest;
 import com.example.artship.social.requests.PrivacyUpdateRequest;
 import com.example.artship.social.requests.UpdateArtRequest;
@@ -282,7 +285,6 @@ public class ArtController {
         return ResponseEntity.ok(result);
     }
     
-    // ==================== DELETE ====================
     
     @Operation(summary = "Удалить арт")
     @ApiResponses({
@@ -497,6 +499,7 @@ public class ArtController {
         
         return ResponseEntity.ok(arts);
     }
+
     
     @Operation(summary = "Проверить доступ к арту")
     @GetMapping("/{id}/access")
@@ -526,6 +529,192 @@ public class ArtController {
         logger.info("Доступ к арту {}: {}", id, hasAccess);
         return ResponseEntity.ok(hasAccess);
     }
+
+
+
+    /**
+     * Скрыть арт (доступно модераторам и администраторам)
+     * Статус арта становится HIDDEN, арт не отображается обычным пользователям
+     */
+    @Operation(summary = "Скрыть арт", 
+               description = "Скрывает арт от обычных пользователей. Доступно модераторам и администраторам.")
+    @PatchMapping("/{artId}/hide")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<ArtDto> hideArt(
+            @Parameter(description = "ID арта", required = true) 
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        logger.info("=== СКРЫТИЕ АРТА ID: {} ===", artId);
+        
+        // Проверка авторизации
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            artService.hideArt(artId);
+            logger.info("Арт {} скрыт пользователем {}", artId, userDetails.getUsername());
+            
+            // Возвращаем обновленный арт
+            Optional<ArtDto> art = artService.getArtDtoById(artId, null);
+            return art.map(ResponseEntity::ok)
+                     .orElse(ResponseEntity.notFound().build());
+            
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при скрытии арта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Восстановить арт (доступно модераторам и администраторам)
+     * Статус арта становится ACTIVE, арт снова отображается
+     */
+    @Operation(summary = "Восстановить арт", 
+               description = "Восстанавливает скрытый арт. Доступно модераторам и администраторам.")
+    @PatchMapping("/{artId}/unhide")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<ArtDto> unhideArt(
+            @Parameter(description = "ID арта", required = true) 
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        logger.info("=== ВОССТАНОВЛЕНИЕ АРТА ID: {} ===", artId);
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            artService.unhideArt(artId);
+            logger.info("Арт {} восстановлен пользователем {}", artId, userDetails.getUsername());
+            
+            Optional<ArtDto> art = artService.getArtDtoById(artId, null);
+            return art.map(ResponseEntity::ok)
+                     .orElse(ResponseEntity.notFound().build());
+            
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при восстановлении арта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Забанить арт (только для администратора)
+     * Статус арта становится BANNED, арт полностью недоступен
+     */
+    @Operation(summary = "Забанить арт", 
+               description = "Полностью блокирует арт. Доступно только администраторам.")
+    @PatchMapping("/{artId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ArtDto> banArt(
+            @Parameter(description = "ID арта", required = true) 
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        logger.info("=== БАЛОКИРОВКА АРТА ID: {} ===", artId);
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            artService.banArt(artId);
+            logger.info("Арт {} забанен администратором {}", artId, userDetails.getUsername());
+            
+            Optional<ArtDto> art = artService.getArtDtoById(artId, null);
+            return art.map(ResponseEntity::ok)
+                     .orElse(ResponseEntity.notFound().build());
+            
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при бане арта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Полностью удалить арт (только для администратора)
+     * Арт полностью удаляется из системы вместе со всеми связями
+     */
+    @Operation(summary = "Полностью удалить арт", 
+               description = "Полностью удаляет арт из системы. Доступно только администраторам.")
+    @DeleteMapping("/{artId}/force")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> forceDeleteArt(
+            @Parameter(description = "ID арта", required = true) 
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        logger.info("=== ПРИНУДИТЕЛЬНОЕ УДАЛЕНИЕ АРТА ID: {} ===", artId);
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            artService.forceDeleteArt(artId);
+            logger.info("Арт {} принудительно удалён администратором {}", 
+                       artId, userDetails.getUsername());
+            return ResponseEntity.noContent().build();
+            
+        } catch (RuntimeException e) {
+            logger.error("Ошибка при удалении арта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Получить арты по статусу (для админ/модератор панели)
+     */
+    @Operation(summary = "Получить арты по статусу", 
+               description = "Возвращает список артов с фильтрацией по статусу. Доступно модераторам и администраторам.")
+    @GetMapping("/admin/by-status")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<Page<ArtDto>> getArtsByStatus(
+            @Parameter(description = "Статус арта (ACTIVE, HIDDEN, BANNED, DELETED_BY_USER)")
+            @RequestParam(required = false) ArtStatus status,
+            @Parameter(description = "Номер страницы") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Сортировка") @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        logger.info("Получение артов по статусу: {}", status);
+        
+        Sort sortObj = parseSort(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        
+        Page<ArtDto> arts = artService.getArtsByStatus(status, pageable);
+        
+        logger.info("Найдено {} артов", arts.getTotalElements());
+        return ResponseEntity.ok(arts);
+    }
+    
+    /**
+     * Получить статистику по статусам артов (только для администратора)
+     */
+    @Operation(summary = "Статистика по статусам артов", 
+               description = "Возвращает количество артов в каждом статусе. Доступно только администраторам.")
+    @GetMapping("/admin/status-statistics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<ArtStatus, Long>> getArtsStatusStatistics() {
+        logger.info("Получение статистики по статусам артов");
+        Map<ArtStatus, Long> statistics = artService.getArtsStatusStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+    
+    // Вспомогательный метод для парсинга сортировки
+    private Sort parseSort(String sortParam) {
+        String[] sortParts = sortParam.split(",");
+        if (sortParts.length == 2) {
+            String field = sortParts[0];
+            String direction = sortParts[1];
+            return "desc".equalsIgnoreCase(direction) 
+                ? Sort.by(field).descending() 
+                : Sort.by(field).ascending();
+        }
+        return Sort.by("createdAt").descending();
+    }
+
     
     
     private boolean isValidImageFormat(String contentType) {

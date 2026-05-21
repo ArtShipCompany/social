@@ -21,6 +21,11 @@ import Me from './pages/Profile/Me'
 import Follows from './pages/Follows/Follows';
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 
+import Admin from './pages/Admin/Admin';
+import ChangeUserRole from './pages/Admin/ChangeUserRole';
+import AdminReports from './pages/Admin/AdminReports';
+
+import Moderator from './pages/Moderator/Moderator';
 
 import './App.css'
 
@@ -48,8 +53,12 @@ function App() {
 
             <Route path="/art/:id" element={<ArtView />} />
             {/* EditArt - редактирование поста(лучше при рефакторинге переименовать PostView и EditPost) */}
+            
             <Route path="/art/:id/edit" element={<EditArt />} />
             <Route path="/create" element={<CreateArt />} />
+            <Route path="/admin" element={<Admin />} />
+
+            <Route path='/moderator' element={<Moderator />} />
           </Routes>
         </div>
         <Footer />

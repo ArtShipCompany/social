@@ -36,9 +36,7 @@ public class ReportController {
     public ReportController(ReportService reportService) {
         this.reportService = reportService;
     }
-    
-    // ==================== CREATE ====================
-    
+        
     /**
      * Создание жалобы (доступно всем авторизованным пользователям)
      */
@@ -98,9 +96,7 @@ public class ReportController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-    
-    // ==================== READ (ADMIN ONLY) ====================
-    
+        
     /**
      * Получение всех жалоб (только для администратора)
      */
@@ -206,9 +202,7 @@ public class ReportController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    // ==================== MODERATOR/ADMIN ACTIONS ====================
-    
+        
     /**
      * Обработка жалобы (удаление контента) - для модераторов и администраторов
      */
@@ -344,7 +338,6 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
     
-    // ==================== HELPER METHODS ====================
     
     private Pageable parsePageable(int page, int size, String sortParam) {
         String[] sortParts = sortParam.split(",");

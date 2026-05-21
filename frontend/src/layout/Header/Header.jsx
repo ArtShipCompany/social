@@ -5,8 +5,18 @@ import { userApi } from '../../api/userApi';
 import PFP from '../../assets/WA.jpg';
 
 function Header() {
-    const { user, isAuthenticated, logout, isLoading, isProcessing, isAuthChecked } = useAuth();
+    const { user, isAuthenticated, logout, isLoading, isProcessing } = useAuth();
     const location = useLocation();
+
+    const userRole = user?.userRole || null;
+    const isAdmin = userRole === 'ADMIN';
+    const isModerator = userRole === 'MODERATOR';
+    
+    const isAdminPage = location.pathname.startsWith('/admin');
+    const isModeratorPage = location.pathname.startsWith('/moderator');
+    
+    const showAdminButton = isAdmin && !isAdminPage && !isModeratorPage;
+    const showModeratorButton = isModerator && !isAdmin && !isAdminPage && !isModeratorPage;
 
     const getAvatarUrl = () => {
         if (!user) return PFP;
@@ -48,6 +58,18 @@ function Header() {
                     </>
                 ) : (
                     <>
+                        {showAdminButton && (
+                            <Link to="/admin" className={styles.roleButton}>
+                                Панель администратора
+                            </Link>
+                        )}
+                        
+                        {showModeratorButton && (
+                            <Link to="/moderator" className={styles.roleButton}>
+                                Панель модератора
+                            </Link>
+                        )}
+                        
                         {location.pathname === '/me' ? (
                             <button 
                                 onClick={handleLogout} 

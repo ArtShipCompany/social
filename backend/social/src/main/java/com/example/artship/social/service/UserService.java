@@ -26,10 +26,10 @@ public class UserService {
     private UserRepository userRepository;
     
     @Autowired
-    private RefreshTokenRepository refreshTokenRepository;  // ← Добавить
+    private RefreshTokenRepository refreshTokenRepository;  
     
     @Autowired
-    private VerificationTokenRepository verificationTokenRepository;  // ← Добавить для MongoDB
+    private VerificationTokenRepository verificationTokenRepository; 
     
     
     public Optional<User> findById(Long id) {
@@ -61,7 +61,7 @@ public class UserService {
         return userRepository.findByUserRole(role, pageable);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public User changeUserRole(Long userId, UserRole newRole) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -70,7 +70,7 @@ public class UserService {
         return updatedUser;
     }
     
-    @Transactional(readOnly = true)
+    @Transactional
     public User changeUserRoleByUsername(String username, UserRole newRole) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));

@@ -1,0 +1,149 @@
+.pendingRow {
+    background-color: #fffdf5;
+}
+
+.targetType {
+    font-weight: 500;
+}
+
+.targetIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.targetId {
+    font-family: monospace;
+    color: #104978;
+}
+
+.reason {
+    max-width: 250px;
+}
+
+.reasonContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.priorityIcon {
+    font-size: 14px;
+}
+
+.reasonDesc {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.reporter, .author {
+    font-size: 13px;
+}
+
+.userId {
+    font-family: monospace;
+    color: #666;
+}
+
+.date {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.statusPending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.statusResolved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.statusRejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.resolvedBy {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.actions {
+    min-width: 200px;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.resolveBtn, .hideBtn, .rejectBtn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.resolveBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+.resolveBtn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.hideBtn {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.hideBtn:hover {
+    background-color: #e0a800;
+    transform: translateY(-1px);
+}
+
+.rejectBtn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.rejectBtn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.resolveBtn:disabled, .hideBtn:disabled, .rejectBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.resolvedInfo {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}

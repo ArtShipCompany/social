@@ -1,0 +1,97 @@
+.moderatorReports {
+    background-color: #dbefff;
+    min-height: 100vh;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #ffffff;
+    font-size: 14px;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #104978;
+    margin-bottom: 8px;
+}
+
+.header p {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+}
+
+.statValue {
+    font-size: 28px;
+    font-weight: 700;
+    color: #104978;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .moderatorReports {
+        padding: 16px;
+    }
+    
+    .stats {
+        gap: 12px;
+    }
+    
+    .statValue {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .moderatorReports {
+        padding: 12px;
+    }
+    
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .statValue {
+        font-size: 20px;
+    }
+    
+    .statLabel {
+        font-size: 11px;
+    }
+}

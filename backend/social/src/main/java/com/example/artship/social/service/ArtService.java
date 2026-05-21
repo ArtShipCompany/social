@@ -1,7 +1,9 @@
 package com.example.artship.social.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -338,7 +340,6 @@ public class ArtService {
                 .orElse(false);
     }
 
-    // ==================== МЕТОДЫ ДЛЯ УДАЛЕНИЯ ====================
 
     @Transactional
     public void deleteAllUserArts(Long userId) {
@@ -368,7 +369,29 @@ public class ArtService {
             }
         }
     }
+    
 
+    @Transactional(readOnly = true)
+    public Page<ArtDto> getArtsByStatus(ArtStatus status, Pageable pageable) {
+        if (status != null) {
+            return artRepository.findByStatus(status, pageable)
+                    .map(this::convertToDto);
+        } else {
+            return artRepository.findAll(pageable)
+                    .map(this::convertToDto);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Map<ArtStatus, Long> getArtsStatusStatistics() {
+        Map<ArtStatus, Long> statistics = new HashMap<>();
+        for (ArtStatus status : ArtStatus.values()) {
+            long count = artRepository.countByStatus(status);
+            statistics.put(status, count);
+        }
+        return statistics;
+    }
+    
     @Transactional
     public void hideArt(Long artId) {
         Art art = artRepository.findById(artId)
@@ -421,7 +444,9 @@ public class ArtService {
         
         artRepository.delete(art);
     }
-        
+
+
+
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
         if (art == null) return null;

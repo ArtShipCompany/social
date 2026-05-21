@@ -1,0 +1,24 @@
+.adminReportsPage {
+    padding: 24px;
+    background-color: #dbefff;
+    min-height: 100vh;
+}
+
+.header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #ffffff;
+    font-size: 14px;
+}
+
+@media (max-width: 1200px) {
+    .adminReportsPage {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .adminReportsPage {
+        padding: 12px;
+    }
+}

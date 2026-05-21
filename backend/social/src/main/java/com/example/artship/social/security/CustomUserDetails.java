@@ -33,8 +33,11 @@ public class CustomUserDetails implements UserDetails {
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities; // Возвращаем список authorities
+        return Collections.singletonList(
+            new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name())
+        );
     }
+
     
     @Override
     public String getPassword() {

@@ -1,0 +1,67 @@
+.tableWrapper {
+    background: white;
+    border-radius: 16px;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.reportsTable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.reportsTable th {
+    text-align: left;
+    padding: 16px;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 14px;
+    color: #104978;
+    border-bottom: 2px solid #dbefff;
+}
+
+.reportsTable td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #dbefff;
+    font-size: 14px;
+    color: #333;
+}
+
+.loading, .emptyState {
+    text-align: center;
+    padding: 60px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #dbefff;
+    border-top: 3px solid #104978;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.emptyState h3 {
+    font-size: 18px;
+    color: #104978;
+    margin-bottom: 8px;
+}
+
+.emptyState p {
+    color: #666;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
