@@ -1,4 +1,3 @@
-// artApi.js
 import { authApi, fetchWithErrorHandling } from './authApi';
 
 const API_URL = 'http://localhost:8081/api';

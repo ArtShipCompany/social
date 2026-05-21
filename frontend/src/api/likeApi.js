@@ -48,6 +48,11 @@ export const likeApi = {
                 },
             });
             
+            if (response.status === 404) {
+                console.log('Like not found, already removed');
+                return true;
+            }
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }

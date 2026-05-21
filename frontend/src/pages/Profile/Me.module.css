@@ -172,8 +172,53 @@
     background-color: #dbefff;
     padding: 10px 20px;
     border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
+.switcherBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.switcherBtn:hover {
+    opacity: 1;
+    background: rgba(16, 74, 120, 0.1);
+}
+
+.switcherBtn.active {
+    opacity: 1;
+    background: var(--text-color);
+    color: #fff;
+    font-weight: 600;
+}
+
+.separator {
+    color: var(--text-color);
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.collectionTitle {
+    color: var(--text-color);
+    font-size: 16px;
+    background: #dbefff;
+    border-radius: 20px;
+}
+
+.feedLayout {
+    display: flex;
+    width: 100%;
+}
 
 .feed {
     margin-top: 20px;

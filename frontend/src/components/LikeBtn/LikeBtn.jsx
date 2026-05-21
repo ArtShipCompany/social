@@ -73,7 +73,18 @@ export default function LikeBtn({
                 });
             }
         } catch (error) {
-            console.error('Ошибка при лайке:', error);
+            if (error.message.includes('404') && isLiked) {
+                setIsLiked(false);
+                setLikesCount(prev => {
+                    const newCount = Math.max(0, prev - 1);
+                    if (onLikeChange) {
+                        onLikeChange(newCount);
+                    }
+                    return newCount;
+                });
+            } else {
+                console.error('Ошибка при лайке:', error);
+            }
         } finally {
             setIsLoading(false);
         }

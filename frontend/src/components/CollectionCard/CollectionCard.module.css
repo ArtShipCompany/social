@@ -1,0 +1,168 @@
+.card {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 24px;
+  background-color: var(--input-bg-color, #f5f5f5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease-in-out;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Спец-стиль для "Мне понравилось" */
+.likedCard {
+  border: 2px solid var(--accent-color, #ff4757);
+  box-shadow: 0 4px 20px rgba(255, 71, 87, 0.15);
+}
+
+.likedCard:hover {
+  box-shadow: 0 8px 32px rgba(255, 71, 87, 0.25);
+}
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 24px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.coverImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.card:hover .coverImage {
+  transform: scale(1.03);
+}
+
+.privateCover {
+  filter: grayscale(80%) brightness(85%);
+  transition: filter 0.3s ease;
+}
+
+.coverPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 48px;
+}
+
+.overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.content {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 2;
+  color: white;
+}
+
+.title {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.artCount {
+  font-weight: 500;
+}
+
+/* Бейдж для "Мне понравилось" */
+.likedBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  background: rgba(255, 71, 87, 0.95);
+  color: white;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4); }
+  50% { box-shadow: 0 4px 16px rgba(255, 71, 87, 0.7); }
+}
+
+/* Кнопки действий */
+.actionIcon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  padding: 0;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.actionIcon img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+}
+
+.actionIcon:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: scale(1.1);
+}
+
+.actionIcon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
