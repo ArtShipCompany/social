@@ -55,6 +55,10 @@ export default function Me() {
     const [activeTab, setActiveTab] = useState('arts');
     const [selectedCollectionName, setSelectedCollectionName] = useState(null);
 
+    const [collectionArts, setCollectionArts] = useState([]);
+    const [isLoadingCollectionArts, setIsLoadingCollectionArts] = useState(false);
+    const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+
     const artApiHook = useApi(artApi);
     const followApiHook = useApi(followApi);
     const collectionsApiHook = useApi(collectionsApi);
@@ -166,14 +170,40 @@ export default function Me() {
         setIsHeadMenuOpen(prev => !prev);
     }, []);
 
+    const handleBackToCollections = useCallback(() => {
+        setSelectedCollectionName(null);
+        setSelectedCollectionId(null);
+        setCollectionArts([]);
+    }, []);    
+
     const handleTabChange = useCallback((tab) => {
         setActiveTab(tab);
-        if (tab === 'arts') setSelectedCollectionName(null);
-    }, []);
+        
+        if (tab === 'collections') {
+            handleBackToCollections();
+        } else if (tab === 'arts') {
+            setSelectedCollectionName(null);
+        }
+    }, [handleBackToCollections]);
 
-    const handleCollectionClick = useCallback((collection) => {
+    const handleCollectionClick = useCallback(async (collection) => {
         setSelectedCollectionName(collection.title || 'Без названия');
-    }, []);
+        setSelectedCollectionId(collection.id);
+        
+        try {
+            setIsLoadingCollectionArts(true);
+            const artsData = await collectionsApi.getArtsInCollection(collection.id, { 
+                page: 0, 
+                size: 50
+            });
+            setCollectionArts(artsData?.content || []);
+        } catch (error) {
+            console.error('Ошибка загрузки артов коллекции:', error);
+            notification.error('Не удалось загрузить арты коллекции');
+        } finally {
+            setIsLoadingCollectionArts(false);
+        }
+    }, [notification]);
 
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
@@ -472,66 +502,95 @@ export default function Me() {
             </div>
 
             <div className={styles.feedLayout}>
-                {activeTab === 'arts' ? (
-                    <div className={styles.feed}>
-                    {validArts.length > 0 ? (
-                        validArts.map(art => (
-                            <ArtCard 
-                                key={art.id} 
-                                id={art.id} 
-                                image={getImageUrl(art.image || art.imageUrl)}
-                                typeShow="amount"
-                                showDeleteIcon={showDeleteIcons}
-                                showPrivacyIcon={showPrivacyIcons}
-                                onOpenConfirmModal={openConfirmDeleteArt}
-                                onTogglePrivacy={() => toggleArtPrivacy(art.id)}
-                                initialIsPrivate={art.isPublicFlag === false}
-                                likesCount={art.likesCount || 0}
-                                isDeleting={deletingArtId === art.id}
-                            />
-                        ))
-                    ) : (
-                        <div className={styles.emptyState}>
-                            <span>Нет артов. Создайте первый!</span>
-                            <button className={styles.createButton} onClick={handleCreateClick}>
-                                <img src={createIcon} alt="create" className={styles.icon} />
-                                Создать
-                            </button>
+                {activeTab === 'collections' ? (
+                    selectedCollectionId ? (
+                        <div className={styles.collectionArtsView}>                            
+                            {isLoadingCollectionArts ? (
+                                <div className={styles.loading}>
+                                    <div className={styles.spinner}></div>
+                                    <span>Загрузка артов...</span>
+                                </div>
+                            ) : collectionArts.length > 0 ? (
+                                <div className={styles.feed}>
+                                    {collectionArts.map(art => (
+                                        <ArtCard 
+                                            key={art.id} 
+                                            id={art.id} 
+                                            image={art.imageUrl}
+                                            typeShow="hide"
+                                            title={art.title || 'Без названия'}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={styles.emptyState}>
+                                    <span>В этой коллекции пока нет артов</span>
+                                </div>
+                            )}
                         </div>
-                    )}
-                    </div>
+                    ) : (
+                        // === VIEW: Список коллекций (старый код) ===
+                        <div className={styles.collectionsFeed}>
+                            {userCollections.length > 0 ? (
+                                userCollections.map(collection => (
+                                    <CollectionCard
+                                        key={collection.id}
+                                        id={collection.id}
+                                        title={collection.title}
+                                        coverImageUrl={collection.coverImageUrl}
+                                        artCount={collection.artCount}
+                                        isPublic={collection.isPublic}
+                                        isLikedCollection={collection.id === LIKED_COLLECTION_ID}
+                                        username={collection.username}
+                                        showDeleteIcon={showDeleteIcons && !isSystemCollection(collection)}
+                                        showPrivacyIcon={showPrivacyIcons && !isSystemCollection(collection)}
+                                        initialIsPrivate={!collection.isPublic}
+                                        onDelete={() => openConfirmDeleteCollection(collection)}
+                                        onTogglePrivacy={() => toggleCollectionPrivacy(collection.id)}
+                                        onClick={() => handleCollectionClick(collection)}
+                                    />
+                                ))
+                            ) : (
+                                <div className={styles.emptyState}>
+                                    <span>Нет коллекций. Создайте первую!</span>
+                                    <button className={styles.createButton} onClick={() => setShowCreateCollectionModal(true)}>
+                                        <img src={createIcon} alt="create" className={styles.icon} />
+                                        Создать коллекцию
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )
                 ) : (
-                    <div className={styles.collectionsFeed}>
-                        {userCollections.length > 0 ? (
-                            userCollections.map(collection => (
-                                <CollectionCard
-                                    key={collection.id}
-                                    id={collection.id}
-                                    title={collection.title}
-                                    coverImageUrl={collection.coverImageUrl}
-                                    artCount={collection.artCount}
-                                    isPublic={collection.isPublic}
-                                    isLikedCollection={collection.id === LIKED_COLLECTION_ID}
-                                    username={collection.username}
-                                    showDeleteIcon={showDeleteIcons && !isSystemCollection(collection)}
-                                    showPrivacyIcon={showPrivacyIcons && !isSystemCollection(collection)}
-                                    initialIsPrivate={!collection.isPublic}
-                                    onDelete={() => openConfirmDeleteCollection(collection)}
-                                    onTogglePrivacy={() => toggleCollectionPrivacy(collection.id)}
-                                    onClick={() => handleCollectionClick(collection)}
+                    // === TAB: Arts (без изменений) ===
+                    <div className={styles.feed}>
+                        {validArts.length > 0 ? (
+                            validArts.map(art => (
+                                <ArtCard 
+                                    key={art.id} 
+                                    id={art.id} 
+                                    image={getImageUrl(art.image || art.imageUrl)}
+                                    typeShow="amount"
+                                    showDeleteIcon={showDeleteIcons}
+                                    showPrivacyIcon={showPrivacyIcons}
+                                    onOpenConfirmModal={openConfirmDeleteArt}
+                                    onTogglePrivacy={() => toggleArtPrivacy(art.id)}
+                                    initialIsPrivate={art.isPublicFlag === false}
+                                    likesCount={art.likesCount || 0}
+                                    isDeleting={deletingArtId === art.id}
                                 />
                             ))
                         ) : (
                             <div className={styles.emptyState}>
-                                <span>Нет коллекций. Создайте первую!</span>
-                                <button className={styles.createButton} onClick={() => setShowCreateCollectionModal(true)}>
+                                <span>Нет артов. Создайте первый!</span>
+                                <button className={styles.createButton} onClick={handleCreateClick}>
                                     <img src={createIcon} alt="create" className={styles.icon} />
-                                    Создать коллекцию
+                                    Создать
                                 </button>
                             </div>
                         )}
                     </div>
-                )}   
+                )}
             </div>
 
             <ConfirmModal

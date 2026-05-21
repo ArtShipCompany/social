@@ -114,6 +114,10 @@ export default function LikeBtn({
     const showText = typeShow === 'amount' || typeShow === 'full';
     const showHeart = typeShow === 'like' || typeShow === 'full';
 
+    if (typeShow === 'hide') {
+        return null;
+    }
+
     return (
         <div className={`${styles.likeBadge} ${className || ''}`}>
             {showText && (

@@ -88,7 +88,7 @@ const formatArtPage = (pageData) => {
     ...pageData,
     content: (pageData.content || []).map(art => ({
       ...art,
-      imageUrl: collectionsApi.getArtImageUrl(art.imageUrl),
+      imageUrl: collectionsApi.getArtImageUrl(art.imageUrl || art.image),
     })),
   };
 };
