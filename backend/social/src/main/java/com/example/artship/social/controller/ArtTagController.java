@@ -6,6 +6,9 @@ import com.example.artship.social.dto.TagDto;
 import com.example.artship.social.service.ArtTagService;
 import com.example.artship.social.service.TagManagementService;
 import com.example.artship.social.service.TagService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +25,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/art-tags")
+@Tag(name = "ArtTag Controller", description = "API для управления тегами артов")
 public class ArtTagController {
     
     private static final Logger log = LoggerFactory.getLogger(ArtTagController.class);

@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/liked-arts")
-@Tag(name = "Liked Arts", description = "API для управления понравившимися артами")
+@Tag(name = "Liked Arts Controller", description = "API для управления понравившимися артами")
 public class LikedArtController {
     
     private final LikedArtService likedArtService;

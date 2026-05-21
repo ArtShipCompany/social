@@ -6,6 +6,8 @@ import com.example.artship.social.requests.CopyArtRequest;
 import com.example.artship.social.requests.MoveArtRequest;
 import com.example.artship.social.service.CollectionArtService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/collection-arts")
+@Tag(name = "CollectionArt Controller", description = "API для управления артами в коллекциях")
 public class CollectionArtController {
 
     private static final Logger log = LoggerFactory.getLogger(FollowController.class);
