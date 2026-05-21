@@ -172,12 +172,8 @@ export default function Me() {
     }, []);
 
     const handleCollectionClick = useCallback((collection) => {
-        if (isSystemCollection(collection)) {
-            navigate('/collections/liked');
-            return;
-        }
-        navigate(`/collections/${collection.id}`);
-    }, [navigate, isSystemCollection]);
+        setSelectedCollectionName(collection.title || 'Без названия');
+    }, []);
 
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);

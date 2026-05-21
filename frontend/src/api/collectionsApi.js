@@ -1,4 +1,3 @@
-// collectionsApi.js
 import { authApi, fetchWithErrorHandling } from './authApi';
 import { likeApi as likedApi } from './likeApi';
 

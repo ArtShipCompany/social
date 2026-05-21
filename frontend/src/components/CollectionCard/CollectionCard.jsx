@@ -78,7 +78,10 @@ const CollectionCard = memo(function CollectionCard({
             <Link
                 to={collectionPath}
                 className={styles.imageContainer}
-                onClick={() => onClick?.(id)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onClick?.({ id, title, isPublic });
+                }}
             >
                 {imgError ? (
                     <div className={styles.coverPlaceholder}>
