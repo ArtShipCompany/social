@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { memo, useState, useCallback, useEffect } from 'react';
 import styles from './CollectionCard.module.css';
-import { LIKED_COLLECTION_ID } from '../../api/collectionsApi';
+import {collectionsApi, LIKED_COLLECTION_ID } from '../../api/collectionsApi';
 
 import Delete from '../../assets/cross-delete.svg';
 import Lock from '../../assets/lock-privacy.svg';
@@ -13,7 +13,7 @@ const CollectionCard = memo(function CollectionCard({
     coverImageUrl,
     artCount = 0,
     isPublic = true,
-    isLikedCollection = false,
+    isLikedCollection = false, // пропс оставляем для обратной совместимости
     showDeleteIcon = false,
     showPrivacyIcon = false,
     initialIsPrivate = false,
@@ -21,14 +21,6 @@ const CollectionCard = memo(function CollectionCard({
     onTogglePrivacy,
     onClick,
 }) {
-
-    console.log('CARD RENDER:', {
-        id,
-        title,
-        isLikedCollection,
-        LIKED_COLLECTION_ID
-    });
-
     const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
     const [imgSrc, setImgSrc] = useState(null);
     const [imgError, setImgError] = useState(false);
@@ -43,33 +35,23 @@ const CollectionCard = memo(function CollectionCard({
         } else {
             setImgSrc('/default-collection-cover.png');
         }
-
         setImgError(false);
     }, [coverImageUrl]);
 
-    const isSystemLikedCollection =
-        isLikedCollection ||
-        id === LIKED_COLLECTION_ID ||
-        id === '__liked__' ||
-        id === 'liked';
+    const isSystemLikedCollection = 
+        isLikedCollection || 
+        collectionsApi.utils.isLikedCollection({ id });
 
     const handleDeleteClick = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('DELETE CLICK:', {
-            id,
-            isSystemLikedCollection
-        });
-
         if (isSystemLikedCollection) {
-            alert('Коллекцию "Мне понравилось" удалить нельзя');
+            notification?.warning?.('Коллекцию "Мне понравилось" удалить нельзя');
             return;
         }
-
         onDelete?.(id);
-
-    }, [id, onDelete, isSystemLikedCollection]);
+    }, [id, onDelete, isSystemLikedCollection, notification]);
 
     const handlePrivacyClick = useCallback((e) => {
         e.preventDefault();
@@ -78,11 +60,8 @@ const CollectionCard = memo(function CollectionCard({
         if (isSystemLikedCollection) {
             return;
         }
-
         onTogglePrivacy?.(id);
-
         setIsPrivate(prev => !prev);
-
     }, [id, onTogglePrivacy, isSystemLikedCollection]);
 
     const handleImageError = useCallback(() => {
@@ -93,6 +72,10 @@ const CollectionCard = memo(function CollectionCard({
         ? '/collections/liked'
         : `/collections/${id}`;
 
+    const displayArtCount = isSystemLikedCollection 
+        ? (artCount ?? 0) 
+        : artCount;
+
     return (
         <div className={styles.card}>
             <Link
@@ -100,7 +83,6 @@ const CollectionCard = memo(function CollectionCard({
                 className={styles.imageContainer}
                 onClick={() => onClick?.(id)}
             >
-
                 {imgError ? (
                     <div className={styles.coverPlaceholder}>
                         <span>📁</span>
@@ -117,23 +99,22 @@ const CollectionCard = memo(function CollectionCard({
                 <div className={styles.overlay} />
 
                 <div className={styles.content}>
-                    <h3 className={styles.title}>
-                        {title}
-                    </h3>
-
+                    <h3 className={styles.title}>{title}</h3>
                     <div className={styles.meta}>
                         <span className={styles.artCount}>
-                            {artCount} артов
+                            {displayArtCount} артов
                         </span>
                     </div>
                 </div>
 
+                {/* ✅ Бейдж для лайкнутой коллекции */}
                 {isSystemLikedCollection && (
                     <div className={styles.likedBadge}>
                         ❤️ Лайки
                     </div>
                 )}
 
+                {/* ✅ Кнопки только для обычных коллекций */}
                 {showDeleteIcon && !isSystemLikedCollection && (
                     <button
                         type="button"
@@ -150,13 +131,9 @@ const CollectionCard = memo(function CollectionCard({
                         className={`${styles.actionIcon} ${styles.privacyIcon}`}
                         onClick={handlePrivacyClick}
                     >
-                        <img
-                            src={isPrivate ? Lock : Unlock}
-                            alt="privacy"
-                        />
+                        <img src={isPrivate ? Lock : Unlock} alt="privacy" />
                     </button>
                 )}
-
             </Link>
         </div>
     );

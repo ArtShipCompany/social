@@ -42,9 +42,8 @@ export default function Me() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isHeadMenuOpen, setIsHeadMenuOpen] = useState(false);
 
-    // === Confirm Modal State (универсальный) ===
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [confirmAction, setConfirmAction] = useState(null); // { type: 'art'|'collection', id, onConfirm }
+    const [confirmAction, setConfirmAction] = useState(null);
 
     const [deletingArtId, setDeletingArtId] = useState(null);
     const [deletingCollectionId, setDeletingCollectionId] = useState(null);
@@ -68,6 +67,25 @@ export default function Me() {
         return art?.id && (art.image || art.imageUrl) && art.image !== 'string';
     }, []);
 
+    const isSystemCollection = useCallback((collection) => {
+        if (!collection) return false;
+        
+        const id = String(collection.id).toLowerCase();
+        if (id === LIKED_COLLECTION_ID || id === '__liked__' || id === 'liked') {
+            return true;
+        }
+        
+        if (collection.title === 'Понравившиеся' || collection.title === 'Мне понравилось') {
+            return true;
+        }
+        
+        if (collection.isVirtual === true) {
+            return true;
+        }
+        
+        return false;
+    }, []);
+
     const loadUserData = useCallback(async () => {
         if (!isAuthenticated || !currentUser?.id) return;
 
@@ -80,7 +98,19 @@ export default function Me() {
                 currentUser.id, 
                 { page: 0, size: 20, includeLiked: true }
             );
-            setUserCollections(collectionsData?.content || []);
+            
+            const collectionsList = (collectionsData?.content || []).map(col => {
+                if (collectionsApi.utils.isLikedCollection(col)) {
+                    return {
+                        ...col,
+                        artCount: col.artCount ?? 0,
+                        isVirtual: true
+                    };
+                }
+                return col;
+            });
+            
+            setUserCollections(collectionsList);
             
             const counts = await followApi.getFollowCounts(currentUser.id);
             setFollowerCount(counts?.followers ?? 0);
@@ -132,9 +162,13 @@ export default function Me() {
         if (tab === 'arts') setSelectedCollectionName(null);
     }, []);
 
-    const handleCollectionCardClick = useCallback((collectionName) => {
-        setSelectedCollectionName(collectionName);
-    }, []);
+    const handleCollectionClick = useCallback((collection) => {
+        if (isSystemCollection(collection)) {
+            navigate('/collections/liked');
+            return;
+        }
+        navigate(`/collections/${collection.id}`);
+    }, [navigate, isSystemCollection]);
 
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
@@ -155,8 +189,6 @@ export default function Me() {
         }
     }, [logout, navigate, notification]);
 
-    // === УНИВЕРСАЛЬНЫЕ ХЕНДЛЕРЫ ПОДТВЕРЖДЕНИЯ ===
-    
     const openConfirmModal = useCallback((type, id, onConfirm) => {
         setConfirmAction({ type, id, onConfirm });
         setShowConfirmModal(true);
@@ -171,6 +203,14 @@ export default function Me() {
         if (!confirmAction) return;
         
         const { type, id, onConfirm } = confirmAction;
+        
+        // ✅ ПРОВЕРКА ЗДЕСЬ ТОЖЕ
+        if (type === 'collection' && isSystemCollection(id)) {
+            console.warn('🚫 Блокировка удаления системной коллекции в handleConfirmDelete');
+            notification.warning('Коллекцию "Мне понравилось" удалить нельзя', 4000);
+            closeConfirmModal();
+            return;
+        }
         
         try {
             if (type === 'art') {
@@ -194,9 +234,8 @@ export default function Me() {
             setDeletingCollectionId(null);
             closeConfirmModal();
         }
-    }, [confirmAction, closeConfirmModal, notification]);
+    }, [confirmAction, closeConfirmModal, notification, isSystemCollection]);
 
-    // === УДАЛЕНИЕ АРТА ===
     const handleDeleteArt = useCallback(async (artId) => {
         await artApi.deleteArt(artId);
         setUserArts(prev => prev.filter(art => art.id !== artId));
@@ -206,24 +245,27 @@ export default function Me() {
         openConfirmModal('art', artId, handleDeleteArt);
     }, [openConfirmModal, handleDeleteArt]);
 
-    // === УДАЛЕНИЕ КОЛЛЕКЦИИ ===
     const handleDeleteCollection = useCallback(async (collectionId) => {
-        if (
-            collectionId === LIKED_COLLECTION_ID ||
-            collectionId === '__liked__' ||
-            collectionId === 'liked'
-        ) {
-            throw new Error('Коллекцию "Мне понравилось" удалить нельзя');
-        }
         await collectionsApi.deleteCollection(collectionId);
         setUserCollections(prev => prev.filter(c => c.id !== collectionId));
     }, []);
 
-    const openConfirmDeleteCollection = useCallback((collectionId) => {
-        openConfirmModal('collection', collectionId, handleDeleteCollection);
-    }, [openConfirmModal, handleDeleteCollection]);
+    const openConfirmDeleteCollection = useCallback((collection) => {
+        console.log('🔍 Проверка коллекции перед удалением:', {
+            collectionId: collection.id,
+            title: collection.title,
+            isSystem: isSystemCollection(collection)
+        });
+        
+        if (isSystemCollection(collection)) {
+            console.warn('🚫 Блокировка удаления системной коллекции');
+            notification.warning('Коллекцию "Мне понравилось" удалить нельзя', 4000);
+            return;
+        }
+        
+        openConfirmModal('collection', collection.id, handleDeleteCollection);
+    }, [openConfirmModal, handleDeleteCollection, notification, isSystemCollection]);
 
-    // === ПРИВАТНОСТЬ ===
     const toggleArtPrivacy = useCallback(async (artId) => {
         const art = userArts.find(a => a.id === artId);
         if (!art) return;
@@ -240,7 +282,7 @@ export default function Me() {
     }, [userArts, notification]);
 
     const toggleCollectionPrivacy = useCallback(async (collectionId) => {
-        if (collectionId === collectionsApi.utils.LIKED_COLLECTION_ID) {
+        if (isSystemCollection(collectionId)) {
             notification.warning('Приватность системной коллекции нельзя изменить');
             return;
         }
@@ -256,19 +298,7 @@ export default function Me() {
         } catch (error) {
             notification.error('Не удалось изменить приватность', 3000);
         }
-    }, [userCollections, notification]);
-
-    const handleCollectionClick = useCallback((collectionId) => {
-        if (
-            collectionId === LIKED_COLLECTION_ID ||
-            collectionId === '__liked__' ||
-            collectionId === 'liked'
-        ) {
-            navigate('/collections/liked');
-            return;
-        }
-        navigate(`/collections/${collectionId}`);
-    }, [navigate]);
+    }, [userCollections, notification, isSystemCollection]);
 
     const handleCollectionCreated = useCallback(() => {
         loadUserData();
@@ -460,39 +490,40 @@ export default function Me() {
                             </div>
                         )
                     ) : (
-                        userCollections.length > 0 ? (
-                            userCollections.map(collection => (
-                                <CollectionCard
-                                    key={collection.id}
-                                    id={collection.id}
-                                    title={collection.title}
-                                    coverImageUrl={collection.coverImageUrl}
-                                    artCount={collection.artCount}
-                                    isPublic={collection.isPublic}
-                                    isLikedCollection={collection.id === LIKED_COLLECTION_ID}
-                                    username={collection.username}
-                                    showDeleteIcon={showDeleteIcons && collection.id !== LIKED_COLLECTION_ID}
-                                    showPrivacyIcon={showPrivacyIcons && collection.id !== LIKED_COLLECTION_ID}
-                                    initialIsPrivate={!collection.isPublic}
-                                    onDelete={() => openConfirmDeleteCollection(collection.id)}
-                                    onTogglePrivacy={() => toggleCollectionPrivacy(collection.id)}
-                                    onClick={handleCollectionClick}
-                                />
-                            ))
-                        ) : (
-                            <div className={styles.emptyState}>
-                                <span>Нет коллекций. Создайте первую!</span>
-                                <button className={styles.createButton} onClick={() => setShowCreateCollectionModal(true)}>
-                                    <img src={createIcon} alt="create" className={styles.icon} />
-                                    Создать коллекцию
-                                </button>
-                            </div>
-                        )
+                        <div className={styles.collectionsFeed}>
+                            {userCollections.length > 0 ? (
+                                userCollections.map(collection => (
+                                    <CollectionCard
+                                        key={collection.id}
+                                        id={collection.id}
+                                        title={collection.title}
+                                        coverImageUrl={collection.coverImageUrl}
+                                        artCount={collection.artCount}
+                                        isPublic={collection.isPublic}
+                                        isLikedCollection={collection.id === LIKED_COLLECTION_ID}
+                                        username={collection.username}
+                                        showDeleteIcon={showDeleteIcons && !isSystemCollection(collection)}
+                                        showPrivacyIcon={showPrivacyIcons && !isSystemCollection(collection)}
+                                        initialIsPrivate={!collection.isPublic}
+                                        onDelete={() => openConfirmDeleteCollection(collection)}
+                                        onTogglePrivacy={() => toggleCollectionPrivacy(collection)}
+                                        onClick={() => handleCollectionClick(collection)}
+                                    />
+                                ))
+                            ) : (
+                                <div className={styles.emptyState}>
+                                    <span>Нет коллекций. Создайте первую!</span>
+                                    <button className={styles.createButton} onClick={() => setShowCreateCollectionModal(true)}>
+                                        <img src={createIcon} alt="create" className={styles.icon} />
+                                        Создать коллекцию
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* === УНИВЕРСАЛЬНЫЙ CONFIRM MODAL === */}
             <ConfirmModal
                 isOpen={showConfirmModal}
                 onClose={closeConfirmModal}
