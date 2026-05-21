@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/search")
-@Tag(name = "Search", description = "API для поиска контента и пользователей")
+@Tag(name = "Search Controller", description = "API для поиска контента и пользователей")
 public class SearchController {
     
     private static final Logger logger = LoggerFactory.getLogger(SearchController.class);

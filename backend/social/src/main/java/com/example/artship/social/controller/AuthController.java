@@ -26,7 +26,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication", description = "API для аутентификации и управления пользователями")
+@Tag(name = "Authentication Controller", description = "API для аутентификации и управления пользователями")
 public class AuthController {
     
     @Autowired

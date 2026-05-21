@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/social-links")
-@Tag(name = "Social Links", description = "API для управления ссылками на социальные сети")
+@Tag(name = "Social Links Controller", description = "API для управления ссылками на социальные сети")
 public class SocialLinkController {
     
     @Autowired

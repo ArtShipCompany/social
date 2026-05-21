@@ -132,21 +132,28 @@ public class ArtService {
         return convertToDto(updatedArt);
     }
 
+    @Transactional
     public void deleteArt(Long id) {
         Art art = artRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
+        
+        collectionArtRepository.deleteByArtId(id);
+        
+        likeRepository.deleteByArtId(id);
+        
+        commentService.deleteAllCommentsByArtId(id);
+        
+        tagManagementService.removeAllTagsFromArt(id);
         
         String imageUrl = art.getImageUrl();
         if (imageUrl != null && imageUrl.startsWith("/api/files/images/")) {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        likeRepository.deleteByArtId(id);
-        tagManagementService.removeAllTagsFromArt(id);
+        // 6. Удаляем сам арт
         artRepository.delete(art);
     }
 
-    // ==================== GET ЗАПРОСЫ С УЧЕТОМ СТАТУСА ====================
 
     @Transactional(readOnly = true)
     public Optional<Art> getArtById(Long id) {
@@ -338,7 +345,6 @@ public class ArtService {
                 .orElse(false);
     }
 
-    // ==================== МЕТОДЫ ДЛЯ УДАЛЕНИЯ ====================
 
     @Transactional
     public void deleteAllUserArts(Long userId) {

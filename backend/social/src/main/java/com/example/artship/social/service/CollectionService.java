@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +24,8 @@ import java.util.stream.Collectors;
 public class CollectionService {
     
     private static final Logger log = LoggerFactory.getLogger(CollectionService.class);
+
+    private static final String LIKED_COLLECTION_NAME = "Понравившиеся";
     
     private final CollectionRepository collectionRepository;
     private final UserRepository userRepository;
@@ -141,13 +142,16 @@ public class CollectionService {
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Collection not found with id: " + id));
         
+        if (LIKED_COLLECTION_NAME.equals(collection.getTitle())) {
+            throw new RuntimeException("Cannot delete the 'Liked' collection. This is a system collection.");
+        }
+        
         collectionArtService.removeAllArtsFromCollection(id);
         collectionRepository.delete(collection);
         
         log.info("Collection {} deleted successfully", id);
     }
-    
-    // НОВЫЕ МЕТОДЫ С ПАГИНАЦИЕЙ
+        
     
     // Коллекции пользователя (с пагинацией)
     @Transactional(readOnly = true)

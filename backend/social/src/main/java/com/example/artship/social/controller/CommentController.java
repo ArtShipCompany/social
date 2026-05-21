@@ -9,6 +9,7 @@ import com.example.artship.social.service.PermissionService;
 import com.example.artship.social.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/comments")
+@Tag(name = "Comment Controller", description = "API для управления комментариями")
 public class CommentController {
     
     private static final Logger logger = LoggerFactory.getLogger(CommentController.class);
