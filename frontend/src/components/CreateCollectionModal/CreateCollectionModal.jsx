@@ -102,7 +102,7 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
     if (!isOpen) return null;
 
     return (
-        <div className={styles.overlay} onClick={handleClose}>
+        <div className={styles.overlay}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <button className={styles.closeBtn} onClick={handleClose}>
                     <img src={CloseIcon} alt="close" />
@@ -132,10 +132,6 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
                                 />
                                 <img src={PlusIcon} alt="plus" className={styles.plusIcon} />
                                 <span>Нажмите для загрузки изображения</span>
-                                <span className={styles.uploadHint}>
-                                    Поддерживаемые форматы: JPEG, PNG<br />
-                                    Максимальный размер: 10MB
-                                </span>
                             </div>
                         ) : (
                             <div className={styles.imagePreview}>
@@ -222,23 +218,23 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
                                 {description.length}/{MAX_DESC_LENGTH}
                             </div>
                         </div>
+                        <div className={styles.buttons}>
+                            <DefaultBtn 
+                                type="button" 
+                                text="Отмена" 
+                                onClick={handleClose} 
+                                disabled={loading}
+                                className={styles.cancelBtn}
+                            />
+                            <DefaultBtn 
+                                type="submit" 
+                                text={loading ? 'Создание...' : 'Создать'} 
+                                disabled={loading}
+                            />
+                        </div>                        
                     </div>
 
                     {/* Кнопки */}
-                    <div className={styles.buttons}>
-                        <DefaultBtn 
-                            type="button" 
-                            text="Отмена" 
-                            onClick={handleClose} 
-                            disabled={loading}
-                            className={styles.cancelBtn}
-                        />
-                        <DefaultBtn 
-                            type="submit" 
-                            text={loading ? 'Создание...' : 'Создать'} 
-                            disabled={loading}
-                        />
-                    </div>
                 </form>
             </div>
         </div>

@@ -403,87 +403,90 @@ export default function SettingsPage() {
 
     return (
         <>
-        <form className={styles.form} onSubmit={handleSubmit}>
-            <h2 className={styles.title}>Редактировать профиль</h2>
-            {/* Аватар */}
-            <div className={styles.pfp}>
-                <label htmlFor="avatarUpload" className={styles.avatarLabel}>
-                    <img 
-                        src={avatarUrl} 
-                        alt="avatar" 
-                        className={styles.avatarImg}
-                        onError={(e) => { e.target.src = blankPfp; }}
+        <div className={styles.form}>
+            <form className={styles.coverForm} onSubmit={handleSubmit}>
+                <h2 className={styles.title}>Редактировать профиль</h2>
+                {/* Аватар */}
+                <div className={styles.pfp}>
+                    <label htmlFor="avatarUpload" className={styles.avatarLabel}>
+                        <img 
+                            src={avatarUrl} 
+                            alt="avatar" 
+                            className={styles.avatarImg}
+                            onError={(e) => { e.target.src = blankPfp; }}
+                        />
+                        <img src={PhotoIcon} alt="edit" className={styles.photoIcon}/>
+                    </label>
+                    <input
+                        id="avatarUpload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        style={{ display: 'none' }}
+                        disabled={loading}
                     />
-                    <img src={PhotoIcon} alt="edit" className={styles.photoIcon}/>
-                </label>
-                <input
-                    id="avatarUpload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    style={{ display: 'none' }}
-                    disabled={loading}
-                />
-            </div>
-            <span className={styles.changePhotoText}>Изменить фото</span>
+                </div>
+                <span className={styles.changePhotoText}>Изменить фото</span>
 
-            {/* Поля */}
-            <div className={styles.inputGroup}>
-                <div className={styles.nameInput}>
-                    <label>Никнейм:</label>
-                    <div className={styles.usernameWrapper}>
-                        <span className={styles.prefix}>@</span>
+                {/* Поля */}
+                <div className={styles.inputGroup}>
+                    <div className={styles.nameInput}>
+                        <label>Никнейм:</label>
+                        <div className={styles.usernameWrapper}>
+                            <span className={styles.prefix}>@</span>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => {
+                                    const val = e.target.value.toLowerCase();
+                                    if (val.length <= 20) setUsername(val);
+                                }}
+                                placeholder="никнейм"
+                                className={styles.usernameInput}
+                                disabled={loading}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className={styles.nameInput}>
+                        <label>Имя:</label>
                         <input
                             type="text"
-                            value={username}
+                            value={displayName}
                             onChange={(e) => {
-                                const val = e.target.value.toLowerCase();
-                                if (val.length <= 20) setUsername(val);
+                                const val = e.target.value;
+                                if (val.length <= MAX_LENGTH) setDisplayName(val);
                             }}
-                            placeholder="никнейм"
-                            className={styles.usernameInput}
+                            placeholder="Ваше имя"
                             disabled={loading}
                         />
                     </div>
+                    
+                    <div className={styles.textareaWrapper}>
+                        <label>О себе:</label>
+                        <textarea
+                            value={bio}
+                            onChange={(e) => {
+                                if (e.target.value.length <= MAX_LENGTH) setBio(e.target.value);
+                            }}
+                            maxLength={MAX_LENGTH}
+                            placeholder="Расскажите о себе..."
+                            className={styles.bioTextarea}
+                            disabled={loading}
+                        />
+                        <div className={styles.charCount}>{bio.length}/{MAX_LENGTH}</div>
+                    </div>
                 </div>
-                
-                <div className={styles.nameInput}>
-                    <label>Имя:</label>
-                    <input
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length <= MAX_LENGTH) setDisplayName(val);
-                        }}
-                        placeholder="Ваше имя"
-                        disabled={loading}
-                    />
-                </div>
-                
-                <div className={styles.textareaWrapper}>
-                    <label>О себе:</label>
-                    <textarea
-                        value={bio}
-                        onChange={(e) => {
-                            if (e.target.value.length <= MAX_LENGTH) setBio(e.target.value);
-                        }}
-                        maxLength={MAX_LENGTH}
-                        placeholder="Расскажите о себе..."
-                        className={styles.bioTextarea}
-                        disabled={loading}
-                    />
-                    <div className={styles.charCount}>{bio.length}/{MAX_LENGTH}</div>
-                </div>
-            </div>
 
-            {error && <div className={styles.errorMessage}>{error}</div>}
+                {error && <div className={styles.errorMessage}>{error}</div>}
 
-            <div className={styles.buttons}>
-                <DefaultBtn type="button" text="Отмена" onClick={() => navigate('/me')} disabled={loading} />
-                <DefaultBtn type="submit" text={loading ? 'Сохранение...' : 'Сохранить'} disabled={loading} />
-            </div>
-        </form>
+                <div className={styles.buttons}>
+                    <DefaultBtn type="button" text="Отмена" onClick={() => navigate('/me')} disabled={loading} />
+                    <DefaultBtn type="submit" text={loading ? 'Сохранение...' : 'Сохранить'} disabled={loading} />
+                </div>
+            </form>
+        </div>
+
 
         <div className={styles.linksSection}>
             <h2 className={styles.sectionTitle}>Социальные сети</h2>    

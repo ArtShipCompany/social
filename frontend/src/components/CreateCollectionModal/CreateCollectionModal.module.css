@@ -20,9 +20,11 @@
 }
 
 .modal {
+    display: flex;
+    flex-direction: column;
     background: #dbefff;
     border-radius: 30px;
-    padding: 30px;
+    padding: 10px 30px;
     width: 100%;
     max-width: 600px;
     max-height: 90vh;
@@ -74,19 +76,20 @@
     font-weight: 600;
     font-size: 22px;
     text-align: center;
-    margin-bottom: 25px;
+    margin-block: 10px;
 }
 
 .form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 10px;
 }
 
 .coverSection {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    align-items: center;
 }
 
 .coverSection label {
@@ -96,9 +99,10 @@
 }
 
 .uploadZone {
+    width: 150px;
     border: 3px dotted #10497840;
     border-radius: 15px;
-    padding: 40px 20px;
+    padding: 20px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -139,7 +143,7 @@
     position: relative;
     border-radius: 15px;
     overflow: hidden;
-    height: 250px;
+    height: 180px;
     background: var(--input-bg-color);
 }
 
@@ -229,7 +233,7 @@
     justify-content: space-between;
     background: var(--input-bg-color);
     border-radius: 15px;
-    padding: 10px 12px;
+    padding: 5px 10px;
 }
 
 .toggleHint {
@@ -276,11 +280,7 @@
 .buttons {
     display: flex;
     gap: 12px;
-    margin-top: 10px;
-}
-
-.buttons button {
-    flex: 1;
+    justify-content: space-between;
 }
 
 .cancelBtn {
