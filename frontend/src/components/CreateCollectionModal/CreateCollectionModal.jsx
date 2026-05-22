@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styles from './CreateCollectionModal.module.css';
-import { collectionsApi } from '../../api/collectionsApi';
+import { collectionsApi, LIKED_COLLECTION_ID } from '../../api/collectionsApi';
 import { useNotification } from '../../contexts/NotificationContext';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import PlusIcon from '../../assets/create.svg';
 import CloseIcon from '../../assets/cross-delete.svg';
 
-export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
+export default function CreateCollectionModal({ isOpen, onClose, onSuccess, collection }) {
     const notification = useNotification();
     const fileInputRef = useRef(null);
     
@@ -17,7 +17,17 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
     const [isPublic, setIsPublic] = useState(true);
     const [loading, setLoading] = useState(false);
 
+    const isEditMode = !!collection;
     const MAX_DESC_LENGTH = 500;
+
+    useEffect(() => {
+        if (isOpen && isEditMode && collection) {
+            setTitle(collection.title || '');
+            setDescription(collection.description || '');
+            setIsPublic(collection.isPublic !== false);
+            setCoverImage(collection.coverImageUrl || null);
+        }
+    }, [isOpen, isEditMode, collection]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -68,23 +78,41 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
         setLoading(true);
 
         try {
-            await collectionsApi.createCollection({
-                title: title.trim(),
-                description: description.trim(),
-                isPublic,
-                coverImageFile,
-            });
-
-            notification.success('Коллекция создана!', 3000);
-            
-            if (onSuccess) {
-                onSuccess();
+            if (isEditMode) {
+                // === РЕДАКТИРОВАНИЕ ===
+                const updatedData = {
+                    id: collection.id,
+                    title: title.trim(),
+                    description: description.trim(),
+                    isPublic,
+                    coverImageFile,
+                };
+                
+                await collectionsApi.updateCollection(collection.id, updatedData);
+                notification.success('Коллекция обновлена!', 3000);
+                
+                if (onSuccess) {
+                    onSuccess(updatedData);
+                }
+            } else {
+                // === СОЗДАНИЕ ===
+                await collectionsApi.createCollection({
+                    title: title.trim(),
+                    description: description.trim(),
+                    isPublic,
+                    coverImageFile,
+                });
+                notification.success('Коллекция создана!', 3000);
+                
+                if (onSuccess) {
+                    onSuccess();
+                }
             }
             
             handleClose();
         } catch (error) {
-            console.error('Ошибка создания коллекции:', error);
-            notification.error(error.message || 'Не удалось создать коллекцию', 3000);
+            console.error(`Ошибка ${isEditMode ? 'обновления' : 'создания'} коллекции:`, error);
+            notification.error(error.message || `Не удалось ${isEditMode ? 'обновить' : 'создать'} коллекцию`, 3000);
         } finally {
             setLoading(false);
         }
@@ -108,7 +136,9 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
                     <img src={CloseIcon} alt="close" />
                 </button>
 
-                <h2 className={styles.title}>Создать коллекцию</h2>
+                <h2 className={styles.title}>
+                    {isEditMode ? 'Редактировать коллекцию' : 'Создать коллекцию'}
+                </h2>
 
                 <form className={styles.form} onSubmit={handleSubmit}>
                     {/* Загрузка обложки */}
@@ -218,23 +248,25 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
                                 {description.length}/{MAX_DESC_LENGTH}
                             </div>
                         </div>
-                        <div className={styles.buttons}>
-                            <DefaultBtn 
-                                type="button" 
-                                text="Отмена" 
-                                onClick={handleClose} 
-                                disabled={loading}
-                                className={styles.cancelBtn}
-                            />
-                            <DefaultBtn 
-                                type="submit" 
-                                text={loading ? 'Создание...' : 'Создать'} 
-                                disabled={loading}
-                            />
-                        </div>                        
                     </div>
 
                     {/* Кнопки */}
+                    <div className={styles.buttons}>
+                        <DefaultBtn 
+                            type="button" 
+                            text="Отмена" 
+                            onClick={handleClose} 
+                            disabled={loading}
+                            className={styles.cancelBtn}
+                        />
+                        <DefaultBtn 
+                            type="submit" 
+                            text={loading 
+                                ? (isEditMode ? 'Обновление...' : 'Создание...') 
+                                : (isEditMode ? 'Обновить' : 'Создать')} 
+                            disabled={loading}
+                        />
+                    </div>
                 </form>
             </div>
         </div>

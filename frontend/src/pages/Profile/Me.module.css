@@ -22,42 +22,6 @@
     border-radius: 50%;
 }
 
-.edit {
-    position: absolute;
-    z-index: 2;
-    top: 20px;
-    right: 25px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    color: var(--text-color);
-    padding-block: 5px;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    text-decoration: none;
-    gap: 2px;
-}
-
-.edit span {
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.edit span:hover {
-    font-size: 14px;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.edit img {
-    width: 20px;
-    height: 20px;
-}
-
-.edit:hover {
-    transform: translateY(1px);
-}
-
 .nameContainer {
     display: flex;
     flex-direction: column;
@@ -209,10 +173,31 @@
 }
 
 .collectionTitle {
+    display: flex;
+    flex-direction: row;
+}
+
+.collectionTitle span {
     color: var(--text-color);
     font-size: 16px;
     background: #dbefff;
     border-radius: 20px;
+}
+
+.editCollectionBtn{
+    background: none;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.editCollectionBtn img {
+    width: 20px;
+    height: 20px;
+}
+
+.editCollectionBtn:hover {
+    transform: translateY(1px);
+    cursor: pointer;
 }
 
 .feedLayout {

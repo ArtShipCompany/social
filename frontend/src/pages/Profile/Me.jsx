@@ -51,6 +51,7 @@ export default function Me() {
 
     const [userCollections, setUserCollections] = useState([]);
     const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false);
+    const [editingCollection, setEditingCollection] = useState(null);
 
     const [activeTab, setActiveTab] = useState('arts');
     const [selectedCollectionName, setSelectedCollectionName] = useState(null);
@@ -344,6 +345,22 @@ export default function Me() {
         loadUserData();
     }, [loadUserData]);
 
+    const handleCollectionUpdated = useCallback((updatedCollection) => {
+        if (updatedCollection && selectedCollectionId === updatedCollection.id) {
+            setSelectedCollectionName(updatedCollection.title || 'Без названия');
+        }
+        loadUserData();
+    }, [loadUserData, selectedCollectionId]);
+
+    const handleEditCollectionClick = useCallback((collection) => {
+        if (isSystemCollection(collection)) {
+            notification.warning('Системную коллекцию нельзя редактировать');
+            return;
+        }
+        setEditingCollection(collection);
+        setShowCreateCollectionModal(true);
+    }, [notification, isSystemCollection]);
+
     if (!isAuthenticated) {
         return <div className={styles.loading}>Перенаправление...</div>;
     }
@@ -488,7 +505,24 @@ export default function Me() {
                         Коллекции
                     </button>
                     {activeTab === 'collections' && selectedCollectionName && (
-                        <span className={styles.collectionTitle}>{selectedCollectionName}</span>
+                        <div className={styles.collectionTitle}>
+                            <span >{selectedCollectionName}</span>
+                            {!isSystemCollection({ id: selectedCollectionId }) && (
+                                <button
+                                    type="button"
+                                    className={styles.editCollectionBtn}
+                                    onClick={() => {
+                                        const collection = userCollections.find(c => c.id === selectedCollectionId);
+                                        if (collection) {
+                                            handleEditCollectionClick(collection);
+                                        }
+                                    }}
+                                    title="Редактировать коллекцию"
+                                >
+                                    <img src={editIcon} alt="Редактировать" />
+                                </button>
+                            )}  
+                        </div>    
                     )}                    
                 </div>
                 
@@ -606,8 +640,12 @@ export default function Me() {
 
             <CreateCollectionModal
                 isOpen={showCreateCollectionModal}
-                onClose={() => setShowCreateCollectionModal(false)}
-                onSuccess={handleCollectionCreated}
+                onClose={() => {
+                    setShowCreateCollectionModal(false);
+                    setEditingCollection(null);
+                }}
+                onSuccess={editingCollection ? handleCollectionUpdated : handleCollectionCreated}
+                collection={editingCollection}
             />
         </>
     );
