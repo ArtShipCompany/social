@@ -47,6 +47,7 @@ export default function Me() {
 
     const [deletingArtId, setDeletingArtId] = useState(null);
     const [deletingCollectionId, setDeletingCollectionId] = useState(null);
+    const [removingArtFromCollectionId, setRemovingArtFromCollectionId] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const [userCollections, setUserCollections] = useState([]);
@@ -269,6 +270,8 @@ export default function Me() {
                 setDeletingArtId(id);
             } else if (type === 'collection') {
                 setDeletingCollectionId(id);
+            } else if (type === 'removeArtFromCollection') {
+                setRemovingArtFromCollectionId(id);
             }
             
             await onConfirm?.(id);
@@ -277,6 +280,8 @@ export default function Me() {
                 notification.success('Арт удалён', 3000);
             } else if (type === 'collection') {
                 notification.success('Коллекция удалена', 3000);
+            } else if (type === 'removeArtFromCollection') {
+                notification.success('Арт удалён из коллекции', 3000);
             }
         } catch (error) {
             console.error('Ошибка удаления:', error);
@@ -284,6 +289,7 @@ export default function Me() {
         } finally {
             setDeletingArtId(null);
             setDeletingCollectionId(null);
+            setRemovingArtFromCollectionId(null);
             closeConfirmModal();
         }
     }, [confirmAction, closeConfirmModal, notification, isSystemCollection]);
@@ -302,6 +308,11 @@ export default function Me() {
         setUserCollections(prev => prev.filter(c => c.id !== collectionId));
     }, []);
 
+    const handleRemoveArtFromCollection = useCallback(async ({ artId, collectionId }) => {
+        await collectionsApi.removeArtFromCollection(collectionId, artId);
+        setCollectionArts(prev => prev.filter(art => art.id !== artId));
+    }, []);
+
     const openConfirmDeleteCollection = useCallback((collection) => {
         console.log('Проверка коллекции перед удалением:', {
             collectionId: collection.id,
@@ -317,6 +328,14 @@ export default function Me() {
         
         openConfirmModal('collection', collection.id, handleDeleteCollection);
     }, [openConfirmModal, handleDeleteCollection, notification, isSystemCollection]);
+
+    const openConfirmRemoveArtFromCollection = useCallback((artId) => {
+        if (!selectedCollectionId) return;
+        
+        openConfirmModal('removeArtFromCollection', artId, (id) => 
+            handleRemoveArtFromCollection({ artId: id, collectionId: selectedCollectionId })
+        );
+    }, [openConfirmModal, handleRemoveArtFromCollection, selectedCollectionId]);
 
     const toggleArtPrivacy = useCallback(async (artId) => {
         const art = userArts.find(a => a.id === artId);
@@ -468,6 +487,17 @@ export default function Me() {
         }
     ];
 
+    const collectionArtsMenuOptions = [
+        {
+            key: 'removeFromCollection',
+            icon: deleteIcon,
+            alt: 'Удалить из коллекции',
+            title: 'Удалить арт из коллекции',
+            onClick: () => setShowDeleteIcons(prev => !prev),
+            closeOnClick: false
+        }
+    ];
+
     return (
         <>
             <div className={styles.headContent}>
@@ -548,7 +578,13 @@ export default function Me() {
                     <ProfileOptionsMenu 
                         isOpen={isMenuOpen}
                         onToggle={toggleMenu}
-                        options={activeTab === 'arts' ? artsMenuOptions : collectionsMenuOptions}
+                        options={
+                            selectedCollectionId 
+                                ? collectionArtsMenuOptions
+                                : activeTab === 'arts' 
+                                    ? artsMenuOptions 
+                                    : collectionsMenuOptions
+                        }
                     />
                 </div>  
             </div>
@@ -580,6 +616,9 @@ export default function Me() {
                                             typeShow="hide"
                                             title={art.title || 'Без названия'}
                                             initialIsPrivate={art.isPublicFlag === false}
+                                            showDeleteIcon={showDeleteIcons}
+                                            onOpenConfirmModal={() => openConfirmRemoveArtFromCollection(art.id)}
+                                            isDeleting={removingArtFromCollectionId === art.id}
                                         />
                                     ))}
                                 </div>
@@ -603,7 +642,7 @@ export default function Me() {
                                         isLikedCollection={collection.id === LIKED_COLLECTION_ID}
                                         username={collection.username}
                                         showDeleteIcon={showDeleteIcons && !isSystemCollection(collection)}
-                                        showPrivacyIcon={showPrivacyIcons && !isSystemCollection(collection)}
+                                        showPrivacyIcon={showPrivacyIcons}
                                         initialIsPrivate={!collection.isPublic}
                                         onDelete={() => openConfirmDeleteCollection(collection)}
                                         onTogglePrivacy={() => toggleCollectionPrivacy(collection.id)}
@@ -657,11 +696,25 @@ export default function Me() {
                 isOpen={showConfirmModal}
                 onClose={closeConfirmModal}
                 onConfirm={handleConfirmDelete}
-                title={confirmAction?.type === 'art' ? 'Удалить арт?' : 'Удалить коллекцию?'}
+                title={
+                    confirmAction?.type === 'art' 
+                        ? 'Удалить арт?' 
+                        : confirmAction?.type === 'removeArtFromCollection'
+                            ? 'Удалить арт из коллекции?'
+                            : 'Удалить коллекцию?'
+                }
                 message="Это действие нельзя отменить"
-                confirmText="Удалить"
+                confirmText={
+                    confirmAction?.type === 'removeArtFromCollection' 
+                        ? 'Удалить из коллекции' 
+                        : 'Удалить'
+                }
                 cancelText="Отмена"
-                isProcessing={deletingArtId !== null || deletingCollectionId !== null}
+                isProcessing={
+                    deletingArtId !== null || 
+                    deletingCollectionId !== null || 
+                    removingArtFromCollectionId !== null
+                }
             />
 
             <CreateCollectionModal
