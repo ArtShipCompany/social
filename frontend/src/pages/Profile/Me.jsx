@@ -192,6 +192,7 @@ export default function Me() {
 
     const handleTabChange = useCallback((tab) => {
         setActiveTab(tab);
+        closeMenuAndResetModes()
         
         if (tab === 'collections') {
             handleBackToCollections();
