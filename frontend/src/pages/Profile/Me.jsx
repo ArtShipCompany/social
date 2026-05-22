@@ -55,6 +55,7 @@ export default function Me() {
 
     const [activeTab, setActiveTab] = useState('arts');
     const [selectedCollectionName, setSelectedCollectionName] = useState(null);
+    const [selectedCollectionDescription, setSelectedCollectionDescription] = useState(null);
 
     const [collectionArts, setCollectionArts] = useState([]);
     const [isLoadingCollectionArts, setIsLoadingCollectionArts] = useState(false);
@@ -71,6 +72,16 @@ export default function Me() {
     const isValidArt = useCallback((art) => {
         return art?.id && (art.image || art.imageUrl) && art.image !== 'string';
     }, []);
+
+    const filterCollectionArts = useCallback((arts) => {
+        if (!currentUser?.id) return arts;
+        
+        return arts.filter(art => {
+            const isPublic = art.isPublicFlag !== false;
+            const isOwner = art.author?.id === currentUser.id;
+            return isPublic || isOwner;
+        });
+    }, [currentUser]);
 
     const isSystemCollection = useCallback((collection) => {
         if (!collection) return false;
@@ -173,6 +184,7 @@ export default function Me() {
 
     const handleBackToCollections = useCallback(() => {
         setSelectedCollectionName(null);
+        setSelectedCollectionDescription(null);
         setSelectedCollectionId(null);
         setCollectionArts([]);
     }, []);    
@@ -189,6 +201,7 @@ export default function Me() {
 
     const handleCollectionClick = useCallback(async (collection) => {
         setSelectedCollectionName(collection.title || 'Без названия');
+        setSelectedCollectionDescription(collection.description || '');
         setSelectedCollectionId(collection.id);
         
         try {
@@ -197,14 +210,18 @@ export default function Me() {
                 page: 0, 
                 size: 50
             });
-            setCollectionArts(artsData?.content || []);
+            
+            const rawArts = artsData?.content || [];
+            const filteredArts = filterCollectionArts(rawArts);
+            
+            setCollectionArts(filteredArts);
         } catch (error) {
             console.error('Ошибка загрузки артов коллекции:', error);
             notification.error('Не удалось загрузить арты коллекции');
         } finally {
             setIsLoadingCollectionArts(false);
         }
-    }, [notification]);
+    }, [notification, filterCollectionArts]);
 
     const handleCreateClick = useCallback(() => {
         setIsMenuOpen(false);
@@ -348,6 +365,7 @@ export default function Me() {
     const handleCollectionUpdated = useCallback((updatedCollection) => {
         if (updatedCollection && selectedCollectionId === updatedCollection.id) {
             setSelectedCollectionName(updatedCollection.title || 'Без названия');
+            setSelectedCollectionDescription(updatedCollection.description || '');
         }
         loadUserData();
     }, [loadUserData, selectedCollectionId]);
@@ -535,6 +553,14 @@ export default function Me() {
                 </div>  
             </div>
 
+            {activeTab === 'collections' && selectedCollectionName && (
+                <div className={styles.description}>
+                    <p className={styles.collectionDescription}>
+                        {selectedCollectionDescription}
+                    </p>
+                </div>
+            )}
+
             <div className={styles.feedLayout}>
                 {activeTab === 'collections' ? (
                     selectedCollectionId ? (
@@ -553,6 +579,7 @@ export default function Me() {
                                             image={art.imageUrl}
                                             typeShow="hide"
                                             title={art.title || 'Без названия'}
+                                            initialIsPrivate={art.isPublicFlag === false}
                                         />
                                     ))}
                                 </div>
@@ -563,7 +590,6 @@ export default function Me() {
                             )}
                         </div>
                     ) : (
-                        // === VIEW: Список коллекций (старый код) ===
                         <div className={styles.collectionsFeed}>
                             {userCollections.length > 0 ? (
                                 userCollections.map(collection => (

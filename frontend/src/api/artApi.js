@@ -34,7 +34,6 @@ const requestMultipart = async (url, options = {}) => {
     credentials: 'include',
     ...options,
     headers: {
-      // 👇 ТОЛЬКО Authorization, без Content-Type!
       ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
