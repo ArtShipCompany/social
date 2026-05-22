@@ -25,4 +25,12 @@ logging:
 app:
   cookie:
     secure: false  
-    domain:  
+    domain: 
+  admin:
+    email: admin@artship.com
+    username: admin
+    password: Admin123!
+  moderator:
+    email: moderator@artship.com
+    username: moderator
+    password: Moderator123! 

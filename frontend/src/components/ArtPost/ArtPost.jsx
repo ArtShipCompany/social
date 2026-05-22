@@ -145,10 +145,10 @@ export default function ArtPost({
   }, [notification]);
 
   const handleReport = useCallback(() => {
-      setIsActionsMenuOpen(false);
-      notification.info('Жалобы в разработке', 3000);
-  }, [notification]);
-
+    setIsActionsMenuOpen(false);
+    console.log('Переход на страницу жалобы, artId:', artId);
+    navigate(`/report/art/${artId}`);
+  }, [navigate, artId]);
   // Закрытие меню при клике вне
   useEffect(() => {
       const handleClickOutside = (e) => {

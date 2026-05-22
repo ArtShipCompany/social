@@ -39,12 +39,10 @@ public class ReportService {
     public Report createArtReport(Long reporterId, Long artId, String reason, String description) {
         logger.info("Creating report on art {} by user {}", artId, reporterId);
         
-        // Проверка на повторную жалобу
         if (reportRepository.existsByReporterIdAndTargetIdAndTargetType(reporterId, artId, ReportTargetType.ART)) {
             throw new RuntimeException("You have already reported this art");
         }
         
-        // Получаем арт для кэширования данных
         Art art = artService.getArtById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found"));
         
@@ -56,21 +54,18 @@ public class ReportService {
         report.setDescription(description);
         report.setStatus(ReportStatus.PENDING);
         
-        // Кэшируем данные арта для быстрого отображения
         report.setArtTitle(art.getTitle());
         if (art.getAuthor() != null) {
             report.setArtAuthorUsername(art.getAuthor().getUsername());
         }
         
-        // Рассчитываем приоритет
         long reportCount = reportRepository.countByTargetIdAndTargetType(artId, ReportTargetType.ART);
         report.setPriority((int) Math.min(reportCount + 1, 5));
         
         Report saved = reportRepository.save(report);
         logger.info("Report created with id: {}", saved.getId());
         
-        // Автоматическое действие при 5+ жалобах
-        if (reportCount + 1 >= 5) {
+        if (reportCount + 1 >= 10) {
             logger.warn("Art {} has 5+ reports, auto-hiding", artId);
             artService.hideArt(artId);
         }
@@ -87,7 +82,6 @@ public class ReportService {
             throw new RuntimeException("You have already reported this comment");
         }
         
-        // Получаем СУЩНОСТЬ Comment, а не DTO
         Comment comment = commentService.getCommentEntityById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
         
@@ -99,7 +93,6 @@ public class ReportService {
         report.setDescription(description);
         report.setStatus(ReportStatus.PENDING);
         
-        // Кэшируем данные комментария из сущности
         report.setCommentText(comment.getText());
         if (comment.getUser() != null) {
             report.setCommentAuthorUsername(comment.getUser().getUsername());

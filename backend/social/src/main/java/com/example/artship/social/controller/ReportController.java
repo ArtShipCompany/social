@@ -36,9 +36,7 @@ public class ReportController {
     public ReportController(ReportService reportService) {
         this.reportService = reportService;
     }
-    
-    // ==================== CREATE ====================
-    
+        
     /**
      * Создание жалобы (доступно всем авторизованным пользователям)
      */
@@ -98,14 +96,12 @@ public class ReportController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-    
-    // ==================== READ (ADMIN ONLY) ====================
-    
+        
     /**
-     * Получение всех жалоб (только для администратора)
+     * Получение всех жалоб (доступно для администратора и модератора)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     @Operation(summary = "Получить все жалобы (только админ)", 
                description = "Возвращает список всех жалоб с пагинацией и фильтрацией")
     public ResponseEntity<Page<Report>> getAllReports(
@@ -139,10 +135,10 @@ public class ReportController {
     }
     
     /**
-     * Получение жалоб по статусу (только для администратора)
+     * Получение жалоб по статусу (только для администратора и модератора)
      */
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     @Operation(summary = "Получить жалобы по статусу (только админ)")
     public ResponseEntity<Page<Report>> getReportsByStatus(
             @Parameter(description = "Статус жалобы", required = true)
@@ -192,8 +188,8 @@ public class ReportController {
      * Получение конкретной жалобы по ID (только для администратора)
      */
     @GetMapping("/{reportId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить жалобу по ID (только админ)")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @Operation(summary = "Получить жалобу по ID (только админ или модератор)")
     public ResponseEntity<?> getReportById(@PathVariable String reportId) {
         
         logger.info("Администратор запрашивает жалобу с ID: {}", reportId);
@@ -206,9 +202,7 @@ public class ReportController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    // ==================== MODERATOR/ADMIN ACTIONS ====================
-    
+        
     /**
      * Обработка жалобы (удаление контента) - для модераторов и администраторов
      */
@@ -344,7 +338,6 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
     
-    // ==================== HELPER METHODS ====================
     
     private Pageable parsePageable(int page, int size, String sortParam) {
         String[] sortParts = sortParam.split(",");

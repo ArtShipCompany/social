@@ -1,0 +1,37 @@
+.adminPage {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #dbefff;
+    min-height: 100vh;
+}
+
+.header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #ffffff;
+    font-size: 14px;
+}
+
+
+.accessDenied {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #dbefff;
+    color: #104978;
+    text-align: center;
+    gap: 16px;
+}
+
+.accessDenied h2 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.accessDenied p {
+    font-size: 16px;
+    opacity: 0.8;
+}

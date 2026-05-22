@@ -1,7 +1,9 @@
 package com.example.artship.social.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,31 +53,22 @@ public class ArtService {
         this.collectionArtRepository = collectionArtRepository;
         this.commentService = commentService;
     }
-
-    // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
     
-    /**
-     * Проверка, виден ли арт для пользователя
-     */
     private boolean isArtVisibleToUser(Art art, User viewer) {
-        // Если арт удален или забанен - никто не видит
         if (art.getStatus() == ArtStatus.DELETED_BY_USER || 
             art.getStatus() == ArtStatus.BANNED) {
             return false;
         }
         
-        // Если арт скрыт - видят только админ и модератор
         if (art.getStatus() == ArtStatus.HIDDEN) {
             return viewer != null && (viewer.getUserRole() == UserRole.ADMIN || 
                                      viewer.getUserRole() == UserRole.MODERATOR);
         }
         
-        // Публичный арт видят все
         if (art.getIsPublicFlag() != null && art.getIsPublicFlag()) {
             return true;
         }
         
-        // Приватный арт видят только автор, админ и модератор
         if (viewer == null) return false;
         
         return viewer.getId().equals(art.getAuthor().getId()) ||
@@ -83,22 +76,15 @@ public class ArtService {
                viewer.getUserRole() == UserRole.MODERATOR;
     }
     
-    /**
-     * Получение Query с учетом статуса для публичных запросов
-     */
     private Page<Art> getVisibleArts(Pageable pageable, User viewer) {
         if (viewer != null && (viewer.getUserRole() == UserRole.ADMIN || 
                               viewer.getUserRole() == UserRole.MODERATOR)) {
-            // Админ и модератор видят все арты (кроме DELETED_BY_USER и BANNED)
             return artRepository.findByStatusNotIn(
                 List.of(ArtStatus.DELETED_BY_USER, ArtStatus.BANNED), pageable);
         } else {
-            // Обычные пользователи видят только ACTIVE и публичные
             return artRepository.findByStatusAndIsPublicFlagTrue(ArtStatus.ACTIVE, pageable);
         }
     }
-
-    // ==================== CRUD ОПЕРАЦИИ ====================
 
     public Art save(Art art) {
         return artRepository.save(art);
@@ -138,11 +124,8 @@ public class ArtService {
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + id));
         
         collectionArtRepository.deleteByArtId(id);
-        
         likeRepository.deleteByArtId(id);
-        
         commentService.deleteAllCommentsByArtId(id);
-        
         tagManagementService.removeAllTagsFromArt(id);
         
         String imageUrl = art.getImageUrl();
@@ -150,10 +133,8 @@ public class ArtService {
             fileStorageService.deleteFile(imageUrl);
         }
         
-        // 6. Удаляем сам арт
         artRepository.delete(art);
     }
-
 
     @Transactional(readOnly = true)
     public Optional<Art> getArtById(Long id) {
@@ -170,7 +151,6 @@ public class ArtService {
         
         Art art = artOpt.get();
         
-        // Проверка видимости с учетом статуса
         if (!isArtVisibleToUser(art, viewer)) {
             return Optional.empty();
         }
@@ -194,11 +174,9 @@ public class ArtService {
         
         if (viewer != null && (viewer.getUserRole() == UserRole.ADMIN || 
                               viewer.getUserRole() == UserRole.MODERATOR)) {
-            // Админ и модератор видят все арты автора (кроме DELETED_BY_USER и BANNED)
             artsPage = artRepository.findByAuthorAndStatusNotIn(
                 author, List.of(ArtStatus.DELETED_BY_USER, ArtStatus.BANNED), pageable);
         } else {
-            // Обычные пользователи видят только ACTIVE и публичные арты
             artsPage = artRepository.findByAuthorAndStatusAndIsPublicFlagTrue(
                 author, ArtStatus.ACTIVE, pageable);
         }
@@ -210,13 +188,10 @@ public class ArtService {
     public Page<ArtDto> getAllArtDtosByAuthor(User author, Pageable pageable, User viewer) {
         Page<Art> artsPage;
         
-        // Свои арты видит автор, чужие - только с учетом прав
         if (viewer != null && viewer.getId().equals(author.getId())) {
-            // Автор видит все свои арты (кроме DELETED_BY_USER - они удалены)
             artsPage = artRepository.findByAuthorAndStatusNotIn(
                 author, List.of(ArtStatus.DELETED_BY_USER), pageable);
         } else {
-            // Не автор - только видимые
             artsPage = getVisibleArts(pageable, viewer);
         }
         
@@ -225,7 +200,6 @@ public class ArtService {
 
     @Transactional(readOnly = true)
     public Page<Art> getUserFeed(Long userId, Pageable pageable, User viewer) {
-        // Лента: арты от подписок + рекомендации, только ACTIVE и публичные
         return artRepository.findFeedByUserIdAndStatus(userId, ArtStatus.ACTIVE, pageable);
     }
 
@@ -311,8 +285,6 @@ public class ArtService {
         return findByAnyTagNames(tagNames, pageable, viewer).map(this::convertToDto);
     }
 
-    // ==================== МЕТОДЫ ДЛЯ ТЕГОВ ====================
-
     public ArtDto addTagsToArt(Long artId, List<String> tagNames) {
         tagManagementService.addTagsToArt(artId, tagNames);
         return getArtDtoById(artId, null)
@@ -345,7 +317,6 @@ public class ArtService {
                 .orElse(false);
     }
 
-
     @Transactional
     public void deleteAllUserArts(Long userId) {
         List<Art> userArts = artRepository.findByAuthorId(userId);
@@ -374,9 +345,28 @@ public class ArtService {
             }
         }
     }
+    
+    @Transactional(readOnly = true)
+    public Page<ArtDto> getArtsByStatus(ArtStatus status, Pageable pageable) {
+        if (status != null) {
+            return artRepository.findByStatus(status, pageable)
+                    .map(this::convertToDto);
+        }
+        return artRepository.findAll(pageable).map(this::convertToDto);
+    }
 
+    @Transactional(readOnly = true)
+    public Map<ArtStatus, Long> getArtsStatusStatistics() {
+        Map<ArtStatus, Long> statistics = new HashMap<>();
+        for (ArtStatus status : ArtStatus.values()) {
+            long count = artRepository.countByStatus(status);
+            statistics.put(status, count);
+        }
+        return statistics;
+    }
+    
     @Transactional
-    public void hideArt(Long artId) {
+    public ArtDto hideArt(Long artId) {
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
         
@@ -384,11 +374,12 @@ public class ArtService {
         art.setStatus(ArtStatus.HIDDEN);
         art.setUpdatedAt(LocalDateTime.now());
         
-        artRepository.save(art);
+        Art savedArt = artRepository.save(art);
+        return convertToDto(savedArt);
     }
 
     @Transactional
-    public void unhideArt(Long artId) {
+    public ArtDto unhideArt(Long artId) {
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
         
@@ -396,11 +387,12 @@ public class ArtService {
         art.setStatus(ArtStatus.ACTIVE);
         art.setUpdatedAt(LocalDateTime.now());
         
-        artRepository.save(art);
+        Art savedArt = artRepository.save(art);
+        return convertToDto(savedArt);
     }
     
     @Transactional
-    public void banArt(Long artId) {
+    public ArtDto banArt(Long artId) {
         Art art = artRepository.findById(artId)
                 .orElseThrow(() -> new RuntimeException("Art not found with id: " + artId));
         
@@ -408,7 +400,8 @@ public class ArtService {
         art.setStatus(ArtStatus.BANNED);
         art.setUpdatedAt(LocalDateTime.now());
         
-        artRepository.save(art);
+        Art savedArt = artRepository.save(art);
+        return convertToDto(savedArt);
     }
     
     @Transactional
@@ -427,7 +420,7 @@ public class ArtService {
         
         artRepository.delete(art);
     }
-        
+
     @Transactional(readOnly = true)
     public ArtDto convertToDto(Art art) {
         if (art == null) return null;
@@ -439,7 +432,7 @@ public class ArtService {
         artDto.setImage(art.getImageUrl());
         artDto.setProjectDataUrl(art.getProjectDataUrl());
         artDto.setPublicFlag(art.getIsPublicFlag() != null ? art.getIsPublicFlag() : true);
-        artDto.setStatus(art.getStatus()); // Добавить status в DTO
+        artDto.setStatus(art.getStatus());
         artDto.setCreatedAt(art.getCreatedAt());
         artDto.setUpdatedAt(art.getUpdatedAt());
     

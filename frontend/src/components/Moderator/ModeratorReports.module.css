@@ -1,0 +1,66 @@
+.moderatorReports {
+    background-color: #dbefff;
+    min-height: 100vh;
+
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #ffffff;
+    font-size: 14px;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #104978;
+    margin-bottom: 8px;
+}
+
+.header p {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .moderatorReports {
+        padding: 16px;
+    }
+    
+    .stats {
+        gap: 12px;
+    }
+    
+    .statValue {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .moderatorReports {
+        padding: 12px;
+    }
+    
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .statValue {
+        font-size: 20px;
+    }
+    
+    .statLabel {
+        font-size: 11px;
+    }
+}

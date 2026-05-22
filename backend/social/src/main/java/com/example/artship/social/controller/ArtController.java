@@ -1,6 +1,7 @@
 package com.example.artship.social.controller;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.artship.social.dto.ArtDto;
 import com.example.artship.social.model.Art;
 import com.example.artship.social.model.User;
+import com.example.artship.social.model.enumclass.ArtStatus;
 import com.example.artship.social.requests.CreateArtRequest;
 import com.example.artship.social.requests.PrivacyUpdateRequest;
 import com.example.artship.social.requests.UpdateArtRequest;
@@ -53,61 +56,42 @@ public class ArtController {
         this.permissionService = permissionService;
     }
     
-    
-    @Operation(
-        summary = "Создать новый арт",
-        description = "Создает арт с загрузкой изображения. Формат запроса: multipart/form-data"
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Арт успешно создан"),
-        @ApiResponse(responseCode = "400", description = "Неверные данные запроса"),
-        @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
-    })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, 
                 produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ArtDto> createArt(
-            @Parameter(description = "Данные арта и файл изображения", required = true)
             @ModelAttribute CreateArtRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
         if (userDetails == null) {
-            logger.error("Пользователь не авторизован");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
-            logger.error("Пользователь не найден: {}", userDetails.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
         User currentUser = userOpt.get();
-        logger.info("Пользователь: {}, роль: {}", currentUser.getUsername(), currentUser.getUserRole());
         
         if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-            logger.error("Заголовок не указан");
             return ResponseEntity.badRequest().build();
         }
         
         if (request.getImageFile() == null || request.getImageFile().isEmpty()) {
-            logger.error("Файл изображения не загружен");
             return ResponseEntity.badRequest().build();
         }
         
         String contentType = request.getImageFile().getContentType();
         if (!isValidImageFormat(contentType)) {
-            logger.error("Неподдерживаемый формат: {}", contentType);
             return ResponseEntity.badRequest().build();
         }
         
         long fileSize = request.getImageFile().getSize();
         if (fileSize > 10 * 1024 * 1024) {
-            logger.error("Файл слишком большой: {} байт", fileSize);
             return ResponseEntity.badRequest().build();
         }
         
         String imageUrl = fileStorageService.uploadFile(request.getImageFile());
-        logger.info("Файл загружен: {}", imageUrl);
         
         Art art = new Art();
         art.setTitle(request.getTitle().trim());
@@ -117,28 +101,16 @@ public class ArtController {
         art.setIsPublicFlag(request.getIsPublicFlag() != null ? request.getIsPublicFlag() : true);
         
         ArtDto createdArt = artService.createArt(art, currentUser.getId());
-        logger.info("=== АРТ СОЗДАН. ID: {} ===", createdArt.getId());
         
         return new ResponseEntity<>(createdArt, HttpStatus.CREATED);
     }
         
-    @Operation(summary = "Обновить арт")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Арт успешно обновлен"),
-        @ApiResponse(responseCode = "403", description = "Нет прав на редактирование"),
-        @ApiResponse(responseCode = "404", description = "Арт не найден"),
-        @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
-    })
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
                produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ArtDto> updateArt(
-            @Parameter(description = "ID арта", required = true) 
             @PathVariable Long id,
-            @Parameter(description = "Обновленные данные арта", required = true)
             @ModelAttribute UpdateArtRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
-        logger.info("=== ОБНОВЛЕНИЕ АРТА ID: {} ===", id);
         
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -153,31 +125,25 @@ public class ArtController {
         
         Optional<Art> artOpt = artService.getArtById(id);
         if (artOpt.isEmpty()) {
-            logger.warn("Арт с ID {} не найден", id);
             return ResponseEntity.notFound().build();
         }
         
         Art existingArt = artOpt.get();
         
         if (!permissionService.canEditContent(currentUser, existingArt)) {
-            logger.warn("Пользователь {} не имеет прав на редактирование арта {}", 
-                       currentUser.getUsername(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         
         if (request.getTitle() != null && !request.getTitle().trim().isEmpty()) {
             existingArt.setTitle(request.getTitle().trim());
-            logger.info("Обновлен заголовок: {}", existingArt.getTitle());
         }
         
         if (request.getDescription() != null) {
             existingArt.setDescription(request.getDescription().trim());
-            logger.info("Обновлено описание");
         }
         
         if (request.getProjectDataUrl() != null) {
             existingArt.setProjectDataUrl(request.getProjectDataUrl().trim());
-            logger.info("Обновлен URL проекта");
         }
         
         if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
@@ -192,11 +158,9 @@ public class ArtController {
             }
             
             String newImageUrl = fileStorageService.uploadFile(request.getImageFile());
-            logger.info("Новое изображение загружено: {}", newImageUrl);
             
             try {
                 fileStorageService.deleteFile(existingArt.getImageUrl());
-                logger.info("Старое изображение удалено: {}", existingArt.getImageUrl());
             } catch (Exception e) {
                 logger.warn("Не удалось удалить старое изображение: {}", e.getMessage());
             }
@@ -207,66 +171,40 @@ public class ArtController {
         existingArt.setUpdatedAt(LocalDateTime.now());
         
         ArtDto updatedArt = artService.updateArt(id, existingArt);
-        logger.info("=== АРТ ОБНОВЛЕН. ID: {} ===", id);
         
         return ResponseEntity.ok(updatedArt);
     }
     
-    @Operation(summary = "Изменение приватности арта")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Приватность арта успешно изменена",
-                content = @Content(schema = @Schema(implementation = ArtDto.class))),
-        @ApiResponse(responseCode = "404", description = "Арт не найден"),
-        @ApiResponse(responseCode = "403", description = "Нет прав на изменение этого арта"),
-        @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
-    })
     @PatchMapping(value = "/{id}/privacy", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
                 produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ArtDto> updateArtPrivacy(
-            @Parameter(description = "ID арта", required = true) 
             @PathVariable Long id,
-            @Parameter(
-                description = "Данные для изменения приватности",
-                required = true,
-                content = @Content(
-                    mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                    schema = @Schema(implementation = PrivacyUpdateRequest.class)
-                )
-            )
             @ModelAttribute PrivacyUpdateRequest privacyRequest,
             @AuthenticationPrincipal UserDetails userDetails) {  
         
-        logger.info("=== ИЗМЕНЕНИЕ ПРИВАТНОСТИ АРТА ID: {} ===", id);
-        
         if (userDetails == null) {
-            logger.error("Пользователь не авторизован");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
         Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
         if (userOpt.isEmpty()) {
-            logger.error("Пользователь не найден: {}", userDetails.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
         User currentUser = userOpt.get();
         
         if (privacyRequest.getIsPublicFlag() == null) {
-            logger.error("isPublicFlag не может быть null");
             return ResponseEntity.badRequest().build();
         }
         
         Optional<Art> artOpt = artService.getArtById(id);
         if (artOpt.isEmpty()) {
-            logger.warn("Арт с ID {} не найден", id);
             return ResponseEntity.notFound().build();
         }
         
         Art art = artOpt.get();
         
         if (!permissionService.canManageArt(currentUser, art)) {
-            logger.warn("Пользователь {} не имеет прав на изменение приватности арта {}", 
-                    currentUser.getUsername(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         
@@ -276,28 +214,13 @@ public class ArtController {
         Art updatedArt = artService.save(art);
         ArtDto result = artService.convertToDto(updatedArt);
         
-        logger.info("Приватность арта {} изменена на {} пользователем {}", 
-                id, privacyRequest.getIsPublicFlag(), currentUser.getUsername());
-        
         return ResponseEntity.ok(result);
     }
     
-    // ==================== DELETE ====================
-    
-    @Operation(summary = "Удалить арт")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Арт успешно удален"),
-        @ApiResponse(responseCode = "403", description = "Нет прав для удаления"),
-        @ApiResponse(responseCode = "404", description = "Арт не найден"),
-        @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
-    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteArt(
-            @Parameter(description = "ID арта", required = true) 
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
-        logger.info("=== УДАЛЕНИЕ АРТА ID: {} ===", id);
         
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -318,77 +241,27 @@ public class ArtController {
         Art art = artOpt.get();
         
         if (!permissionService.canManageArt(currentUser, art)) {
-            logger.warn("Пользователь {} не имеет прав на удаление арта {}", 
-                       currentUser.getUsername(), id);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         
         try {
             fileStorageService.deleteFile(art.getImageUrl());
-            logger.info("Файл изображения удален: {}", art.getImageUrl());
         } catch (Exception e) {
             logger.warn("Не удалось удалить файл изображения: {}", e.getMessage());
         }
         
         artService.deleteArt(id);
-        logger.info("=== АРТ УДАЛЕН. ID: {} пользователем: {} ===", id, currentUser.getUsername());
         
         return ResponseEntity.noContent().build();
     }
 
-    
-    @Operation(summary = "Получить арт по ID")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Арт найден"),
-        @ApiResponse(responseCode = "403", description = "Нет доступа к приватному арту"),
-        @ApiResponse(responseCode = "404", description = "Арт не найден")
-    })
-    @GetMapping("/{id}")
-    public ResponseEntity<ArtDto> getArtById(
-            @Parameter(description = "ID арта", required = true) 
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        
-        logger.info("Получение арта по ID: {}", id);
-        
-        Optional<Art> artOpt = artService.getArtById(id);
-        if (artOpt.isEmpty()) {
-            logger.warn("Арт с ID {} не найден", id);
-            return ResponseEntity.notFound().build();
-        }
-        
-        Art art = artOpt.get();
-        
-        User currentUser = null;
-        if (userDetails != null) {
-            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
-            currentUser = userOpt.orElse(null);
-        }
-        
-        if (!permissionService.canViewArt(currentUser, art)) {
-            logger.warn("Пользователь {} не имеет доступа к арту {}", 
-                       currentUser != null ? currentUser.getUsername() : "неавторизованный", id);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        
-        ArtDto artDto = artService.convertToDto(art);
-        return ResponseEntity.ok(artDto);
-    }
-    
-    @Operation(summary = "Получить публичные арты с пагинацией")
     @GetMapping("/public")
     public ResponseEntity<Page<ArtDto>> getPublicArts(
-            @Parameter(description = "Номер страницы (начиная с 0)", example = "0") 
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Количество элементов на странице", example = "20") 
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Поле для сортировки", example = "createdAt") 
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @Parameter(description = "Направление сортировки", example = "desc") 
             @RequestParam(defaultValue = "desc") String direction,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
-        logger.info("Получение публичных артов. Страница: {}, Размер: {}", page, size);
         
         Sort sort = direction.equalsIgnoreCase("desc") 
             ? Sort.by(sortBy).descending() 
@@ -396,7 +269,6 @@ public class ArtController {
         
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        // Получаем текущего пользователя (может быть null)
         User currentUser = null;
         if (userDetails != null) {
             Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
@@ -405,20 +277,14 @@ public class ArtController {
         
         Page<ArtDto> arts = artService.getPublicArtsDtos(pageable, currentUser);
         
-        logger.info("Найдено {} публичных артов", arts.getTotalElements());
         return ResponseEntity.ok(arts);
     }
     
-    @Operation(summary = "Получить ленту пользователя")
     @GetMapping("/feed")
     public ResponseEntity<Page<ArtDto>> getUserFeed(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "Номер страницы (начиная с 0)", example = "0") 
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Количество элементов на странице", example = "20") 
             @RequestParam(defaultValue = "20") int size) {
-        
-        logger.info("Получение ленты пользователя");
         
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -435,28 +301,20 @@ public class ArtController {
         
         Page<ArtDto> feed = artService.getUserFeedDtos(currentUser.getId(), pageable, currentUser);
         
-        logger.info("Лента пользователя {} содержит {} артов", 
-                   currentUser.getUsername(), feed.getTotalElements());
         return ResponseEntity.ok(feed);
     }
     
-    @Operation(summary = "Получить публичные арты пользователя")
     @GetMapping("/author/{userId}")
     public ResponseEntity<Page<ArtDto>> getPublicArtsByAuthor(
-            @Parameter(description = "ID пользователя", required = true) 
             @PathVariable Long userId,
             @PageableDefault(size = 20) Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        logger.info("Получение публичных артов пользователя ID: {}", userId);
-        
         Optional<User> author = userService.findById(userId);
         if (author.isEmpty()) {
-            logger.warn("Пользователь с ID {} не найден", userId);
             return ResponseEntity.notFound().build();
         }
         
-        // Получаем текущего пользователя для проверки прав
         User currentUser = null;
         if (userDetails != null) {
             Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
@@ -465,19 +323,13 @@ public class ArtController {
         
         Page<ArtDto> arts = artService.getPublicArtDtosByAuthor(author.get(), pageable, currentUser);
         
-        logger.info("Найдено {} публичных артов пользователя {}", 
-                arts.getTotalElements(), author.get().getUsername());
-        
         return ResponseEntity.ok(arts);
     }
     
-    @Operation(summary = "Получить все арты текущего пользователя")
     @GetMapping("/my-arts")
     public ResponseEntity<Page<ArtDto>> getMyArts(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
-        
-        logger.info("Получение всех артов текущего пользователя");
         
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -492,24 +344,65 @@ public class ArtController {
         
         Page<ArtDto> arts = artService.getAllArtDtosByAuthor(currentUser, pageable, currentUser);
         
-        logger.info("Найдено {} артов пользователя {}", 
-                arts.getTotalElements(), currentUser.getUsername());
+        return ResponseEntity.ok(arts);
+    }
+    
+    @GetMapping("/admin/by-status")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<Page<ArtDto>> getArtsByStatus(
+            @RequestParam(required = false) ArtStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+        
+        Sort sortObj = parseSort(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        
+        Page<ArtDto> arts = artService.getArtsByStatus(status, pageable);
         
         return ResponseEntity.ok(arts);
     }
     
-    @Operation(summary = "Проверить доступ к арту")
-    @GetMapping("/{id}/access")
-    public ResponseEntity<Boolean> checkArtAccess(
-            @Parameter(description = "ID арта", required = true) 
+    @GetMapping("/admin/status-statistics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<ArtStatus, Long>> getArtsStatusStatistics() {
+        Map<ArtStatus, Long> statistics = artService.getArtsStatusStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ArtDto> getArtById(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        logger.info("Проверка доступа к арту ID: {}", id);
+        Optional<Art> artOpt = artService.getArtById(id);
+        if (artOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Art art = artOpt.get();
+        
+        User currentUser = null;
+        if (userDetails != null) {
+            Optional<User> userOpt = userService.findByUsername(userDetails.getUsername());
+            currentUser = userOpt.orElse(null);
+        }
+        
+        if (!permissionService.canViewArt(currentUser, art)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        ArtDto artDto = artService.convertToDto(art);
+        return ResponseEntity.ok(artDto);
+    }
+    
+    @GetMapping("/{id}/access")
+    public ResponseEntity<Boolean> checkArtAccess(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
         Optional<Art> artOpt = artService.getArtById(id);
         if (artOpt.isEmpty()) {
-            logger.warn("Арт с ID {} не найден", id);
             return ResponseEntity.notFound().build();
         }
         
@@ -523,10 +416,96 @@ public class ArtController {
         
         boolean hasAccess = permissionService.canViewArt(currentUser, art);
         
-        logger.info("Доступ к арту {}: {}", id, hasAccess);
         return ResponseEntity.ok(hasAccess);
     }
+
+    @PatchMapping("/{artId}/hide")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<ArtDto> hideArt(
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            ArtDto updatedArt = artService.hideArt(artId);
+            logger.info("Арт {} скрыт пользователем {}", artId, userDetails.getUsername());
+            return ResponseEntity.ok(updatedArt);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
     
+    @PatchMapping("/{artId}/unhide")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    public ResponseEntity<ArtDto> unhideArt(
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            ArtDto updatedArt = artService.unhideArt(artId);
+            logger.info("Арт {} восстановлен пользователем {}", artId, userDetails.getUsername());
+            return ResponseEntity.ok(updatedArt);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PatchMapping("/{artId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ArtDto> banArt(
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            ArtDto updatedArt = artService.banArt(artId);
+            logger.info("Арт {} забанен администратором {}", artId, userDetails.getUsername());
+            return ResponseEntity.ok(updatedArt);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @DeleteMapping("/{artId}/force")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> forceDeleteArt(
+            @PathVariable Long artId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            artService.forceDeleteArt(artId);
+            logger.info("Арт {} принудительно удалён администратором {}", artId, userDetails.getUsername());
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    private Sort parseSort(String sortParam) {
+        String[] sortParts = sortParam.split(",");
+        if (sortParts.length == 2) {
+            String field = sortParts[0];
+            String direction = sortParts[1];
+            return "desc".equalsIgnoreCase(direction) 
+                ? Sort.by(field).descending() 
+                : Sort.by(field).ascending();
+        }
+        return Sort.by("createdAt").descending();
+    }
     
     private boolean isValidImageFormat(String contentType) {
         if (contentType == null) {

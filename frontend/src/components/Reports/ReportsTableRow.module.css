@@ -1,0 +1,460 @@
+.pendingRow {
+    background-color: #fffdf5;
+}
+
+.targetType {
+    font-weight: 500;
+}
+
+.targetIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.targetId {
+    font-family: monospace;
+    color: #104978;
+}
+
+.reason {
+    max-width: 250px;
+}
+
+.reasonContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.priorityIcon {
+    font-size: 14px;
+}
+
+.reasonDesc {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.reporter, .author {
+    font-size: 13px;
+}
+
+.userId {
+    font-family: monospace;
+    color: #666;
+}
+
+.date {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.statusPending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.statusResolved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.statusRejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.resolvedBy {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.actions {
+    min-width: 200px;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.resolveBtn, .hideBtn, .rejectBtn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.resolveBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+.resolveBtn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.hideBtn {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.hideBtn:hover {
+    background-color: #e0a800;
+    transform: translateY(-1px);
+}
+
+.rejectBtn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.rejectBtn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+.resolveBtn:disabled, .hideBtn:disabled, .rejectBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.resolvedInfo {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+.priorityNumber {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.priorityHigh {
+    background-color: #ef4444;
+    color: white;
+}
+
+.priorityMedium {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.priorityLow {
+    background-color: #10b981;
+    color: white;
+}
+
+.contentCell {
+    min-width: 250px;
+    max-width: 300px;
+}
+
+.contentPreview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.contentImage {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.contentText {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.contentText strong {
+    font-size: 14px;
+}
+
+.contentDescription {
+    color: #666;
+    font-size: 11px;
+}
+
+.commentText {
+    color: #333;
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Остальные стили */
+.targetIcon {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #f0f0f0;
+    font-size: 12px;
+}
+
+.reasonContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reasonDesc {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.statusPending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.statusResolved {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.statusRejected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.resolveBtn, .hideBtn, .rejectBtn {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.resolveBtn {
+    background: #ef4444;
+    color: white;
+}
+
+.resolveBtn:hover {
+    background: #dc2626;
+}
+
+.hideBtn {
+    background: #f59e0b;
+    color: white;
+}
+
+.hideBtn:hover {
+    background: #d97706;
+}
+
+.rejectBtn {
+    background: #6b7280;
+    color: white;
+}
+
+.rejectBtn:hover {
+    background: #4b5563;
+}
+
+.resolvedInfo {
+    font-size: 11px;
+    color: #666;
+}
+
+.resolvedBy {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.pendingRow {
+    background-color: #fffbeb;
+}
+
+.userId {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.dialogOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+}
+
+.dialog {
+    background-color: #3a90d6;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: dialogFadeIn 0.2s ease;
+}
+
+@keyframes dialogFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.dialogHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #333;
+}
+
+.dialogHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #fff;
+}
+
+.dialogClose {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.dialogClose:hover {
+    color: #fff;
+}
+
+.dialogBody {
+    padding: 20px;
+}
+
+.dialogBody p {
+    margin: 0 0 16px 0;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.dialogLabel {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #ccc;
+    font-size: 13px;
+}
+
+.dialogTextarea {
+    width: 100%;
+    padding: 10px;
+    background-color: #fffefe;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #000000;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    margin-top: 8px;
+}
+
+.dialogTextarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.dialogFooter {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 16px 20px;
+    border-top: 1px solid #333;
+}
+
+.dialogCancelBtn {
+    padding: 8px 20px;
+    background-color: #3a3a3a;
+    border: none;
+    border-radius: 6px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.dialogCancelBtn:hover {
+    background-color: #4a4a4a;
+}
+
+.dialogConfirmBtn {
+    padding: 8px 20px;
+    background-color: #ef4444;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.dialogConfirmBtn:hover:not(:disabled) {
+    background-color: #dc2626;
+}
+
+.dialogConfirmBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

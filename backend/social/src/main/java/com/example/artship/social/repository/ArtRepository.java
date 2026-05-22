@@ -16,7 +16,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ArtRepository extends JpaRepository<Art, Long> {
     
-    // ==================== СУЩЕСТВУЮЩИЕ МЕТОДЫ ====================
     
     Page<Art> findByAuthorAndIsPublicFlagTrue(User author, Pageable pageable);
     Page<Art> findByAuthor(User author, Pageable pageable);
@@ -53,7 +52,6 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
     @Query("SELECT DISTINCT a FROM Art a JOIN a.tags t WHERE LOWER(t.name) = LOWER(:tagName) AND a.isPublicFlag = true")
     Page<Art> findByTagNameAndIsPublicFlagTrue(@Param("tagName") String tagName, Pageable pageable);
     
-    // ==================== НОВЫЕ МЕТОДЫ С УЧЕТОМ СТАТУСА ====================
     
     /**
      * Поиск по статусу и публичности для обычных пользователей
@@ -167,4 +165,8 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
     Page<Art> findByAnyTagNamesAndStatusAndIsPublicFlagTrue(@Param("tagNames") List<String> tagNames,
                                                              @Param("status") ArtStatus status,
                                                              Pageable pageable);
+    Page<Art> findByStatus(ArtStatus status, Pageable pageable);
+
+    @Query("SELECT COUNT(a) FROM Art a WHERE a.status = :status")
+    long countByStatus(@Param("status") ArtStatus status);
 }

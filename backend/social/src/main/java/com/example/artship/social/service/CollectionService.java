@@ -213,7 +213,6 @@ public class CollectionService {
         return new PageImpl<>(dtos, pageable, collectionsPage.getTotalElements());
     }
     
-    // СТАРЫЕ МЕТОДЫ (ОСТАВЛЯЕМ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ)
     @Transactional(readOnly = true)
     public List<CollectionDto> getCollectionsByUserId(Long userId) {
         return collectionRepository.findByUserId(userId).stream()
@@ -319,7 +318,6 @@ public class CollectionService {
     private CollectionDto convertToDtoWithArts(Collection collection) {
         log.debug("Converting collection {} to DTO with arts", collection.getId());
 
-        // Используем метод без пагинации для получения всех артов
         List<ArtDto> arts = collectionArtService.getAllArtsByCollectionId(collection.getId());
  
         CollectionDto dto = new CollectionDto();
