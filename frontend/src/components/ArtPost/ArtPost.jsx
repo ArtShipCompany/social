@@ -1,19 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useApi } from '../../hooks/useApi';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useApi } from '../../hooks/useApi';
+import { artApi } from '../../api/artApi';
+import { tagApi } from '../../api/tagApi';
+
 import { formatDate } from '../../utils/formatDate';
+
 import styles from './ArtPost.module.css';
 import LikeBtn from '../LikeBtn/LikeBtn';
 import DefaultBtn from '../DefaultBtn/DefaultBtn';
 import CustomTextArea from '../CustomTextArea/CustomTextArea';
+import AddToCollectionModal from '../AddToCollectionModal/AddToCollectionModal';
+
 import CreateIcon from '../../assets/create.svg';
 import editIcon from '../../assets/edit-icon.svg';
 import lockIcon from '../../assets/private-icon.svg'
 import PFP from '../../assets/WA.jpg';
-import { artApi } from '../../api/artApi';
-import { tagApi } from '../../api/tagApi';
+
 
 export default function ArtPost({ 
   mode = 'view',
@@ -46,8 +51,10 @@ export default function ArtPost({
   const [imageError, setImageError] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [artDetails, setArtDetails] = useState(null);
+
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const actionsMenuRef = useRef(null);
+  const [isAddToCollectionModalOpen, setIsAddToCollectionModalOpen] = useState(false);
   
   // Для автодополнения тегов
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -592,18 +599,52 @@ export default function ArtPost({
 
           {/* Кнопка редактирования для владельца */}
           {isOwner ? (
-            <>
-              <Link to={`/art/${artId}/edit`} className={styles.edit}>
-                <img src={editIcon} alt="Редактировать" />
-                <span>Редактировать</span>
-              </Link>
+            <div className={styles.ownerActions}>
+              {/* Бейдж приватности — остаётся слева */}
               {artDetails?.isPublicFlag === false && (
                 <span className={styles.privateBadge}>
                   <img src={lockIcon} alt="Приватный" />
                   Приватный
                 </span>
               )}
-            </>
+              
+              {/* Выпадающее меню владельца — справа */}
+              <div className={styles.actionsWrapper} ref={actionsMenuRef}>
+                <button 
+                  className={styles.actionsBtn} 
+                  onClick={toggleActionsMenu}
+                  aria-expanded={isActionsMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <span>Действия</span>
+                  <svg className={`${styles.arrow} ${isActionsMenuOpen ? styles.open : ''}`} width="12" height="8" viewBox="0 0 12 8" fill="none">
+                    <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+                
+                {isActionsMenuOpen && (
+                  <div className={styles.actionsDropdown}>
+                    <button 
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        navigate(`/art/${artId}/edit`)
+                      }}
+                    >
+                      Редактировать                      
+                    </button>                    
+                    <button 
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setIsActionsMenuOpen(false);
+                        setIsAddToCollectionModalOpen(true);
+                      }}
+                    >
+                      Добавить в коллекцию
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             <div className={styles.actionsWrapper} ref={actionsMenuRef}>
               <button 
@@ -620,12 +661,15 @@ export default function ArtPost({
               
               {isActionsMenuOpen && (
                 <div className={styles.actionsDropdown}>
-                  <button 
-                    className={styles.dropdownItem}
-                    onClick={handleAddToCollection}
-                  >
-                    Добавить в коллекцию
-                  </button>
+                    <button 
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setIsActionsMenuOpen(false);
+                        setIsAddToCollectionModalOpen(true);
+                      }}
+                    >
+                      Добавить в коллекцию
+                    </button>
                   <button 
                     className={styles.dropdownItem}
                     onClick={handleReport}
@@ -636,6 +680,14 @@ export default function ArtPost({
               )}
             </div>
           )}
+          <AddToCollectionModal
+              isOpen={isAddToCollectionModalOpen}
+              onClose={() => setIsAddToCollectionModalOpen(false)}
+              artId={artId}
+              onSuccess={() => {
+                // Можно обновить данные арта если нужно
+              }}
+          />          
         </>
       )}
     </div>

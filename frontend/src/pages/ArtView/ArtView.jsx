@@ -60,7 +60,7 @@ export default function ArtView() {
         };
 
         window.addEventListener('scroll', handleScroll);
-        setTimeout(handleScroll, 100); // Небольшая задержка
+        setTimeout(handleScroll, 100);
         
         return () => window.removeEventListener('scroll', handleScroll);
     }, [art]);
@@ -75,7 +75,6 @@ export default function ArtView() {
 
     return (
         <div className={styles.container}>
-            {/* Убрали лишнюю информацию об авторе, так как она уже в ArtPost */}
             <div ref={artPostRef}>
                 <ArtPost 
                     key={`art-${art.id}`} 
@@ -83,7 +82,7 @@ export default function ArtView() {
                     image={art.imageUrl}
                     description={art.description}
                     tags={art.tags}
-                    owner={art.author} // Автор передается в ArtPost
+                    owner={art.author}
                 />
             </div>
 

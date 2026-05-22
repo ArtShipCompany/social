@@ -1,0 +1,250 @@
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modalContent {
+  background: var(--bg-color, #fff);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closeBtn {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: none; border: none;
+  cursor: pointer; padding: 6px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.closeBtn:hover { 
+  background: var(--input-bg-color, #f0f0f0);
+  transform: rotate(90deg);
+}
+
+.closeBtn img { 
+  width: 18px; height: 18px;
+  filter: brightness(0) invert(0.4);
+}
+
+.title {
+  margin: 0 0 20px 0;
+  font-size: 20px; font-weight: 600;
+  color: var(--text-color, #333);
+  text-align: center;
+  padding-right: 32px;
+}
+
+.loading {
+  text-align: center; 
+  padding: 40px 24px;
+  color: var(--text-secondary, #666);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--input-bg-color, #e0e0e0);
+  border-top-color: var(--accent-color, #667eea);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Скроллящийся список */
+.collectionsList {
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 16px;
+}
+
+/* Скроллбар */
+.collectionsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.collectionsList::-webkit-scrollbar-track {
+  background: var(--input-bg-color, #f0f0f0);
+  border-radius: 3px;
+}
+
+.collectionsList::-webkit-scrollbar-thumb {
+  background: var(--accent-color, #667eea);
+  border-radius: 3px;
+}
+
+.collectionsList::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover, #5568d3);
+}
+
+.collectionItem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  background: var(--input-bg-color, #f5f5f5);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left; width: 100%;
+  position: relative;
+}
+
+.collectionItem:hover {
+  background: var(--btn-hover-color, #e8e8e8);
+  border-color: var(--accent-color, #667eea);
+  transform: translateX(4px);
+}
+
+.collectionItem.selected {
+  border-color: var(--accent-color, #667eea);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.collectionItem:disabled { 
+  opacity: 0.6; cursor: not-allowed;
+  transform: none;
+}
+
+.collectionCover {
+  width: 56px; height: 56px;
+  border-radius: 10px; overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-secondary, #e0e0e0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.collectionCover img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.coverPlaceholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.collectionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.collectionTitle {
+  font-size: 15px; font-weight: 600;
+  color: var(--text-color, #333);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.artCount {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+  font-weight: 500;
+}
+
+.checkmark {
+  color: var(--accent-color, #667eea);
+  font-weight: 700; font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* Футер с кнопками */
+.actionsFooter {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--input-bg-color, #e0e0e0);
+}
+
+.cancelBtn, .confirmBtn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn {
+  background: var(--input-bg-color, #f0f0f0);
+  color: var(--text-color, #333);
+}
+
+.cancelBtn:hover {
+  background: var(--btn-hover-color, #e0e0e0);
+}
+
+.confirmBtn {
+  background: var(--accent-color, #667eea);
+  color: white;
+}
+
+.confirmBtn:hover:not(.disabled) {
+  background: var(--accent-hover, #5568d3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.confirmBtn.disabled {
+  background: var(--input-bg-color, #e0e0e0);
+  color: var(--text-secondary, #999);
+  cursor: not-allowed;
+}
+
+.emptyState {
+  text-align: center; 
+  padding: 48px 24px;
+  color: var(--text-secondary, #666);
+  font-size: 15px;
+}
