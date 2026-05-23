@@ -14,11 +14,17 @@ function AdminReports() {
     const [processing, setProcessing] = useState(null);
     
     const [page, setPage] = useState(0);
-    const [size, setSize] = useState(20);
+    const [size, setSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const [statusFilter, setStatusFilter] = useState('');
     
+    const [stats, setStats] = useState({
+        all: 0,
+        pending: 0,
+        resolved: 0,
+        rejected: 0
+    });
 
     const loadReports = async () => {
         try {
@@ -34,9 +40,29 @@ function AdminReports() {
         }
     };
     
+    const loadStatistics = async () => {
+        try {
+            const [allRes, pendingRes, resolvedRes, rejectedRes] = await Promise.all([
+                reportsApi.getAllReports(0, 1, ''),
+                reportsApi.getAllReports(0, 1, 'PENDING'),
+                reportsApi.getAllReports(0, 1, 'RESOLVED'),
+                reportsApi.getAllReports(0, 1, 'REJECTED')
+            ]);
+            
+            setStats({
+                all: allRes.totalElements || 0,
+                pending: pendingRes.totalElements || 0,
+                resolved: resolvedRes.totalElements || 0,
+                rejected: rejectedRes.totalElements || 0
+            });
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+        }
+    };
     
     useEffect(() => {
         loadReports();
+        loadStatistics();
     }, [page, size, statusFilter]);
     
     const handleResolve = async (reportId, deleteContent) => {
@@ -60,7 +86,8 @@ function AdminReports() {
         try {
             await reportsApi.rejectReport(reportId, resolutionNote);
             notification.success('Жалоба отклонена');
-            loadReports(); // Перезагружаем список жалоб
+            loadReports();
+            loadStatistics();
         } catch (error) {
             console.error('Error rejecting report:', error);
             notification.error('Ошибка при отклонении жалобы');
@@ -69,15 +96,14 @@ function AdminReports() {
     
     return (
         <div className={styles.adminReportsPage}>
-
             <div className={styles.header}>
                 <h1>Управление жалобами</h1>
+                <span>Управление статусами и видимостью артов:</span>
             </div>
             <ReportsFilters 
                 statusFilter={statusFilter}
                 onStatusChange={setStatusFilter}
-                size={size}
-                onSizeChange={setSize}
+                stats={stats}
             />
             <ReportsTable 
                 reports={reports}

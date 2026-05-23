@@ -1,3 +1,24 @@
+.customTooltip {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    animation: tooltipFadeIn 0.2s ease;
+}
+
+.tooltipContent {
+    background: var(--btn-bg-color);
+    color: var(--text-color);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 150px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    box-shadow: 0 4px 20px rgba(16, 73, 120, 0.3);
+    font-weight: 500;
+}
+
 .pendingRow {
     background-color: #fffdf5;
 }
@@ -7,157 +28,66 @@
 }
 
 .targetIcon {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: #f0f0f0;
+    font-size: 11px;
+    font-weight: 600;
 }
 
-.targetId {
-    font-family: monospace;
+.contentCell {
+    min-width: 100px;
+    max-width: 140px;
+    padding: 8px 12px !important;
+    cursor: pointer;
+}
+
+.contentText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.contentTitle {
+    font-size: 12px;
+    font-weight: 600;
     color: #104978;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contentId {
+    font-family: monospace;
+    font-size: 10px;
+    color: #666;
 }
 
 .reason {
-    max-width: 250px;
+    max-width: 150px;
+    padding: 8px 12px !important;
+    cursor: help;
 }
 
 .reasonContent {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 500;
-}
-
-.priorityIcon {
-    font-size: 14px;
-}
-
-.reasonDesc {
-    font-size: 12px;
-    color: #666;
-    margin-top: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-}
-
-.reporter, .author {
-    font-size: 13px;
-}
-
-.userId {
-    font-family: monospace;
-    color: #666;
-}
-
-.date {
-    font-size: 12px;
-    color: #666;
-    white-space: nowrap;
-}
-
-.statusBadge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.statusPending {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.statusResolved {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.statusRejected {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.resolvedBy {
-    font-size: 11px;
-    color: #666;
-    margin-top: 4px;
-}
-
-.actions {
-    min-width: 200px;
-}
-
-.actionButtons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.resolveBtn, .hideBtn, .rejectBtn {
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.resolveBtn {
-    background-color: #28a745;
-    color: white;
-}
-
-.resolveBtn:hover {
-    background-color: #218838;
-    transform: translateY(-1px);
-}
-
-.hideBtn {
-    background-color: #ffc107;
-    color: #333;
-}
-
-.hideBtn:hover {
-    background-color: #e0a800;
-    transform: translateY(-1px);
-}
-
-.rejectBtn {
-    background-color: #6c757d;
-    color: white;
-}
-
-.rejectBtn:hover {
-    background-color: #5a6268;
-    transform: translateY(-1px);
-}
-
-.resolveBtn:disabled, .hideBtn:disabled, .rejectBtn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.resolvedInfo {
-    font-size: 12px;
-    color: #666;
-    font-style: italic;
+    gap: 6px;
+    margin-bottom: 2px;
 }
 
 .priorityNumber {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 12px;
-    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: bold;
-    margin-right: 8px;
+    flex-shrink: 0;
 }
 
 .priorityHigh {
@@ -175,72 +105,46 @@
     color: white;
 }
 
-.contentCell {
-    min-width: 250px;
-    max-width: 300px;
-}
-
-.contentPreview {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.contentImage {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.contentText {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 13px;
-}
-
-.contentText strong {
+.reasonText {
     font-size: 14px;
-}
-
-.contentDescription {
-    color: #666;
-    font-size: 11px;
-}
-
-.commentText {
-    color: #333;
-    font-style: italic;
-    font-size: 13px;
-}
-
-/* Остальные стили */
-.targetIcon {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: #f0f0f0;
-    font-size: 12px;
-}
-
-.reasonContent {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
 .reasonDesc {
+    font-size: 10px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reporter, .author, .userId {
+    font-size: 14px;
+}
+
+.author {
+    font-weight: 500;
+    color: #104978;
+}
+
+.date {
     font-size: 11px;
     color: #666;
-    margin-top: 4px;
+    white-space: nowrap;
+    padding: 8px 12px !important;
 }
 
 .statusBadge {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
 }
 
 .statusPending {
@@ -258,27 +162,38 @@
     color: #dc2626;
 }
 
+.resolvedBy {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+}
+
 .actionButtons {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-.resolveBtn, .hideBtn, .rejectBtn {
-    padding: 4px 12px;
+.deleteBtn, .hideBtn, .rejectBtn {
+    padding: 5px 10px;
+    border-radius: 20px;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-.resolveBtn {
+.deleteBtn {
     background: #ef4444;
     color: white;
 }
 
-.resolveBtn:hover {
+.deleteBtn:hover {
     background: #dc2626;
+    transform: translateY(-1px);
 }
 
 .hideBtn {
@@ -288,6 +203,7 @@
 
 .hideBtn:hover {
     background: #d97706;
+    transform: translateY(-1px);
 }
 
 .rejectBtn {
@@ -297,28 +213,26 @@
 
 .rejectBtn:hover {
     background: #4b5563;
+    transform: translateY(-1px);
+}
+
+.deleteBtn:disabled, .hideBtn:disabled, .rejectBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .resolvedInfo {
-    font-size: 11px;
+    font-size: 14px;
     color: #666;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: normal;
+    display: inline-block;
 }
 
-.resolvedBy {
-    font-size: 10px;
-    color: #999;
-    margin-top: 2px;
-}
-
-.pendingRow {
-    background-color: #fffbeb;
-}
-
-.userId {
-    font-family: monospace;
-    font-size: 12px;
-}
-
+/* Dialog styles */
 .dialogOverlay {
     position: fixed;
     top: 0;

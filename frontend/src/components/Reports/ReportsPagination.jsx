@@ -44,17 +44,9 @@ function ReportsPagination({ page, totalPages, totalElements, size, onPageChange
     return (
         <div className={styles.pagination}>
             <div className={styles.info}>
-                Показано <span className={styles.infoHighlight}>{startItem}</span> — <span className={styles.infoHighlight}>{endItem}</span> из <span className={styles.infoHighlight}>{totalElements}</span> жалоб
+                Показано {startItem}-{endItem} из {totalElements} жалоб
             </div>
             <div className={styles.controls}>
-                <button
-                    onClick={() => onPageChange(0)}
-                    disabled={page === 0}
-                    className={styles.pageBtn}
-                    title="Первая страница"
-                >
-                    ⏮
-                </button>
                 <button
                     onClick={() => onPageChange(page - 1)}
                     disabled={page === 0}
@@ -83,14 +75,6 @@ function ReportsPagination({ page, totalPages, totalElements, size, onPageChange
                     className={styles.pageBtn}
                 >
                     Вперед →
-                </button>
-                <button
-                    onClick={() => onPageChange(totalPages - 1)}
-                    disabled={page >= totalPages - 1}
-                    className={styles.pageBtn}
-                    title="Последняя страница"
-                >
-                    ⏭
                 </button>
             </div>
         </div>

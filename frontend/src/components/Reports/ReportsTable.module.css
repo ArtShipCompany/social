@@ -1,39 +1,46 @@
 .tableWrapper {
     background: white;
-    border-radius: 16px;
+    border-radius: 30px;
     overflow-x: auto;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-height: 426px;
+    position: relative;
 }
 
 .reportsTable {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 1000px;
+}
+
+.reportsTable th:first-child,
+.reportsTable td:first-child {
+    padding-left: 20px;
 }
 
 .reportsTable th {
-    text-align: left;
-    padding: 16px;
-    background-color: #f8f9fa;
+    text-align: center;
+    padding: 10px 8px;
+    background-color: var(--btn-bg-color);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: #104978;
+    cursor: pointer;
+    user-select: none;
     border-bottom: 2px solid #dbefff;
 }
 
 .reportsTable td {
-    padding: 12px 16px;
     border-bottom: 1px solid #dbefff;
-    font-size: 14px;
-    color: #333;
+    color: #104978;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .loading, .emptyState {
+    min-height: 426px;
     text-align: center;
     padding: 60px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .spinner {
@@ -46,11 +53,6 @@
     margin: 0 auto 16px;
 }
 
-.emptyIcon {
-    font-size: 48px;
-    margin-bottom: 16px;
-}
-
 .emptyState h3 {
     font-size: 18px;
     color: #104978;
@@ -58,7 +60,7 @@
 }
 
 .emptyState p {
-    color: #666;
+    color: #6c757d;
 }
 
 @keyframes spin {

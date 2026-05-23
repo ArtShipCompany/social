@@ -8,9 +8,10 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
     const [showRejectDialog, setShowRejectDialog] = useState(false);
     const [rejectNote, setRejectNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [tooltip, setTooltip] = useState({ visible: false, text: '', x: 0, y: 0 });
     
     const getTargetTypeName = (type) => {
-        return type === 'ART' ? 'Арт' : 'Комментарий';
+        return type === 'ART' ? 'Арт' : 'Коммент';
     };
     
     const getStatusBadgeClass = (status) => {
@@ -48,10 +49,23 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
         return date.toLocaleString('ru-RU', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+    
+    const showTooltip = (e, text) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltip({
+            visible: true,
+            text: text,
+            x: rect.right + 5,
+            y: rect.top
+        });
+    };
+    
+    const hideTooltip = () => {
+        setTooltip({ ...tooltip, visible: false });
     };
     
     const handleArtClick = () => {
@@ -89,7 +103,6 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
             return {
                 title: report.artTitle || 'Без названия',
                 imageUrl: report.artImageUrl,
-                description: report.artDescription,
                 onClick: handleArtClick,
                 type: 'art'
             };
@@ -118,45 +131,30 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                     onClick={content.onClick}
                     style={{ cursor: content.type === 'art' ? 'pointer' : 'default' }}
                 >
-                    <div className={styles.contentPreview}>
-                        {content.type === 'art' && content.imageUrl && (
-                            <img 
-                                src={content.imageUrl} 
-                                alt={content.title}
-                                className={styles.contentImage}
-                                onError={(e) => e.target.style.display = 'none'}
-                            />
-                        )}
-                        <div className={styles.contentText}>
-                            <strong>{content.title}</strong>
-                            {content.type === 'art' && content.description && (
-                                <span className={styles.contentDescription}>
-                                    {content.description.substring(0, 80)}
-                                    {content.description.length > 80 ? '...' : ''}
-                                </span>
-                            )}
-                            {content.type === 'comment' && content.text && (
-                                <span className={styles.commentText}>
-                                    "{content.text.substring(0, 100)}
-                                    {content.text.length > 100 ? '...' : ''}"
-                                </span>
-                            )}
-                            <span className={styles.contentId}>
-                                ID: {report.targetId}
-                            </span>
-                        </div>
+                    <div className={styles.contentText}>
+                        <strong 
+                        className={styles.contentTitle}
+                        onMouseEnter={(e) => showTooltip(e, content.title)}
+                        onMouseLeave={hideTooltip}                        
+                        >
+                            {content.title}
+                        </strong>
+                        <span className={styles.contentId}>ID: {report.targetId}</span>
                     </div>
                 </td>
                 
                 <td className={styles.reason}>
                     <div className={styles.reasonContent}>
-                        <span className={`${styles.priorityNumber} ${getPriorityClass(report.priority)}`}>
-                            {getPriorityDisplay(report.priority)}
-                        </span>
-                        <span>{report.reason}</span>
+                        <span className={styles.reasonText}>{report.reason}</span>
                     </div>
                     {report.description && (
-                        <div className={styles.reasonDesc}>{report.description}</div>
+                        <div 
+                        className={styles.reasonDesc}
+                        onMouseEnter={(e) => showTooltip(e, report.description || report.reason)}
+                        onMouseLeave={hideTooltip}
+                        >
+                            {report.description}
+                        </div>
                     )}
                 </td>
                 
@@ -187,8 +185,8 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                             <button
                                 onClick={() => onResolve(report.id, true)}
                                 disabled={processing}
-                                className={styles.resolveBtn}
-                                title="Подтвердить жалобу и удалить контент"
+                                className={styles.deleteBtn}
+                                title="Удалить контент"
                             >
                                 Удалить
                             </button>
@@ -196,7 +194,7 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                                 onClick={() => onResolve(report.id, false)}
                                 disabled={processing}
                                 className={styles.hideBtn}
-                                title="Подтвердить жалобу, но скрыть контент"
+                                title="Скрыть контент"
                             >
                                 Скрыть
                             </button>
@@ -210,12 +208,30 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                             </button>
                         </div>
                     ) : (
-                        <span className={styles.resolvedInfo}>
+                        <span 
+                            className={styles.resolvedInfo}
+                        >
                             {report.resolutionNote}
                         </span>
                     )}
                 </td>
             </tr>
+            
+            {/* Кастомная подсказка */}
+            {tooltip.visible && (
+                <div 
+                    className={styles.customTooltip}
+                    style={{
+                        left: `${tooltip.x}px`,
+                        top: `${tooltip.y}px`,
+                        transform: 'translateY(-100%) translateX(-30%)',
+                    }}
+                >
+                    <div className={styles.tooltipContent}>
+                        {tooltip.text}
+                    </div>
+                </div>
+            )}
             
             {/* Модальное окно для отклонения жалобы */}
             {showRejectDialog && (

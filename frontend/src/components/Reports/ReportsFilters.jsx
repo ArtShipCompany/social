@@ -1,34 +1,33 @@
 import styles from './ReportsFilters.module.css';
 
-function ReportsFilters({ statusFilter, onStatusChange, size, onSizeChange }) {
+function ReportsFilters({ 
+    statusFilter, 
+    onStatusChange, 
+    stats 
+}) {
+    const filters = [
+        { value: 'PENDING', label: 'Ожидают', count: stats?.pending || 0 },
+        { value: 'RESOLVED', label: 'Решены', count: stats?.resolved || 0 },
+        { value: 'REJECTED', label: 'Отклонены', count: stats?.rejected || 0 },
+        { value: '', label: 'Все', count: stats?.all || 0 },
+    ];
+
     return (
         <div className={styles.filters}>
-            <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Статус:</label>
-                <select 
-                    value={statusFilter} 
-                    onChange={(e) => onStatusChange(e.target.value)}
-                    className={styles.filterSelect}
-                >
-                    <option value="">Все</option>
-                    <option value="PENDING">Ожидают</option>
-                    <option value="RESOLVED">Решены</option>
-                    <option value="REJECTED">Отклонены</option>
-                </select>
+            <div className={styles.label}>
+                <span className={styles.filterLabel}>Статус:</span>
             </div>
-            
-            <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Показывать:</label>
-                <select 
-                    value={size} 
-                    onChange={(e) => onSizeChange(Number(e.target.value))}
-                    className={styles.filterSelect}
-                >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                </select>
+            <div className={styles.filterButtons}>
+                {filters.map((filter) => (
+                    <button
+                        key={filter.value}
+                        onClick={() => onStatusChange(filter.value)}
+                        className={`${styles.filterButton} ${statusFilter === filter.value ? styles.active : ''}`}
+                    >
+                        <span className={styles.buttonCount}>{filter.count}</span>
+                        <span className={styles.buttonLabel}>{filter.label}</span>
+                    </button>
+                ))}
             </div>
         </div>
     );
