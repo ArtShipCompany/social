@@ -17,7 +17,7 @@ function ChangeUserRole() {
     const [updatingRole, setUpdatingRole] = useState(null);
     
     const [page, setPage] = useState(0);
-    const [size, setSize] = useState(20);
+    const [size, setSize] = useState(5);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const [sortBy, setSortBy] = useState('createdAt');
@@ -145,14 +145,14 @@ function ChangeUserRole() {
                 <h1>Управление пользователями</h1>
             </div>
             <AdminStats stats={stats} />
-            <AdminSearch 
+            {/* <AdminSearch 
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onReset={handleResetSearch}
                 size={size}
                 onSizeChange={handleSizeChange}
-            />
+            /> */}
             <AdminUserTable 
                 users={users}
                 loading={loading}

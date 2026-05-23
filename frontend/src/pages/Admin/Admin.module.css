@@ -1,33 +1,16 @@
 .adminPage {
     display: flex;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
+    min-width: 1300px;
 }
 
 .sidebar {
     width: 280px;
     background: white;
-    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
     position: sticky;
     top: 0;
-    height: 100vh;
     display: flex;
     flex-direction: column;
-}
-
-.logo {
-    padding: 24px 20px;
-    border-bottom: 2px solid #dbefff;
-    margin-bottom: 20px;
-}
-
-.logo h2 {
-    font-size: 20px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #104978 0%, #2c7cb6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    border-radius: 30px 0px 0px 30px;
 }
 
 .nav {
@@ -43,7 +26,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: 30px;
     border: none;
     background: transparent;
     color: #104978;
@@ -72,10 +55,8 @@
 
 .content {
     flex: 1;
-    overflow-x: auto;
-    min-width: 1200px; 
+    overflow-x: auto; 
 }
-
 
 .accessDenied {
     display: flex;
@@ -97,57 +78,4 @@
 .accessDenied p {
     font-size: 14px;
     color: #6c757d;
-}
-
-@media (max-width: 768px) {
-    .adminPage {
-        flex-direction: column;
-    }
-    
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-    }
-    
-    .logo {
-        padding: 0;
-        border-bottom: none;
-        margin-bottom: 0;
-    }
-    
-    .logo h2 {
-        font-size: 16px;
-    }
-    
-    .nav {
-        flex-direction: row;
-        gap: 8px;
-        padding: 0;
-    }
-    
-    .navBtn {
-        padding: 8px 12px;
-        width: auto;
-    }
-    
-    .navText {
-        display: none;
-    }
-    
-    .navIcon {
-        font-size: 18px;
-    }
-    
-    .navBtn:hover {
-        transform: none;
-    }
-    
-    .content {
-        padding: 0;
-    }
 }

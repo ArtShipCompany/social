@@ -59,13 +59,13 @@ function Header() {
                 ) : (
                     <>
                         {showAdminButton && (
-                            <Link to="/admin" className={styles.roleButton}>
+                            <Link to="/admin" className={styles.cover}>
                                 Панель администратора
                             </Link>
                         )}
                         
                         {showModeratorButton && (
-                            <Link to="/moderator" className={styles.roleButton}>
+                            <Link to="/moderator" className={styles.cover}>
                                 Панель модератора
                             </Link>
                         )}

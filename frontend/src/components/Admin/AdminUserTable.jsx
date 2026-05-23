@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import styles from './AdminUserTable.module.css';
 
 function AdminUserTable({ 
@@ -11,6 +12,8 @@ function AdminUserTable({
     onRoleChange,
     getRoleName 
 }) {
+    
+    const [openSelectId, setOpenSelectId] = useState(null);
     
     const getRoleBadgeClass = (role) => {
         switch(role) {
@@ -30,7 +33,20 @@ function AdminUserTable({
         });
     };
     
-    if (loading) {
+    const getRoleLabel = (role) => {
+        switch(role) {
+            case 'ADMIN': return 'Администратор';
+            case 'MODERATOR': return 'Модератор';
+            default: return 'Пользователь';
+        }
+    };
+    
+    const handleRoleSelect = (userId, newRole) => {
+        onRoleChange(userId, newRole);
+        setOpenSelectId(null);
+    };
+    
+    if (loading && users.length === 0) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -80,17 +96,43 @@ function AdminUserTable({
                                     {getRoleName(user.userRole)}
                                 </span>
                             </td>
-                            <td>
-                                <select
-                                    value={user.userRole}
-                                    onChange={(e) => onRoleChange(user.id, e.target.value)}
-                                    disabled={updatingRole === user.id}
-                                    className={`${styles.roleSelect} ${errorUser === user.id ? styles.errorSelect : ''}`}
-                                >
-                                    <option value="USER">Пользователь</option>
-                                    <option value="MODERATOR">Модератор</option>
-                                    <option value="ADMIN">Администратор</option>
-                                </select>
+                            <td className={styles.actionCell}>
+                                <div className={styles.selectContainer}>
+                                    <button
+                                        onClick={() => setOpenSelectId(openSelectId === user.id ? null : user.id)}
+                                        disabled={updatingRole === user.id}
+                                        className={`${styles.selectButton} ${errorUser === user.id ? styles.errorSelect : ''}`}
+                                    >
+                                        <span className={styles.selectValue}>{getRoleLabel(user.userRole)}</span>
+                                        <span className={`${styles.selectArrow} ${openSelectId === user.id ? styles.arrowUp : ''}`}>
+                                            ▼
+                                        </span>
+                                    </button>
+                                    
+                                    {openSelectId === user.id && (
+                                        <div className={styles.selectDropdown}>
+                                            <div 
+                                                className={`${styles.dropdownOption} ${user.userRole === 'USER' ? styles.dropdownOptionActive : ''}`}
+                                                onClick={() => handleRoleSelect(user.id, 'USER')}
+                                            >
+                                                <span>Пользователь</span>
+                                            </div>
+                                            <div 
+                                                className={`${styles.dropdownOption} ${user.userRole === 'MODERATOR' ? styles.dropdownOptionActive : ''}`}
+                                                onClick={() => handleRoleSelect(user.id, 'MODERATOR')}
+                                            >
+                                                <span>Модератор</span>
+                                            </div>
+                                            <div 
+                                                className={`${styles.dropdownOption} ${user.userRole === 'ADMIN' ? styles.dropdownOptionActive : ''}`}
+                                                onClick={() => handleRoleSelect(user.id, 'ADMIN')}
+                                            >
+                                                <span>Администратор</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
                                 {updatingRole === user.id && (
                                     <span className={styles.spinnerSmall}></span>
                                 )}
@@ -102,6 +144,14 @@ function AdminUserTable({
                     ))}
                 </tbody>
             </table>
+            
+            {/* Клик вне селекта закрывает его */}
+            {openSelectId && (
+                <div 
+                    className={styles.dropdownBackdrop}
+                    onClick={() => setOpenSelectId(null)}
+                />
+            )}
         </div>
     );
 }

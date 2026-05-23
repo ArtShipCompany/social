@@ -2,6 +2,8 @@ import styles from './AdminStats.module.css';
 
 function AdminStats({ stats }) {
     return (
+        <div>
+        <span className={styles.title}>Статистика пользователей: </span>
         <div className={styles.stats}>
             <div className={styles.statCard}>
                 <div className={styles.statValue}>{stats.totalUsers}</div>
@@ -19,6 +21,7 @@ function AdminStats({ stats }) {
                 <div className={styles.statValue}>{stats.userCount}</div>
                 <div className={styles.statLabel}>Обычных пользователей</div>
             </div>
+        </div>              
         </div>
     );
 }

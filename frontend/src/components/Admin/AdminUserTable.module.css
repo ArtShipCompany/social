@@ -1,8 +1,10 @@
 .tableWrapper {
     background: white;
-    border-radius: 20px;
+    border-radius: 30px;
     overflow-x: auto;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-height: 300px;
+    position: relative;
 }
 
 .userTable {
@@ -11,10 +13,139 @@
     min-width: 900px;
 }
 
-.userTable th {
+.userTable th:first-child,
+.userTable td:first-child {
+    padding-left: 20px;
+}
+
+.userTable th:last-child,
+.userTable td:last-child {
+    padding-right: 20px;
+}
+
+.actionCell {
+    position: relative;
+    padding: 10px 12px;
+}
+
+.selectContainer {
+    position: relative;
+    display: inline-block;
+}
+
+.selectButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 2px solid #dbefff;
+    background: linear-gradient(135deg, #dbefff 0%, #e8f4ff 100%);
+    color: #104978;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    box-shadow: 0 2px 8px rgba(16, 73, 120, 0.1);
+}
+
+.selectButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c7e8ff 0%, #d4edff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 73, 120, 0.15);
+}
+
+.selectButton:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.selectButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.selectValue {
+    flex: 1;
     text-align: left;
-    padding: 16px;
-    background-color: #f8f9fa;
+}
+
+.selectArrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    opacity: 0.7;
+}
+
+.selectArrow.arrowUp {
+    transform: rotate(180deg);
+}
+
+.selectDropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(16, 73, 120, 0.2);
+    min-width: 180px;
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownSlide 0.2s ease;
+    border: 2px solid #dbefff;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdownOption {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.dropdownOption:hover {
+    background: linear-gradient(90deg, #dbefff 0%, #e8f4ff 100%);
+}
+
+.dropdownOptionActive {
+    background: var(--btn-bg-color);
+}
+
+.dropdownOptionActive:hover {
+    background: var(--btn-bg-color);
+}
+
+.dropdownBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+    background: transparent;
+}
+
+.userTable th {
+    text-align: center;
+    padding: 12px;
+    background-color: var(--btn-bg-color);
     font-weight: 600;
     font-size: 14px;
     color: #104978;
@@ -24,14 +155,15 @@
 }
 
 .userTable th:hover {
-    background-color: #e9ecef;
+    background-color: var(--btn-hover-color);
 }
 
 .userTable td {
-    padding: 12px 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid #dbefff;
     color: #104978;
     font-size: 14px;
+    text-align: center;
 }
 
 .username {

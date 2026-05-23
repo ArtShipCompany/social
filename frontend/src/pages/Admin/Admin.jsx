@@ -27,7 +27,7 @@ function Admin() {
                         onClick={() => setActiveTab('users')}
                         className={`${styles.navBtn} ${activeTab === 'users' ? styles.active : ''}`}
                     >
-                        <span className={styles.navText}>Управление пользователями</span>
+                        <span className={styles.navText}>Управление ролями</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('arts')}
