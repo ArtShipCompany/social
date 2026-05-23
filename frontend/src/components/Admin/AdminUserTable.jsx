@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './AdminUserTable.module.css';
 
 function AdminUserTable({ 
@@ -12,6 +14,9 @@ function AdminUserTable({
     onRoleChange,
     getRoleName 
 }) {
+    
+    const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
     
     const [openSelectId, setOpenSelectId] = useState(null);
     
@@ -46,6 +51,14 @@ function AdminUserTable({
         setOpenSelectId(null);
     };
     
+    const handleUserClick = (userId) => {
+        if (currentUser?.id === userId) {
+            navigate('/me');
+        } else {
+            navigate(`/profile/${userId}`);
+        }
+    };
+    
     if (loading && users.length === 0) {
         return (
             <div className={styles.loading}>
@@ -72,10 +85,10 @@ function AdminUserTable({
                             ID {sortBy === 'id' && (sortDir === 'asc' ? '↑' : '↓')}
                         </th>
                         <th onClick={() => onSort('username')}>
-                            Username {sortBy === 'username' && (sortDir === 'asc' ? '↑' : '↓')}
+                            Никнейм {sortBy === 'username' && (sortDir === 'asc' ? '↑' : '↓')}
                         </th>
-                        <th>Email</th>
-                        <th>Display Name</th>
+                        <th>Почта</th>
+                        <th>Имя</th>
                         <th onClick={() => onSort('createdAt')}>
                             Дата регистрации {sortBy === 'createdAt' && (sortDir === 'asc' ? '↑' : '↓')}
                         </th>
@@ -85,22 +98,43 @@ function AdminUserTable({
                 </thead>
                 <tbody>
                     {users.map((user, index) => {
-                        // Определяем, является ли строка одной из последних 2
                         const isLastRows = index >= users.length - 2;
                         
                         return (
-                            <tr key={user.id} className={errorUser === user.id ? styles.errorRow : ''}>
+                            <tr 
+                                key={user.id} 
+                                className={`${styles.clickableRow} ${errorUser === user.id ? styles.errorRow : ''}`}
+                            >
                                 <td>{user.id}</td>
-                                <td className={styles.username}>{user.username}</td>
-                                <td>{user.email || '-'}</td>
-                                <td>{user.displayName || '-'}</td>
+                                
+                                <td 
+                                    className={`${styles.username} ${styles.clickableCell}`}
+                                    onClick={() => handleUserClick(user.id)}
+                                >
+                                    {user.username}
+                                </td>
+                                <td 
+                                    className={styles.clickableCell}
+                                    onClick={() => handleUserClick(user.id)}
+                                >
+                                    {user.email || '-'}
+                                </td>
+                                <td 
+                                    className={styles.clickableCell}
+                                    onClick={() => handleUserClick(user.id)}
+                                >
+                                    {user.displayName || '-'}
+                                </td>
+                                
                                 <td>{formatDate(user.createdAt)}</td>
                                 <td>
                                     <span className={`${styles.badge} ${getRoleBadgeClass(user.userRole)}`}>
                                         {getRoleName(user.userRole)}
                                     </span>
                                 </td>
-                                <td className={styles.actionCell}>
+                                
+                                {/* ✅ actionCell с stopPropagation чтобы не триггерить клик по строке */}
+                                <td className={styles.actionCell} onClick={(e) => e.stopPropagation()}>
                                     <div className={styles.selectContainer}>
                                         <button
                                             onClick={() => setOpenSelectId(openSelectId === user.id ? null : user.id)}
@@ -150,7 +184,6 @@ function AdminUserTable({
                 </tbody>
             </table>
             
-            {/* Клик вне селекта закрывает его */}
             {openSelectId && (
                 <div 
                     className={styles.dropdownBackdrop}

@@ -183,6 +183,16 @@
     text-align: center;
 }
 
+/* ✅ clickableRow как в ArtsTable — ховер на всю строку */
+.clickableRow {
+    cursor: default; /* Курсор по умолчанию, т.к. кликаем только по ячейкам */
+    transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+    background-color: #e8f3ff;
+}
+
 .username {
     font-weight: 600;
 }
@@ -238,4 +248,18 @@
     color: #104978a7;
     font-size: 14px;
     min-height: 355px;
+}
+
+.errorRow {
+    background-color: #ffebee !important;
+}
+
+.errorSelect {
+    border-color: #f44336;
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+}
+
+.errorIcon {
+    margin-left: 8px;
+    font-size: 14px;
 }
