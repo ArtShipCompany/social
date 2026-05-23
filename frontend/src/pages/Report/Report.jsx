@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { artApi } from '../../api/artApi';
 import { reportsApi } from '../../api/reportsApi';
+import CustomTextArea from '../../components/CustomTextArea/CustomTextArea';
 import styles from './Report.module.css';
 
 const REPORT_REASONS = [
@@ -28,7 +29,8 @@ function Report() {
     const [description, setDescription] = useState('');
     const [submitting, setSubmitting] = useState(false);
     
-    // ✅ ПЕРЕНЕСЛИ navigate В useEffect
+    const textareaRef = useRef(null);
+    
     useEffect(() => {
         if (!user) {
             navigate('/login', { state: { from: `/report/art/${artId}` } });
@@ -99,88 +101,83 @@ function Report() {
     }
     
     return (
-        <div className={styles.reportPage}>
-            <div className={styles.container}>
-                <button className={styles.backBtn} onClick={() => navigate(-1)}>
-                    ← Назад
-                </button>
+        <div className={styles.container}>  
+            <div className={styles.reportCard}>
+                <h1 className={styles.title}>Пожаловаться на арт</h1>
+                <p className={styles.subtitle}>
+                    Ваша жалоба поможет нам сделать сообщество лучше. 
+                    Модераторы рассмотрят её в ближайшее время.
+                </p>
                 
-                <div className={styles.reportCard}>
-                    <h1 className={styles.title}>Пожаловаться на арт</h1>
-                    <p className={styles.subtitle}>
-                        Ваша жалоба поможет нам сделать сообщество лучше. 
-                        Модераторы рассмотрят её в ближайшее время.
-                    </p>
-                    
-                    {/* Информация об арте */}
-                    <div className={styles.artInfo}>
-                        <img 
-                            src={art.imageUrl} 
-                            alt={art.title}
-                            className={styles.artImage}
-                        />
-                        <div className={styles.artDetails}>
-                            <h3>{art.title}</h3>
-                            <p>Автор: {art.author?.displayName || art.author?.username}</p>
-                            <p>Создан: {new Date(art.createdAt).toLocaleDateString('ru-RU')}</p>
+                {/* Информация об арте */}
+                <div className={styles.artInfo}>
+                    <img 
+                        src={art.imageUrl} 
+                        alt={art.title}
+                        className={styles.artImage}
+                    />
+                    <div className={styles.artDetails}>
+                        <h3>{art.title}</h3>
+                        <p>Автор: {art.author?.displayName || art.author?.username}</p>
+                        <p>Создан: {new Date(art.createdAt).toLocaleDateString('ru-RU')}</p>
+                    </div>
+                </div>
+                
+                {/* Форма жалобы */}
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    <div className={styles.formGroup}>
+                        <label>Причина жалобы *</label>
+                        <div className={styles.reasonsList}>
+                            {REPORT_REASONS.map(reason => (
+                                <label key={reason.value} className={styles.reasonOption}>
+                                    <input
+                                        type="radio"
+                                        name="reason"
+                                        value={reason.value}
+                                        checked={selectedReason === reason.value}
+                                        onChange={(e) => setSelectedReason(e.target.value)}
+                                    />
+                                    <div className={styles.reasonContent}>
+                                        <strong>{reason.label}</strong>
+                                        <span className={styles.reasonDesc}>{reason.description}</span>
+                                    </div>
+                                </label>
+                            ))}
                         </div>
                     </div>
                     
-                    {/* Форма жалобы */}
-                    <form onSubmit={handleSubmit} className={styles.form}>
-                        <div className={styles.formGroup}>
-                            <label>Причина жалобы *</label>
-                            <div className={styles.reasonsList}>
-                                {REPORT_REASONS.map(reason => (
-                                    <label key={reason.value} className={styles.reasonOption}>
-                                        <input
-                                            type="radio"
-                                            name="reason"
-                                            value={reason.value}
-                                            checked={selectedReason === reason.value}
-                                            onChange={(e) => setSelectedReason(e.target.value)}
-                                        />
-                                        <div className={styles.reasonContent}>
-                                            <strong>{reason.label}</strong>
-                                            <span className={styles.reasonDesc}>{reason.description}</span>
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        <div className={styles.formGroup}>
-                            <label htmlFor="description">Дополнительное описание</label>
-                            <textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Опишите подробнее, что именно нарушает правила..."
-                                rows={5}
-                                className={styles.textarea}
-                            />
-                        </div>
-                        
-                        <div className={styles.buttons}>
-                            <button 
-                                type="button" 
-                                onClick={() => navigate(-1)} 
-                                className={styles.cancelBtn}
-                            >
-                                Отмена
-                            </button>
-                            <button 
-                                type="submit" 
-                                disabled={submitting || !selectedReason}
-                                className={styles.submitBtn}
-                            >
-                                {submitting ? 'Отправка...' : 'Отправить жалобу'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className={styles.formGroup}>
+                        <CustomTextArea
+                            ref={textareaRef}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            maxLength={500}
+                            placeholder="Опишите подробнее, что именно нарушает правила..."
+                            label="Дополнительное описание"
+                            id="description"
+                        />
+                    </div>
+                    
+                    <div className={styles.buttons}>
+                        <button 
+                            type="button" 
+                            onClick={() => navigate(-1)} 
+                            className={styles.cancelBtn}
+                        >
+                            Отмена
+                        </button>
+                        <button 
+                            type="submit" 
+                            disabled={submitting || !selectedReason}
+                            className={styles.submitBtn}
+                        >
+                            {submitting ? 'Отправка...' : 'Отправить жалобу'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+
     );
 }
 
