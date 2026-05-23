@@ -233,29 +233,32 @@
 }
 
 /* Dialog styles */
-.dialogOverlay {
+.rejectOverlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 10001;
+    backdrop-filter: blur(4px);
 }
 
-.dialog {
-    background-color: #3a90d6;
-    border-radius: 12px;
+.rejectModal {
+    position: relative;
     width: 90%;
-    max-width: 450px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    animation: dialogFadeIn 0.2s ease;
+    max-width: 500px;
+    background-color: #dbefff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.2s ease;
 }
 
-@keyframes dialogFadeIn {
+@keyframes modalFadeIn {
     from {
         opacity: 0;
         transform: scale(0.95);
@@ -266,109 +269,107 @@
     }
 }
 
-.dialogHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-}
-
-.dialogHeader h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #fff;
-}
-
-.dialogClose {
-    background: none;
+.rejectClose {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: transparent;
     border: none;
-    font-size: 24px;
     cursor: pointer;
-    color: #888;
-    transition: color 0.2s;
+    color: var(--text-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+    padding: 0;
 }
 
-.dialogClose:hover {
-    color: #fff;
+.rejectClose:hover {
+    background: rgba(16, 73, 120, 0.1);
+    transform: scale(1.1);
 }
 
-.dialogBody {
-    padding: 20px;
+.rejectContent {
+    padding: 30px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.dialogBody p {
-    margin: 0 0 16px 0;
-    color: #e0e0e0;
+.rejectHeader {
+    text-align: center;
+}
+
+.rejectTitle {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.rejectDesc {
+    margin: 0;
     font-size: 14px;
+    color: var(--text-color);
+    opacity: 0.8;
 }
 
-.dialogLabel {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: #ccc;
-    font-size: 13px;
+.rejectForm {
+    padding: 0 10px;
 }
 
-.dialogTextarea {
-    width: 100%;
-    padding: 10px;
-    background-color: #fffefe;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #000000;
-    font-size: 14px;
-    resize: vertical;
-    font-family: inherit;
-    margin-top: 8px;
-}
-
-.dialogTextarea:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-.dialogFooter {
+.rejectButtons {
     display: flex;
     gap: 12px;
-    justify-content: flex-end;
-    padding: 16px 20px;
-    border-top: 1px solid #333;
+    padding-top: 10px;
 }
 
-.dialogCancelBtn {
-    padding: 8px 20px;
-    background-color: #3a3a3a;
+.rejectCancelBtn {
+    flex: 1;
+    padding: 12px 20px;
+    background: #c7e8ff;
     border: none;
-    border-radius: 6px;
-    color: #e0e0e0;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s;
-}
-
-.dialogCancelBtn:hover {
-    background-color: #4a4a4a;
-}
-
-.dialogConfirmBtn {
-    padding: 8px 20px;
-    background-color: #ef4444;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
+    border-radius: 30px;
+    color: var(--text-color);
     font-size: 14px;
     font-weight: 500;
-    transition: background-color 0.2s;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.dialogConfirmBtn:hover:not(:disabled) {
-    background-color: #dc2626;
+.rejectCancelBtn:hover:not(:disabled) {
+    background: #b3d9ff;
+    transform: translateY(1px);
 }
 
-.dialogConfirmBtn:disabled {
+.rejectCancelBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.rejectConfirmBtn {
+    flex: 1;
+    padding: 12px 20px;
+    background-color: var(--btn-bg-color);
+    border: none;
+    border-radius: 30px;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rejectConfirmBtn:hover:not(:disabled) {
+    background: var(--btn-hover-color);
+    transform: translateY(1px);
+}
+
+.rejectConfirmBtn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }

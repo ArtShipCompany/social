@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ArtViewModal from '../ArtViewModal/ArtViewModal';
+import CustomTextArea from '../CustomTextArea/CustomTextArea';
 import styles from './ReportsTableRow.module.css';
 
 function ReportsTableRow({ report, processing, onResolve, onReject }) {
@@ -133,9 +134,9 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                 >
                     <div className={styles.contentText}>
                         <strong 
-                        className={styles.contentTitle}
-                        onMouseEnter={(e) => showTooltip(e, content.title)}
-                        onMouseLeave={hideTooltip}                        
+                            className={styles.contentTitle}
+                            onMouseEnter={(e) => showTooltip(e, content.title)}
+                            onMouseLeave={hideTooltip}                        
                         >
                             {content.title}
                         </strong>
@@ -149,9 +150,9 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                     </div>
                     {report.description && (
                         <div 
-                        className={styles.reasonDesc}
-                        onMouseEnter={(e) => showTooltip(e, report.description || report.reason)}
-                        onMouseLeave={hideTooltip}
+                            className={styles.reasonDesc}
+                            onMouseEnter={(e) => showTooltip(e, report.description || report.reason)}
+                            onMouseLeave={hideTooltip}
                         >
                             {report.description}
                         </div>
@@ -208,9 +209,7 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                             </button>
                         </div>
                     ) : (
-                        <span 
-                            className={styles.resolvedInfo}
-                        >
+                        <span className={styles.resolvedInfo}>
                             {report.resolutionNote}
                         </span>
                     )}
@@ -233,46 +232,54 @@ function ReportsTableRow({ report, processing, onResolve, onReject }) {
                 </div>
             )}
             
-            {/* Модальное окно для отклонения жалобы */}
+            {/* Модальное окно для отклонения жалобы - в стиле ArtViewModal */}
             {showRejectDialog && (
-                <div className={styles.dialogOverlay} onClick={() => setShowRejectDialog(false)}>
-                    <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.dialogHeader}>
-                            <h3>Отклонение жалобы</h3>
-                            <button 
-                                className={styles.dialogClose} 
-                                onClick={() => setShowRejectDialog(false)}
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className={styles.dialogBody}>
-                            <p>Вы уверены, что хотите отклонить эту жалобу?</p>
-                            <label className={styles.dialogLabel}>
-                                Причина отклонения:
-                                <textarea
+                <div className={styles.rejectOverlay} onClick={() => setShowRejectDialog(false)}>
+                    <div className={styles.rejectModal} onClick={(e) => e.stopPropagation()}>
+                        <button 
+                            className={styles.rejectClose} 
+                            onClick={() => setShowRejectDialog(false)}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        </button>
+                        
+                        <div className={styles.rejectContent}>
+                            <div className={styles.rejectHeader}>
+                                <h3 className={styles.rejectTitle}>Отклонение жалобы</h3>
+                                <p className={styles.rejectDesc}>
+                                    Вы уверены, что хотите отклонить эту жалобу?
+                                </p>
+                            </div>
+                            
+                            <div className={styles.rejectForm}>
+                                <CustomTextArea
                                     value={rejectNote}
                                     onChange={(e) => setRejectNote(e.target.value)}
+                                    maxLength={500}
                                     placeholder="Укажите причину отклонения жалобы..."
-                                    className={styles.dialogTextarea}
-                                    rows={3}
+                                    label="Причина отклонения:"
+                                    id="rejectNote"
                                 />
-                            </label>
-                        </div>
-                        <div className={styles.dialogFooter}>
-                            <button 
-                                onClick={() => setShowRejectDialog(false)}
-                                className={styles.dialogCancelBtn}
-                            >
-                                Отмена
-                            </button>
-                            <button 
-                                onClick={handleRejectConfirm}
-                                disabled={isSubmitting || !rejectNote.trim()}
-                                className={styles.dialogConfirmBtn}
-                            >
-                                {isSubmitting ? 'Отклонение...' : 'Подтвердить'}
-                            </button>
+                            </div>
+                            
+                            <div className={styles.rejectButtons}>
+                                <button 
+                                    onClick={() => setShowRejectDialog(false)}
+                                    className={styles.rejectCancelBtn}
+                                    disabled={isSubmitting}
+                                >
+                                    Отмена
+                                </button>
+                                <button 
+                                    onClick={handleRejectConfirm}
+                                    disabled={isSubmitting || !rejectNote.trim()}
+                                    className={styles.rejectConfirmBtn}
+                                >
+                                    {isSubmitting ? 'Отклонение...' : 'Подтвердить'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
