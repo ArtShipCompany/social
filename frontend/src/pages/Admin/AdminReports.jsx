@@ -17,7 +17,7 @@ function AdminReports() {
     const [size, setSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('PENDING');
     
     const [stats, setStats] = useState({
         all: 0,

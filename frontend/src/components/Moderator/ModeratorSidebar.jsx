@@ -21,13 +21,6 @@ function ModeratorSidebar({ activeTab, onTabChange, isAdmin }) {
                     {activeTab === 'reports' && <span className={styles.activeIndicator} />}
                 </button>
             </nav>
-            
-            {isAdmin && (
-                <div className={styles.adminBadge}>
-                    <span className={styles.adminIcon}>👑</span>
-                    <span>Администратор</span>
-                </div>
-            )}
         </div>
     );
 }
