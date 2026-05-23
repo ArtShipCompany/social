@@ -145,14 +145,6 @@ function ChangeUserRole() {
                 <h1>Управление пользователями</h1>
             </div>
             <AdminStats stats={stats} />
-            {/* <AdminSearch 
-                searchInput={searchInput}
-                onSearchInputChange={setSearchInput}
-                onSearch={handleSearch}
-                onReset={handleResetSearch}
-                size={size}
-                onSizeChange={handleSizeChange}
-            /> */}
             <AdminUserTable 
                 users={users}
                 loading={loading}

@@ -1,31 +1,46 @@
 .tableWrapper {
+    background: white;
+    border-radius: 30px;
     overflow-x: auto;
-    border-radius: 16px;
-    border: 1px solid #dbefff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-height: 426px;
+    position: relative;
 }
 
 .artsTable {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px;
-    background-color: #f8f9fa;
+    min-width: 900px;
+}
+
+.artsTable th:first-child,
+.artsTable td:first-child {
+    padding-left: 20px;
+}
+
+.artsTable th:last-child,
+.artsTable td:last-child {
+    padding-left: 20px;
 }
 
 .artsTable th {
-    text-align: left;
-    padding: 14px 16px;
-    background-color: #f8f9fa;
+    text-align: center;
+    padding: 12px;
+    background-color: var(--btn-bg-color);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
     color: #104978;
+    cursor: pointer;
+    user-select: none;
     border-bottom: 2px solid #dbefff;
 }
 
 .artsTable td {
-    padding: 12px 16px;
+    padding: 10px 7px;
     border-bottom: 1px solid #dbefff;
+    color: #104978;
     font-size: 14px;
-    vertical-align: middle;
+    text-align: center;
 }
 
 /* Кликабельная строка */
@@ -41,7 +56,6 @@
 .idCell {
     font-weight: 600;
     color: #104978;
-    font-family: monospace;
 }
 
 .imageCell {
@@ -68,13 +82,9 @@
     white-space: nowrap;
 }
 
-.authorCell {
-    color: #666;
-}
 
 .dateCell {
     font-size: 12px;
-    color: #999;
     white-space: nowrap;
 }
 
@@ -91,17 +101,17 @@
 }
 
 .statusActive {
-    background-color: #227ac2;
+    background-color: #28a7469f;
     color: #ffffff;
 }
 
 .statusHidden {
-    background-color: #1c6cad;
+    background-color: #949494b3;
     color: #ffffff;
 }
 
 .statusBanned {
-    background-color: #104978;
+    background-color: #a72828b8;
     color: #ffffff;
 }
 
@@ -111,7 +121,7 @@
 
 .hideBtn, .unhideBtn, .banBtn, .unbanBtn {
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: 30px;
     border: none;
     cursor: pointer;
     font-size: 12px;
@@ -131,12 +141,12 @@
 }
 
 .unhideBtn {
-    background-color: #227ac2;
+    background-color: #28a745;
     color: #ffffff;
 }
 
 .unhideBtn:hover {
-    background-color: #2480cc;
+    background-color: #218838;
     transform: translateY(-1px);
 }
 
@@ -161,6 +171,7 @@
 }
 
 .loading, .emptyState {
+    min-height: 426px;
     text-align: center;
     padding: 60px;
 }

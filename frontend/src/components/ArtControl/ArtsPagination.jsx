@@ -4,12 +4,47 @@ function ArtsPagination({ page, totalPages, totalElements, size, onPageChange })
     const startItem = page * size + 1;
     const endItem = Math.min((page + 1) * size, totalElements);
     
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        
+        if (totalPages <= maxVisible) {
+            for (let i = 0; i < totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (page <= 2) {
+                for (let i = 0; i < maxVisible - 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            } else if (page >= totalPages - 3) {
+                pages.push(0);
+                pages.push('...');
+                for (let i = totalPages - 4; i < totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(0);
+                pages.push('...');
+                for (let i = page - 1; i <= page + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages - 1);
+            }
+        }
+        
+        return pages;
+    };
+    
     if (totalPages === 0) return null;
     
     return (
         <div className={styles.pagination}>
             <div className={styles.info}>
-                Показано <span className={styles.highlight}>{startItem}</span> — <span className={styles.highlight}>{endItem}</span> из <span className={styles.highlight}>{totalElements}</span> артов
+                Показано {startItem}-{endItem} из {totalElements} артов
             </div>
             <div className={styles.controls}>
                 <button
@@ -19,9 +54,21 @@ function ArtsPagination({ page, totalPages, totalElements, size, onPageChange })
                 >
                     ← Назад
                 </button>
-                <span className={styles.pageInfo}>
-                    Страница {page + 1} из {totalPages}
-                </span>
+                
+                {getPageNumbers().map((p, index) => (
+                    p === '...' ? (
+                        <span key={`dots-${index}`} className={styles.dots}>...</span>
+                    ) : (
+                        <button
+                            key={p}
+                            onClick={() => onPageChange(p)}
+                            className={`${styles.pageBtn} ${page === p ? styles.active : ''}`}
+                        >
+                            {p + 1}
+                        </button>
+                    )
+                ))}
+                
                 <button
                     onClick={() => onPageChange(page + 1)}
                     disabled={page >= totalPages - 1}

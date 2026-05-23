@@ -33,11 +33,11 @@ function ArtsTable({ arts, loading, isAdmin, onHide, onRestore, onBan }) {
         setShowArtModal(true);
     };
     
-    if (loading) {
+    if (loading && arts.length === 0) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
-                <p>Загрузка артов...</p>
+                <p>Загрузка пользователей...</p>
             </div>
         );
     }
@@ -75,14 +75,14 @@ function ArtsTable({ arts, loading, isAdmin, onHide, onRestore, onBan }) {
                                     className={styles.clickableRow}
                                     onClick={() => handleArtClick(art.id)}
                                 >
-                                    <td className={styles.idCell}>#{art.id}</td>
+                                    <td className={styles.idCell}>{art.id}</td>
                                     <td className={styles.imageCell}>
                                         <img 
                                             src={art.imageUrl} 
                                             alt={art.title}
                                             className={styles.thumbnail}
                                             onError={(e) => e.target.src = '/default-art.jpg'}
-                                            onClick={(e) => e.stopPropagation()}
+                                            onClick={handleArtClick}
                                         />
                                     </td>
                                     <td className={styles.titleCell}>{art.title}</td>

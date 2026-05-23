@@ -90,7 +90,6 @@ function ArtViewModal({ artId, onClose }) {
     return (
         <div className={styles.overlay} onClick={handleOverlayClick}>
             <div className={styles.modal}>
-                <button className={styles.closeBtn} onClick={onClose}>&times;</button>
                 
                 <div className={styles.modalContent}>
                     {/* Изображение */}
@@ -110,7 +109,6 @@ function ArtViewModal({ artId, onClose }) {
                         />
                         {imageError && (
                             <div className={styles.imageError}>
-                                <span>⚠️</span>
                                 <p>Не удалось загрузить изображение</p>
                             </div>
                         )}
@@ -119,44 +117,47 @@ function ArtViewModal({ artId, onClose }) {
                     {/* Информация об арте */}
                     <div className={styles.infoContainer}>
                         <div className={styles.header}>
-                            <h2>{art.title || 'Без названия'}</h2>
-                            <div className={styles.meta}>
-                                <span className={styles.id}>ID: {art.id}</span>
-                                <span className={styles.date}>
-                                    {new Date(art.createdAt).toLocaleDateString('ru-RU')}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div className={styles.author}>
-                            <span className={styles.authorLabel}>Автор:</span>
-                            <span className={styles.authorName}>
-                                {art.author?.displayName || art.author?.username || 'Неизвестный автор'}
-                            </span>
-                        </div>
-                        
-                        {art.tags && (
-                            <div className={styles.tags}>
-                                <span className={styles.tagsLabel}>Теги:</span>
-                                <div className={styles.tagsList}>
-                                    {typeof art.tags === 'string' 
-                                        ? art.tags.split(' ').map((tag, i) => (
-                                            <span key={i} className={styles.tag}>{tag}</span>
-                                          ))
-                                        : Array.isArray(art.tags) && art.tags.map((tag, i) => (
-                                            <span key={i} className={styles.tag}>#{tag}</span>
-                                          ))
-                                    }
+                            <div className={styles.h}>
+                                <h2 className={styles.artTitle}>{art.title || 'Без названия'}</h2>
+                                <div className={styles.meta}>
+                                    <span className={styles.id}>ID: {art.id}</span>
+                                    <span className={styles.date}>
+                                        {new Date(art.createdAt).toLocaleDateString('ru-RU')}
+                                    </span>
                                 </div>
                             </div>
-                        )}
-                        
-                        {art.description && (
-                            <div className={styles.description}>
-                                <span className={styles.descriptionLabel}>Описание:</span>
-                                <p>{art.description}</p>
+                            
+                            <div className={styles.author}>
+                                <span className={styles.authorLabel}>Автор:</span>
+                                <span className={styles.authorName}>
+                                    {art.author?.displayName || art.author?.username || 'Неизвестный автор'}
+                                </span>
                             </div>
-                        )}
+                            
+                            {art.tags && (
+                                <div className={styles.tags}>
+                                    <span className={styles.tagsLabel}>Теги:</span>
+                                    <div className={styles.tagsList}>
+                                        {typeof art.tags === 'string' 
+                                            ? art.tags.split(' ').map((tag, i) => (
+                                                <span key={i} className={styles.tag}>{tag}</span>
+                                            ))
+                                            : Array.isArray(art.tags) && art.tags.map((tag, i) => (
+                                                <span key={i} className={styles.tag}>#{tag}</span>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {art.description && (
+                                <div className={styles.description}>
+                                    <span className={styles.descriptionLabel}>Описание:</span>
+                                    <p>{art.description}</p>
+                                </div>
+                            )}
+                        </div>
+
                         
                         <div className={styles.buttons}>
                             <button className={styles.goToBtn} onClick={handleGoToArtPage}>

@@ -13,10 +13,17 @@ function ModeratorArts({ isAdmin }) {
     const [loading, setLoading] = useState(true);
     
     const [page, setPage] = useState(0);
-    const [size, setSize] = useState(20);
+    const [size, setSize] = useState(5);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const [statusFilter, setStatusFilter] = useState('');
+    
+    const [stats, setStats] = useState({
+        all: 0,
+        active: 0,
+        hidden: 0,
+        banned: 0
+    });
     
     const loadArts = async () => {
         try {
@@ -32,8 +39,30 @@ function ModeratorArts({ isAdmin }) {
         }
     };
     
+    const loadStatistics = async () => {
+        try {
+            // Загружаем арты каждого статуса для подсчета
+            const [allRes, activeRes, hiddenRes, bannedRes] = await Promise.all([
+                artApi.getArtsByStatus(null, 0, 1),
+                artApi.getArtsByStatus('ACTIVE', 0, 1),
+                artApi.getArtsByStatus('HIDDEN', 0, 1),
+                artApi.getArtsByStatus('BANNED', 0, 1)
+            ]);
+            
+            setStats({
+                all: allRes.totalElements || 0,
+                active: activeRes.totalElements || 0,
+                hidden: hiddenRes.totalElements || 0,
+                banned: bannedRes.totalElements || 0
+            });
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+        }
+    };
+    
     useEffect(() => {
         loadArts();
+        loadStatistics();
     }, [page, size, statusFilter]);
     
     const handleHide = async (artId) => {
@@ -41,6 +70,7 @@ function ModeratorArts({ isAdmin }) {
             await artApi.hideArt(artId);
             notification.success('Арт скрыт');
             loadArts();
+            loadStatistics();
         } catch (error) {
             notification.error('Ошибка при скрытии арта');
         }
@@ -51,6 +81,7 @@ function ModeratorArts({ isAdmin }) {
             await artApi.unhideArt(artId); 
             notification.success('Арт восстановлен');
             loadArts();
+            loadStatistics();
         } catch (error) {
             notification.error('Ошибка при восстановлении арта');
         }
@@ -62,6 +93,7 @@ function ModeratorArts({ isAdmin }) {
             await artApi.banArt(artId);
             notification.success('Арт забанен');
             loadArts();
+            loadStatistics();
         } catch (error) {
             notification.error('Ошибка при бане арта');
         }
@@ -71,14 +103,13 @@ function ModeratorArts({ isAdmin }) {
         <div className={styles.moderatorArts}>
             <div className={styles.header}>
                 <h1>Модерация артов</h1>
-                <p>Управление статусами и видимостью артов</p>
+                <span>Управление статусами и видимостью артов:</span>
             </div>
             
             <ArtsFilters 
                 statusFilter={statusFilter}
                 onStatusChange={setStatusFilter}
-                size={size}
-                onSizeChange={setSize}
+                stats={stats}
             />
             
             <ArtsTable 

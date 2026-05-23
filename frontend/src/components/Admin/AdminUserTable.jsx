@@ -84,64 +84,69 @@ function AdminUserTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map((user) => (
-                        <tr key={user.id} className={errorUser === user.id ? styles.errorRow : ''}>
-                            <td>{user.id}</td>
-                            <td className={styles.username}>{user.username}</td>
-                            <td>{user.email || '-'}</td>
-                            <td>{user.displayName || '-'}</td>
-                            <td>{formatDate(user.createdAt)}</td>
-                            <td>
-                                <span className={`${styles.badge} ${getRoleBadgeClass(user.userRole)}`}>
-                                    {getRoleName(user.userRole)}
-                                </span>
-                            </td>
-                            <td className={styles.actionCell}>
-                                <div className={styles.selectContainer}>
-                                    <button
-                                        onClick={() => setOpenSelectId(openSelectId === user.id ? null : user.id)}
-                                        disabled={updatingRole === user.id}
-                                        className={`${styles.selectButton} ${errorUser === user.id ? styles.errorSelect : ''}`}
-                                    >
-                                        <span className={styles.selectValue}>{getRoleLabel(user.userRole)}</span>
-                                        <span className={`${styles.selectArrow} ${openSelectId === user.id ? styles.arrowUp : ''}`}>
-                                            ▼
-                                        </span>
-                                    </button>
+                    {users.map((user, index) => {
+                        // Определяем, является ли строка одной из последних 2
+                        const isLastRows = index >= users.length - 2;
+                        
+                        return (
+                            <tr key={user.id} className={errorUser === user.id ? styles.errorRow : ''}>
+                                <td>{user.id}</td>
+                                <td className={styles.username}>{user.username}</td>
+                                <td>{user.email || '-'}</td>
+                                <td>{user.displayName || '-'}</td>
+                                <td>{formatDate(user.createdAt)}</td>
+                                <td>
+                                    <span className={`${styles.badge} ${getRoleBadgeClass(user.userRole)}`}>
+                                        {getRoleName(user.userRole)}
+                                    </span>
+                                </td>
+                                <td className={styles.actionCell}>
+                                    <div className={styles.selectContainer}>
+                                        <button
+                                            onClick={() => setOpenSelectId(openSelectId === user.id ? null : user.id)}
+                                            disabled={updatingRole === user.id}
+                                            className={`${styles.selectButton} ${errorUser === user.id ? styles.errorSelect : ''}`}
+                                        >
+                                            <span className={styles.selectValue}>{getRoleLabel(user.userRole)}</span>
+                                            <span className={`${styles.selectArrow} ${openSelectId === user.id ? styles.arrowUp : ''}`}>
+                                                ▼
+                                            </span>
+                                        </button>
+                                        
+                                        {openSelectId === user.id && (
+                                            <div className={`${styles.selectDropdown} ${isLastRows ? styles.dropdownUp : ''}`}>
+                                                <div 
+                                                    className={`${styles.dropdownOption} ${user.userRole === 'USER' ? styles.dropdownOptionActive : ''}`}
+                                                    onClick={() => handleRoleSelect(user.id, 'USER')}
+                                                >
+                                                    <span>Пользователь</span>
+                                                </div>
+                                                <div 
+                                                    className={`${styles.dropdownOption} ${user.userRole === 'MODERATOR' ? styles.dropdownOptionActive : ''}`}
+                                                    onClick={() => handleRoleSelect(user.id, 'MODERATOR')}
+                                                >
+                                                    <span>Модератор</span>
+                                                </div>
+                                                <div 
+                                                    className={`${styles.dropdownOption} ${user.userRole === 'ADMIN' ? styles.dropdownOptionActive : ''}`}
+                                                    onClick={() => handleRoleSelect(user.id, 'ADMIN')}
+                                                >
+                                                    <span>Администратор</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                     
-                                    {openSelectId === user.id && (
-                                        <div className={styles.selectDropdown}>
-                                            <div 
-                                                className={`${styles.dropdownOption} ${user.userRole === 'USER' ? styles.dropdownOptionActive : ''}`}
-                                                onClick={() => handleRoleSelect(user.id, 'USER')}
-                                            >
-                                                <span>Пользователь</span>
-                                            </div>
-                                            <div 
-                                                className={`${styles.dropdownOption} ${user.userRole === 'MODERATOR' ? styles.dropdownOptionActive : ''}`}
-                                                onClick={() => handleRoleSelect(user.id, 'MODERATOR')}
-                                            >
-                                                <span>Модератор</span>
-                                            </div>
-                                            <div 
-                                                className={`${styles.dropdownOption} ${user.userRole === 'ADMIN' ? styles.dropdownOptionActive : ''}`}
-                                                onClick={() => handleRoleSelect(user.id, 'ADMIN')}
-                                            >
-                                                <span>Администратор</span>
-                                            </div>
-                                        </div>
+                                    {updatingRole === user.id && (
+                                        <span className={styles.spinnerSmall}></span>
                                     )}
-                                </div>
-                                
-                                {updatingRole === user.id && (
-                                    <span className={styles.spinnerSmall}></span>
-                                )}
-                                {errorUser === user.id && (
-                                    <span className={styles.errorIcon} title="Ошибка изменения роли">⚠️</span>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
+                                    {errorUser === user.id && (
+                                        <span className={styles.errorIcon} title="Ошибка изменения роли">⚠️</span>
+                                    )}
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
             

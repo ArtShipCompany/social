@@ -1,37 +1,115 @@
 .filters {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 16px;
+    gap: 16px;
+    margin-block: 5px 10px;
+    width: 100%;
+    border-radius: 30px;
 }
 
-.filterGroup {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.label {
+    background: white;
+    padding: 10px 20px;
+    border-radius: 30px;
 }
 
 .filterLabel {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: #104978;
+    white-space: nowrap;
 }
 
-.filterSelect {
-    padding: 8px 16px;
-    border-radius: 10px;
-    border: 1px solid #dbefff;
-    background-color: white;
-    color: #104978;
-    font-size: 14px;
+.filterButtons {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.filterButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    border: 0px;
+    border-radius: 30px;
     cursor: pointer;
-    outline: none;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    color: #104978;
+    box-shadow: 0 2px 8px rgba(16, 73, 120, 0.08);
+    position: relative;
+    overflow: hidden;
 }
 
-.filterSelect:hover {
+.filterButton::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #104978, #dbefff);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.filterButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 73, 120, 0.15);
+    border-color: #1c6cad;
+}
+
+.filterButton:hover::before {
+    transform: scaleX(1);
+}
+
+.filterButton.active {
+    background: #1c6cad;
+    color: white;
     border-color: #104978;
+    box-shadow: 0 4px 12px rgba(16, 73, 120, 0.3);
+}
+
+.filterButton.active::before {
+    display: none;
+}
+
+.filterButton.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(16, 73, 120, 0.4);
+}
+
+.buttonCount {
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+.buttonLabel {
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .filterButtons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .filterButton {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
 }
